@@ -57,7 +57,7 @@ class _MapboxViewState extends State<MapboxView> {
   _onMapCreated(MapboxMap mapboxMap) async {
     this.mapboxMap = mapboxMap;
 
-    await mapboxMap.style.setStyleURI("mapbox://styles/jhjang0703/cmr09ioq7002e01stcrp2d9cq");
+    await mapboxMap.style.setStyleURI(MapboxStyles.STANDARD);
     
     // Enable user location component
     await mapboxMap.location.updateSettings(
@@ -101,12 +101,14 @@ class _MapboxViewState extends State<MapboxView> {
       optionsList.add(PointAnnotationOptions(
         geometry: Point(coordinates: Position(lng, lat)),
         image: markerImageBytes, // Use Uint8List directly
-        iconSize: 0.3,
+        iconSize: 0.12, // Reduced icon size for better 3D proportions
+        iconAnchor: IconAnchor.BOTTOM, // Anchor to the bottom so it sits on the ground
         textField: title, 
+        textSize: 14.0,
         textColor: Colors.black.value,
         textHaloColor: Colors.white.value,
         textHaloWidth: 2.0,
-        textOffset: [0.0, 2.0],
+        textOffset: [0.0, 1.0], // Adjusted text offset
       ));
     }
     
@@ -123,9 +125,9 @@ class _MapboxViewState extends State<MapboxView> {
       onMapCreated: _onMapCreated,
       cameraOptions: CameraOptions(
         center: Point(coordinates: Position(129.2266, 35.8348)),
-        zoom: 14.5,
-        pitch: 60.0,
-        bearing: -20.0,
+        zoom: 15.5, // Zoomed in slightly more for 3D view
+        pitch: 65.0, // Tilted to see 3D buildings and trees
+        bearing: -30.0,
       ),
     );
   }
