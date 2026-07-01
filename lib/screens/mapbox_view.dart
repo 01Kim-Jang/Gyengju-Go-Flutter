@@ -66,6 +66,26 @@ class _MapboxViewState extends State<MapboxView> {
     } catch (e) {
       print("Terrain error: $e");
     }
+
+    // Add 3D Hanok Model
+    try {
+      await mapboxMap.style.addStyleModel('hanok-model', 'asset://assets/scene.gltf');
+      
+      // 동궁과 월지 좌표: 35.8348, 129.2266
+      await mapboxMap.style.addSource(GeoJsonSource(
+        id: 'donggung-point',
+        data: '{"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "Point", "coordinates": [129.2266, 35.8348]}}]}'
+      ));
+
+      await mapboxMap.style.addLayer(ModelLayer(
+        id: 'hanok-layer',
+        sourceId: 'donggung-point',
+        modelId: 'hanok-model',
+        modelScale: [1.0, 1.0, 1.0], // 크기 조절 필요시 수정
+      ));
+    } catch (e) {
+      print("Model load error: $e");
+    }
     
     // Enable user location component
     await mapboxMap.location.updateSettings(
