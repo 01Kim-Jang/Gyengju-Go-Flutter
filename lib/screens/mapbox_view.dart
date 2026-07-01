@@ -59,26 +59,18 @@ class _MapboxViewState extends State<MapboxView> {
   _onMapCreated(MapboxMap mapboxMap) async {
     this.mapboxMap = mapboxMap;
 
-    await mapboxMap.style.setStyleURI("mapbox://styles/jhjang0703/cmr09ioq7002e01stcrp2d9cq");
+    await mapboxMap.style.setStyleURI(MapboxStyles.STANDARD);
     
     try {
       final appState = context.read<AppState>();
       await mapboxMap.style.localizeLabels(appState.currentLanguage, null);
       
-      // 일반 건물(빌딩) 및 불필요한 모든 정보(영어 라벨 등) '완전 철거'
-      final layersToHide = [
-        'poi-label', 'transit-label', 'settlement-subdivision-label', 'settlement-label', 
-        'state-label', 'natural-point-label', 'water-point-label', 'road-label', 
-        'waterway-label', 'building', 'building-extrusion', 'building-outline', 'building-top',
-        '3d-buildings', 'poi'
-      ];
-      for (var layer in layersToHide) {
-        try {
-          await mapboxMap.style.setStyleLayerProperty(layer, 'visibility', 'none');
-        } catch (_) {
-          // Ignore error if layer doesn't exist
-        }
-      }
+      // 최신 Mapbox Standard 스타일 전용 베이스맵 제어 스위치 (진짜 건물 제거 기능)
+      await mapboxMap.style.setStyleImportConfigProperty('basemap', 'showPointOfInterestLabels', false);
+      await mapboxMap.style.setStyleImportConfigProperty('basemap', 'show3dObjects', false);
+      await mapboxMap.style.setStyleImportConfigProperty('basemap', 'showTransitLabels', false);
+      await mapboxMap.style.setStyleImportConfigProperty('basemap', 'showPlaceLabels', false);
+      await mapboxMap.style.setStyleImportConfigProperty('basemap', 'showRoadLabels', true);
     } catch (e) {
       print("Style update error: $e");
     }
@@ -105,8 +97,10 @@ class _MapboxViewState extends State<MapboxView> {
 
   Future<void> _loadSpotsAndRender() async {
     if (pointAnnotationManager == null) return;
+    if (!mounted) return;
     
-    final spots = await OdiiService.fetchGyeongjuSpots();
+    final appState = context.read<AppState>();
+    final spots = await OdiiService.fetchGyeongjuSpots(appState.currentLanguage);
     
     List<PointAnnotationOptions> optionsList = [];
     for (var spot in spots) {
