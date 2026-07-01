@@ -175,8 +175,8 @@ class _MapboxViewState extends State<MapboxView> {
       onMapCreated: _onMapCreated,
       cameraOptions: CameraOptions(
         center: Point(coordinates: Position(129.2266, 35.8348)),
-        zoom: 17.5, // Pokemon Go style zoom
-        pitch: 75.0, // Pokemon Go style pitch
+        zoom: 16.0,
+        pitch: 60.0, // 포켓몬고 스타일 항공샷(기울기)
         bearing: -20.0,
       ),
     );
