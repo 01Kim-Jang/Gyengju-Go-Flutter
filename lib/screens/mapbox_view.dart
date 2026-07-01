@@ -6,6 +6,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../utils/mock_geolocator.dart' hide Position;
 import '../services/odii_service.dart';
 import '../components/docent_sheet.dart';
+import '../utils/marker_generator.dart';
 
 class MapboxView extends StatefulWidget {
   const MapboxView({super.key});
@@ -53,11 +54,18 @@ class _MapboxViewState extends State<MapboxView> {
       permission = await Geolocator.requestPermission();
     }
   }
-
   _onMapCreated(MapboxMap mapboxMap) async {
     this.mapboxMap = mapboxMap;
 
-    await mapboxMap.style.setStyleURI(MapboxStyles.STANDARD);
+    await mapboxMap.style.setStyleURI("mapbox://styles/jhjang0703/cmr09ioq7002e01stcrp2d9cq");
+    
+    // Add 3D Terrain
+    try {
+      await mapboxMap.style.addSource(RasterDemSource(id: "mapbox-dem", url: "mapbox://mapbox.mapbox-terrain-dem-v1"));
+      await mapboxMap.style.setTerrain(Terrain(sourceId: "mapbox-dem", exaggeration: 1.5));
+    } catch (e) {
+      print("Terrain error: $e");
+    }
     
     // Enable user location component
     await mapboxMap.location.updateSettings(
@@ -80,14 +88,6 @@ class _MapboxViewState extends State<MapboxView> {
   Future<void> _loadSpotsAndRender() async {
     if (pointAnnotationManager == null) return;
     
-    Uint8List? markerImageBytes;
-    try {
-      final ByteData bytes = await DefaultAssetBundle.of(context).load('assets/images/pokestop.png');
-      markerImageBytes = bytes.buffer.asUint8List();
-    } catch (e) {
-      print("Failed to load pokestop image: $e");
-    }
-
     final spots = await OdiiService.fetchGyeongjuSpots();
     
     List<PointAnnotationOptions> optionsList = [];
@@ -98,10 +98,19 @@ class _MapboxViewState extends State<MapboxView> {
       
       _spotsMap[title] = spot;
 
+      String? imageUrl;
+      // 동궁과 월지에만 사진 적용 (사용자 요청)
+      if (title.contains('동궁과 월지')) {
+        imageUrl = spot['firstimage']; // Odii API 제공 대표 이미지
+      }
+
+      // 다이내믹 포켓스탑 마커 생성
+      final Uint8List markerImageBytes = await MarkerGenerator.createPokestopMarker(imageUrl: imageUrl);
+
       optionsList.add(PointAnnotationOptions(
         geometry: Point(coordinates: Position(lng, lat)),
-        image: markerImageBytes, // Use Uint8List directly
-        iconSize: 0.12, // Reduced icon size for better 3D proportions
+        image: markerImageBytes, // Use dynamically generated image
+        iconSize: 0.8, // Adjusted size for generated canvas
         iconAnchor: IconAnchor.BOTTOM, // Anchor to the bottom so it sits on the ground
         textField: title, 
         textSize: 14.0,
@@ -125,9 +134,9 @@ class _MapboxViewState extends State<MapboxView> {
       onMapCreated: _onMapCreated,
       cameraOptions: CameraOptions(
         center: Point(coordinates: Position(129.2266, 35.8348)),
-        zoom: 15.5, // Zoomed in slightly more for 3D view
-        pitch: 65.0, // Tilted to see 3D buildings and trees
-        bearing: -30.0,
+        zoom: 14.5, // Reverted to Web-like zoom
+        pitch: 60.0,
+        bearing: -20.0,
       ),
     );
   }
