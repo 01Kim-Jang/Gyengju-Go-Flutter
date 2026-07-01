@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:kakao_map_plugin/kakao_map_plugin.dart';
 import '../services/odii_service.dart';
-
+import 'package:provider/provider.dart';
+import '../providers/app_state.dart';
+import '../utils/marker_generator.dart';
+import 'dart:convert';
+import 'dart:typed_data';
+import '../components/docent_sheet.dart';
 class KakaoMapView extends StatefulWidget {
   const KakaoMapView({super.key});
 
@@ -21,22 +26,33 @@ class _KakaoMapViewState extends State<KakaoMapView> {
   }
 
   Future<void> _loadSpots() async {
-    final loadedSpots = await OdiiService.fetchGyeongjuSpots();
-    setState(() {
-      spots = loadedSpots;
-      markers = spots.map((spot) {
-        return Marker(
-          markerId: spot['title'] ?? 'marker',
-          latLng: LatLng(
-            double.tryParse(spot['mapY'].toString()) ?? 35.8348,
-            double.tryParse(spot['mapX'].toString()) ?? 129.2266,
-          ),
-          infoWindowContent: spot['title'],
-          // Default KakaoMap marker will be used since markerImageSrc is removed
-        );
-      }).toSet();
-    });
+    if (!mounted) return;
+    final appState = context.read<AppState>();
+    final loadedSpots = await OdiiService.fetchGyeongjuSpots(appState.currentLanguage);
+    
+    Set<Marker> newMarkers = {};
+    for (var spot in loadedSpots) {
+      final Uint8List bytes = await MarkerGenerator.createPokestopMarker(imageUrl: spot['firstimage']);
+      final base64Image = base64Encode(bytes);
+      
+      newMarkers.add(Marker(
+        markerId: spot['title'] ?? 'marker',
+        latLng: LatLng(
+          double.tryParse(spot['mapY'].toString()) ?? 35.8348,
+          double.tryParse(spot['mapX'].toString()) ?? 129.2266,
+        ),
+        markerImageSrc: 'data:image/png;base64,$base64Image',
+      ));
+    }
+    
+    if (mounted) {
+      setState(() {
+        spots = loadedSpots;
+        markers = newMarkers;
+      });
+    }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -46,6 +62,17 @@ class _KakaoMapViewState extends State<KakaoMapView> {
       }),
       markers: markers.toList(),
       center: LatLng(35.8348, 129.2266),
+      onMarkerTap: (markerId, latLng, zoomLevel) {
+        final spot = spots.firstWhere((s) => s['title'] == markerId, orElse: () => {});
+        if (spot.isNotEmpty) {
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            builder: (context) => DocentSheet(spotData: spot),
+          );
+        }
+      },
     );
   }
 }

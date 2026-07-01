@@ -1,0 +1,11 @@
+Model Information:
+* title:	문경새재 한옥
+* source:	https://sketchfab.com/3d-models/c57298f7f4f3461b878e96965fda72ef
+* author:	solikenom (https://sketchfab.com/solikenom)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "문경새재 한옥" (https://sketchfab.com/3d-models/c57298f7f4f3461b878e96965fda72ef) by solikenom (https://sketchfab.com/solikenom) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

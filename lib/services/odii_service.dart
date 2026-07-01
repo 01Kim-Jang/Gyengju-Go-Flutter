@@ -7,15 +7,18 @@ class OdiiService {
   static const String _baseUrl = 'https://apis.data.go.kr/B551011/Odii';
 
   // 1. 테마 기반 스팟 정보 조회 (경주)
-  static Future<List<Map<String, dynamic>>> fetchGyeongjuSpots() async {
+  static Future<List<Map<String, dynamic>>> fetchGyeongjuSpots(String langCode) async {
+    // Convert generic language code to Odii specific code if needed
+    String odiiLang = langCode;
+    if (langCode == 'zh') odiiLang = 'zh-hans';
     final url = Uri.parse('$_baseUrl/themeBasedList'
         '?serviceKey=$_serviceKey'
-        '&numOfRows=50'
+        '&numOfRows=5000'
         '&pageNo=1'
         '&MobileOS=AND'
         '&MobileApp=GyeongjuGo'
         '&_type=json'
-        '&langCode=ko'); // areaCode와 themeCd는 에러를 유발하므로 제거
+        '&langCode=$odiiLang'); // areaCode와 themeCd는 에러를 유발하므로 제거
 
     try {
       final response = await http.get(url);
@@ -24,10 +27,28 @@ class OdiiService {
         final items = data['response']?['body']?['items']?['item'] as List<dynamic>?;
         if (items != null) {
           // 경주시 데이터만 필터링
-          final gyeongjuSpots = items
-              .where((item) => item['addr2'] == '경주시')
-              .map((item) => Map<String, dynamic>.from(item))
-              .toList();
+          final gyeongjuSpots = items.where((i) {
+            final addr1 = i['addr1']?.toString().toLowerCase() ?? '';
+            final addr2 = i['addr2']?.toString().toLowerCase() ?? '';
+            final title = i['title']?.toString().toLowerCase() ?? '';
+            return addr1.contains('경주') || addr2.contains('경주') ||
+                   addr1.contains('gyeongju') || addr2.contains('gyeongju') ||
+                   title.contains('gyeongju') || title.contains('경주') ||
+                   addr1.contains('キョンジュ') || addr2.contains('キョンジュ') ||
+                   title.contains('キョンジュ');
+          }).map((item) {
+            final mapItem = Map<String, dynamic>.from(item);
+            // Odii API는 imageUrl을 주지만 비어있는 경우가 많으므로 임시 목업 이미지 주입 (BE 연동 전 FE 테스트용)
+            String title = mapItem['title']?.toString() ?? '';
+            if (title.contains('동궁과 월지') || title.contains('Donggung') || title.contains('雁鴨池')) {
+              mapItem['firstimage'] = 'https://www.gyeongju.go.kr/upload/content/thumb/20200527/159055973719000.jpg';
+            } else if (title.contains('불국사') || title.contains('Bulguksa')) {
+              mapItem['firstimage'] = 'https://www.gyeongju.go.kr/upload/content/thumb/20200527/159056006730100.jpg';
+            } else {
+              mapItem['firstimage'] = mapItem['imageUrl'] != '' ? mapItem['imageUrl'] : 'https://www.gyeongju.go.kr/upload/content/thumb/20200527/159055973719000.jpg'; // Default fallback
+            }
+            return mapItem;
+          }).toList();
               
           if (gyeongjuSpots.isNotEmpty) {
             return gyeongjuSpots;

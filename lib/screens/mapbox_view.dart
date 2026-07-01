@@ -7,6 +7,8 @@ import '../utils/mock_geolocator.dart' hide Position;
 import '../services/odii_service.dart';
 import '../components/docent_sheet.dart';
 import '../utils/marker_generator.dart';
+import 'package:provider/provider.dart';
+import '../providers/app_state.dart';
 
 class MapboxView extends StatefulWidget {
   const MapboxView({super.key});
@@ -57,29 +59,24 @@ class _MapboxViewState extends State<MapboxView> {
   _onMapCreated(MapboxMap mapboxMap) async {
     this.mapboxMap = mapboxMap;
 
-    await mapboxMap.style.setStyleURI("mapbox://styles/jhjang0703/cmr09ioq7002e01stcrp2d9cq");
+    await mapboxMap.style.setStyleURI(MapboxStyles.STANDARD);
+    
+    try {
+      final appState = context.read<AppState>();
+      
+      // Mapbox Standard 스타일의 언어 설정은 basemap config로 제어
+      await mapboxMap.style.setStyleImportConfigProperty('basemap', 'language', appState.currentLanguage);
+      
+      // 사용자 요청: 짜장면, 버스정류장 등 불필요한 POI 제거 (건물은 유지)
+      await mapboxMap.style.setStyleImportConfigProperty('basemap', 'showPointOfInterestLabels', false);
+      await mapboxMap.style.setStyleImportConfigProperty('basemap', 'showTransitLabels', false);
+      await mapboxMap.style.setStyleImportConfigProperty('basemap', 'showPlaceLabels', false);
+      await mapboxMap.style.setStyleImportConfigProperty('basemap', 'showRoadLabels', true);
+    } catch (e) {
+      print("Style update error: $e");
+    }
     
     // Terrain is managed via Mapbox Studio style instead of programmatic adding
-
-    // Add 3D Hanok Model
-    try {
-      await mapboxMap.style.addStyleModel('hanok-model', 'asset://assets/scene.gltf');
-      
-      // 동궁과 월지 좌표: 35.8348, 129.2266
-      await mapboxMap.style.addSource(GeoJsonSource(
-        id: 'donggung-point',
-        data: '{"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "Point", "coordinates": [129.2266, 35.8348]}}]}'
-      ));
-
-      await mapboxMap.style.addLayer(ModelLayer(
-        id: 'hanok-layer',
-        sourceId: 'donggung-point',
-        modelId: 'hanok-model',
-        modelScale: [1.0, 1.0, 1.0], // 크기 조절 필요시 수정
-      ));
-    } catch (e) {
-      print("Model load error: $e");
-    }
     
     // Enable user location component
     await mapboxMap.location.updateSettings(
@@ -101,41 +98,94 @@ class _MapboxViewState extends State<MapboxView> {
 
   Future<void> _loadSpotsAndRender() async {
     if (pointAnnotationManager == null) return;
+    if (!mounted) return;
     
-    final spots = await OdiiService.fetchGyeongjuSpots();
+    final appState = context.read<AppState>();
+    final spots = await OdiiService.fetchGyeongjuSpots(appState.currentLanguage);
     
     List<PointAnnotationOptions> optionsList = [];
     for (var spot in spots) {
       double lat = double.tryParse(spot['mapY'].toString()) ?? 35.8348;
       double lng = double.tryParse(spot['mapX'].toString()) ?? 129.2266;
-      final title = spot['title'] ?? 'Unknown';
+      
+      // 제목에서 "(나레이션 ...)" 제거 및 "경주, " 제거
+      String rawTitle = spot['title'] ?? 'Unknown';
+      String title = rawTitle.replaceAll(RegExp(r'\([^)]*\)'), '').replaceAll('경주, ', '').trim();
       
       _spotsMap[title] = spot;
 
-      String? imageUrl;
-      // 동궁과 월지에만 사진 적용 (사용자 요청)
-      if (title.contains('동궁과 월지')) {
-        imageUrl = spot['firstimage']; // Odii API 제공 대표 이미지
-      }
+      // 31개 전체 스팟에 대해 대표 이미지 할당
+      String? imageUrl = spot['firstimage'];
 
-      // 다이내믹 포켓스탑 마커 생성
-      final Uint8List markerImageBytes = await MarkerGenerator.createPokestopMarker(imageUrl: imageUrl);
+      // 다이내믹 포켓스탑 마커 생성 (Mapbox v11용 Raw RGBA)
+      final rawData = await MarkerGenerator.createPokestopMarkerRaw(imageUrl: imageUrl);
+      
+      // Mapbox 스타일에 이미지 사전 등록
+      final String imageId = 'pokestop_marker_$title';
+      try {
+        final mbxImage = MbxImage(
+          width: rawData['width'],
+          height: rawData['height'],
+          data: rawData['bytes'] as Uint8List,
+        );
+        await mapboxMap?.style.addStyleImage(
+          imageId,
+          1.0, // scale
+          mbxImage,
+          false, // sdf
+          [], // stretchX
+          [], // stretchY
+          null // content
+        );
+      } catch (e) {
+        print("Failed to add image to style: $e");
+      }
 
       optionsList.add(PointAnnotationOptions(
         geometry: Point(coordinates: Position(lng, lat)),
-        image: markerImageBytes, // Use dynamically generated image
-        iconSize: 0.8, // Adjusted size for generated canvas
-        iconAnchor: IconAnchor.BOTTOM, // Anchor to the bottom so it sits on the ground
+        iconImage: imageId, // Use pre-registered image
+        iconSize: 0.8,
+        iconAnchor: IconAnchor.BOTTOM,
         textField: title, 
         textSize: 14.0,
         textColor: Colors.black.value,
         textHaloColor: Colors.white.value,
         textHaloWidth: 2.0,
-        textOffset: [0.0, 1.0], // Adjusted text offset
+        textOffset: [0.0, 1.0],
       ));
     }
     
     await pointAnnotationManager?.createMulti(optionsList);
+
+    // 3D Hanok Model 일괄 적용 (모든 스팟 좌표에)
+    try {
+      if (mapboxMap != null) {
+        await mapboxMap!.style.addStyleModel('hanok-model', 'asset://assets/scene.gltf');
+        
+        List<String> features = [];
+        for (var spot in spots) {
+          double lat = double.tryParse(spot['mapY'].toString()) ?? 35.8348;
+          double lng = double.tryParse(spot['mapX'].toString()) ?? 129.2266;
+          features.add('{"type": "Feature", "geometry": {"type": "Point", "coordinates": [$lng, $lat]}}');
+        }
+        
+        String geoJsonData = '{"type": "FeatureCollection", "features": [${features.join(",")}]}';
+        
+        await mapboxMap!.style.addSource(GeoJsonSource(
+          id: 'hanok-points-source',
+          data: geoJsonData
+        ));
+
+        await mapboxMap!.style.addLayer(ModelLayer(
+          id: 'hanok-layer',
+          sourceId: 'hanok-points-source',
+          modelId: 'hanok-model',
+          modelScale: [30.0, 30.0, 30.0], // 한옥 모델 스케일 대폭 증가 (건물 덮어쓰기 위해)
+        ));
+      }
+    } catch (e) {
+      print("Hanok Model load error: $e");
+    }
   }
 
   @override
@@ -143,15 +193,55 @@ class _MapboxViewState extends State<MapboxView> {
     final token = dotenv.env['MAPBOX_ACCESS_TOKEN'] ?? '';
     MapboxOptions.setAccessToken(token);
 
-    return MapWidget(
+    Widget mapWidget = MapWidget(
       key: const ValueKey("mapboxWidget"),
       onMapCreated: _onMapCreated,
       cameraOptions: CameraOptions(
         center: Point(coordinates: Position(129.2266, 35.8348)),
-        zoom: 14.5, // Reverted to Web-like zoom
-        pitch: 60.0,
+        zoom: 16.0,
+        pitch: 75.0, // 극단적인 포켓몬고 스타일 항공샷
         bearing: -20.0,
       ),
     );
+
+    // CSS 필터 복원: saturate(130%) contrast(110%) hue-rotate(10deg) + 따뜻한 색감
+    
+    // 1. Saturate (1.3)
+    const double sat = 1.3;
+    const double invSat = 1 - sat;
+    const double R = 0.2126 * invSat;
+    const double G = 0.7152 * invSat;
+    const double B = 0.0722 * invSat;
+    mapWidget = ColorFiltered(
+      colorFilter: const ColorFilter.matrix([
+        R + sat, G, B, 0, 0,
+        R, G + sat, B, 0, 0,
+        R, G, B + sat, 0, 0,
+        0, 0, 0, 1, 0,
+      ]),
+      child: mapWidget,
+    );
+    
+    // 2. Contrast (1.1)
+    mapWidget = ColorFiltered(
+      colorFilter: const ColorFilter.matrix([
+        1.1, 0, 0, 0, -12.75,
+        0, 1.1, 0, 0, -12.75,
+        0, 0, 1.1, 0, -12.75,
+        0, 0, 0, 1, 0,
+      ]),
+      child: mapWidget,
+    );
+    
+    // 3. 몽환적인 노란/연두빛 감성 (Hue Rotate 대체)
+    mapWidget = ColorFiltered(
+      colorFilter: ColorFilter.mode(
+        const Color(0xFFD4E157).withOpacity(0.15),
+        BlendMode.colorBurn,
+      ),
+      child: mapWidget,
+    );
+
+    return mapWidget;
   }
 }
