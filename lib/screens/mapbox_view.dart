@@ -65,8 +65,12 @@ class _MapboxViewState extends State<MapboxView> {
       final appState = context.read<AppState>();
       await mapboxMap.style.localizeLabels(appState.currentLanguage, null);
       
-      // 불필요한 POI (식당, 대중교통 등) 숨기기
-      final layersToHide = ['poi-label', 'transit-label', 'settlement-subdivision-label', 'settlement-label', 'state-label', 'natural-point-label', 'water-point-label'];
+      // 일반 건물(빌딩) 및 불필요한 모든 정보(영어 라벨 등) '완전 철거'
+      final layersToHide = [
+        'poi-label', 'transit-label', 'settlement-subdivision-label', 'settlement-label', 
+        'state-label', 'natural-point-label', 'water-point-label', 'road-label', 
+        'waterway-label', 'building', 'building-extrusion', 'building-outline', 'building-top'
+      ];
       for (var layer in layersToHide) {
         await mapboxMap.style.setStyleLayerProperty(layer, 'visibility', 'none');
       }
