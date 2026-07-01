@@ -41,7 +41,7 @@ class AnnotationClickListener extends OnPointAnnotationClickListener {
 
 class _MapboxViewState extends State<MapboxView> {
   MapboxMap? mapboxMap;
-  PointAnnotationManager? pointAnnotationManager;
+  ViewAnnotationManager? viewAnnotationManager;
   final Map<String, dynamic> _spotsMap = {};
 
   @override
@@ -64,7 +64,12 @@ class _MapboxViewState extends State<MapboxView> {
     try {
       final appState = context.read<AppState>();
       await mapboxMap.style.localizeLabels(appState.currentLanguage, null);
-      // 건물을 지우지 않고 유지합니다.
+      
+      // 사용자 요청: 짜장면, 버스정류장 등 불필요한 POI 제거 (건물은 유지)
+      await mapboxMap.style.setStyleImportConfigProperty('basemap', 'showPointOfInterestLabels', false);
+      await mapboxMap.style.setStyleImportConfigProperty('basemap', 'showTransitLabels', false);
+      await mapboxMap.style.setStyleImportConfigProperty('basemap', 'showPlaceLabels', false);
+      await mapboxMap.style.setStyleImportConfigProperty('basemap', 'showRoadLabels', true);
     } catch (e) {
       print("Style update error: $e");
     }
@@ -81,71 +86,90 @@ class _MapboxViewState extends State<MapboxView> {
       )
     );
 
-    // 마커 매니저 생성
-    pointAnnotationManager = await mapboxMap.annotations.createPointAnnotationManager();
-    pointAnnotationManager?.addOnPointAnnotationClickListener(AnnotationClickListener(context, _spotsMap));
+    // 뷰 어노테이션(Flutter 위젯 마커) 매니저 생성
+    viewAnnotationManager = await mapboxMap.annotations.createViewAnnotationManager();
     
     // 데이터 불러오기 및 마커 렌더링
     _loadSpotsAndRender();
   }
 
   Future<void> _loadSpotsAndRender() async {
-    if (pointAnnotationManager == null) return;
+    if (viewAnnotationManager == null) return;
     if (!mounted) return;
     
     final appState = context.read<AppState>();
     final spots = await OdiiService.fetchGyeongjuSpots(appState.currentLanguage);
     
-    List<PointAnnotationOptions> optionsList = [];
     for (var spot in spots) {
       double lat = double.tryParse(spot['mapY'].toString()) ?? 35.8348;
       double lng = double.tryParse(spot['mapX'].toString()) ?? 129.2266;
-      final title = spot['title'] ?? 'Unknown';
+      
+      // 제목에서 "(나레이션 ...)" 제거 및 "경주, " 제거
+      String rawTitle = spot['title'] ?? 'Unknown';
+      String title = rawTitle.replaceAll(RegExp(r'\([^)]*\)'), '').replaceAll('경주, ', '').trim();
       
       _spotsMap[title] = spot;
 
-      // 31개 전체 스팟에 대해 대표 이미지 할당
       String? imageUrl = spot['firstimage'];
 
-      // 다이내믹 포켓스탑 마커 생성 (Mapbox v11용 Raw RGBA)
-      final rawData = await MarkerGenerator.createPokestopMarkerRaw(imageUrl: imageUrl);
-      
-      // Mapbox 스타일에 이미지 사전 등록
-      final String imageId = 'pokestop_marker_$title';
+      // Flutter 네이티브 위젯으로 뷰 어노테이션 추가
+      final markerWidget = GestureDetector(
+        onTap: () {
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            builder: (context) => DocentSheet(spotData: spot),
+          );
+        },
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 3),
+                color: const Color(0xFF29B6F6),
+                image: imageUrl != null && imageUrl.isNotEmpty 
+                  ? DecorationImage(image: NetworkImage(imageUrl), fit: BoxFit.cover)
+                  : null,
+                boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2))],
+              ),
+            ),
+            const SizedBox(height: 4),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.8),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                title,
+                style: const TextStyle(color: Colors.black, fontSize: 12, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+      );
+
+      final options = ViewAnnotationOptions(
+        geometry: Point(coordinates: Position(lng, lat)),
+        allowOverlap: true,
+        anchor: ViewAnnotationAnchor.BOTTOM,
+      );
+
       try {
-        final mbxImage = MbxImage(
-          width: rawData['width'],
-          height: rawData['height'],
-          data: rawData['bytes'] as Uint8List,
-        );
-        await mapboxMap?.style.addStyleImage(
-          imageId,
-          1.0, // scale
-          mbxImage,
-          false, // sdf
-          [], // stretchX
-          [], // stretchY
-          null // content
+        await viewAnnotationManager?.addViewAnnotation(
+          "marker_$title",
+          options,
+          markerWidget,
         );
       } catch (e) {
-        print("Failed to add image to style: $e");
+        print("ViewAnnotation error: $e");
       }
-
-      optionsList.add(PointAnnotationOptions(
-        geometry: Point(coordinates: Position(lng, lat)),
-        iconImage: imageId, // 사전 등록된 이미지 ID 사용
-        iconSize: 0.8, // Adjusted size for generated canvas
-        iconAnchor: IconAnchor.BOTTOM, // Anchor to the bottom so it sits on the ground
-        textField: title, 
-        textSize: 14.0,
-        textColor: Colors.black.value,
-        textHaloColor: Colors.white.value,
-        textHaloWidth: 2.0,
-        textOffset: [0.0, 1.0], // Adjusted text offset
-      ));
     }
-    
-    await pointAnnotationManager?.createMulti(optionsList);
 
     // 3D Hanok Model 일괄 적용 (모든 스팟 좌표에)
     try {
