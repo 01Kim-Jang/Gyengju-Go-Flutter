@@ -7,6 +7,8 @@ import '../utils/mock_geolocator.dart' hide Position;
 import '../services/odii_service.dart';
 import '../components/docent_sheet.dart';
 import '../utils/marker_generator.dart';
+import 'package:provider/provider.dart';
+import '../providers/app_state.dart';
 
 class MapboxView extends StatefulWidget {
   const MapboxView({super.key});
@@ -57,29 +59,16 @@ class _MapboxViewState extends State<MapboxView> {
   _onMapCreated(MapboxMap mapboxMap) async {
     this.mapboxMap = mapboxMap;
 
-    await mapboxMap.style.setStyleURI(MapboxStyles.STANDARD);
+    await mapboxMap.style.setStyleURI("mapbox://styles/jhjang0703/cmr09ioq7002e01stcrp2d9cq");
+    
+    try {
+      final appState = context.read<AppState>();
+      await mapboxMap.style.localizeLabels(appState.currentLanguage, null);
+    } catch (e) {
+      print("Localize error: $e");
+    }
     
     // Terrain is managed via Mapbox Studio style instead of programmatic adding
-
-    // Add 3D Hanok Model
-    try {
-      await mapboxMap.style.addStyleModel('hanok-model', 'asset://assets/scene.gltf');
-      
-      // 동궁과 월지 좌표: 35.8348, 129.2266
-      await mapboxMap.style.addSource(GeoJsonSource(
-        id: 'donggung-point',
-        data: '{"type": "FeatureCollection", "features": [{"type": "Feature", "geometry": {"type": "Point", "coordinates": [129.2266, 35.8348]}}]}'
-      ));
-
-      await mapboxMap.style.addLayer(ModelLayer(
-        id: 'hanok-layer',
-        sourceId: 'donggung-point',
-        modelId: 'hanok-model',
-        modelScale: [1.0, 1.0, 1.0], // 크기 조절 필요시 수정
-      ));
-    } catch (e) {
-      print("Model load error: $e");
-    }
     
     // Enable user location component
     await mapboxMap.location.updateSettings(
@@ -136,6 +125,36 @@ class _MapboxViewState extends State<MapboxView> {
     }
     
     await pointAnnotationManager?.createMulti(optionsList);
+
+    // 3D Hanok Model 일괄 적용 (모든 스팟 좌표에)
+    try {
+      if (mapboxMap != null) {
+        await mapboxMap!.style.addStyleModel('hanok-model', 'asset://assets/scene.gltf');
+        
+        List<String> features = [];
+        for (var spot in spots) {
+          double lat = double.tryParse(spot['mapY'].toString()) ?? 35.8348;
+          double lng = double.tryParse(spot['mapX'].toString()) ?? 129.2266;
+          features.add('{"type": "Feature", "geometry": {"type": "Point", "coordinates": [$lng, $lat]}}');
+        }
+        
+        String geoJsonData = '{"type": "FeatureCollection", "features": [${features.join(",")}]}';
+        
+        await mapboxMap!.style.addSource(GeoJsonSource(
+          id: 'hanok-points-source',
+          data: geoJsonData
+        ));
+
+        await mapboxMap!.style.addLayer(ModelLayer(
+          id: 'hanok-layer',
+          sourceId: 'hanok-points-source',
+          modelId: 'hanok-model',
+          modelScale: [2.0, 2.0, 2.0], // 한옥 모델 스케일 (필요시 조정)
+        ));
+      }
+    } catch (e) {
+      print("Hanok Model load error: $e");
+    }
   }
 
   @override
@@ -148,8 +167,8 @@ class _MapboxViewState extends State<MapboxView> {
       onMapCreated: _onMapCreated,
       cameraOptions: CameraOptions(
         center: Point(coordinates: Position(129.2266, 35.8348)),
-        zoom: 14.5, // Reverted to Web-like zoom
-        pitch: 65.0,
+        zoom: 17.5, // Pokemon Go style zoom
+        pitch: 75.0, // Pokemon Go style pitch
         bearing: -20.0,
       ),
     );
