@@ -64,8 +64,14 @@ class _MapboxViewState extends State<MapboxView> {
     try {
       final appState = context.read<AppState>();
       await mapboxMap.style.localizeLabels(appState.currentLanguage, null);
+      
+      // 불필요한 POI (식당, 대중교통 등) 숨기기
+      final layersToHide = ['poi-label', 'transit-label', 'settlement-subdivision-label', 'settlement-label', 'state-label', 'natural-point-label', 'water-point-label'];
+      for (var layer in layersToHide) {
+        await mapboxMap.style.setStyleLayerProperty(layer, 'visibility', 'none');
+      }
     } catch (e) {
-      print("Localize error: $e");
+      print("Style update error: $e");
     }
     
     // Terrain is managed via Mapbox Studio style instead of programmatic adding
@@ -101,11 +107,8 @@ class _MapboxViewState extends State<MapboxView> {
       
       _spotsMap[title] = spot;
 
-      String? imageUrl;
-      // 동궁과 월지에만 사진 적용 (사용자 요청)
-      if (title.contains('동궁과 월지')) {
-        imageUrl = spot['firstimage']; // Odii API 제공 대표 이미지
-      }
+      // 31개 전체 스팟에 대해 대표 이미지 할당
+      String? imageUrl = spot['firstimage'];
 
       // 다이내믹 포켓스탑 마커 생성
       final Uint8List markerImageBytes = await MarkerGenerator.createPokestopMarker(imageUrl: imageUrl);
@@ -162,7 +165,7 @@ class _MapboxViewState extends State<MapboxView> {
     final token = dotenv.env['MAPBOX_ACCESS_TOKEN'] ?? '';
     MapboxOptions.setAccessToken(token);
 
-    return MapWidget(
+    Widget mapWidget = MapWidget(
       key: const ValueKey("mapboxWidget"),
       onMapCreated: _onMapCreated,
       cameraOptions: CameraOptions(
@@ -172,5 +175,45 @@ class _MapboxViewState extends State<MapboxView> {
         bearing: -20.0,
       ),
     );
+
+    // CSS 필터 복원: saturate(130%) contrast(110%) hue-rotate(10deg) + 따뜻한 색감
+    
+    // 1. Saturate (1.3)
+    const double sat = 1.3;
+    const double invSat = 1 - sat;
+    const double R = 0.2126 * invSat;
+    const double G = 0.7152 * invSat;
+    const double B = 0.0722 * invSat;
+    mapWidget = ColorFiltered(
+      colorFilter: const ColorFilter.matrix([
+        R + sat, G, B, 0, 0,
+        R, G + sat, B, 0, 0,
+        R, G, B + sat, 0, 0,
+        0, 0, 0, 1, 0,
+      ]),
+      child: mapWidget,
+    );
+    
+    // 2. Contrast (1.1)
+    mapWidget = ColorFiltered(
+      colorFilter: const ColorFilter.matrix([
+        1.1, 0, 0, 0, -12.75,
+        0, 1.1, 0, 0, -12.75,
+        0, 0, 1.1, 0, -12.75,
+        0, 0, 0, 1, 0,
+      ]),
+      child: mapWidget,
+    );
+    
+    // 3. 몽환적인 노란/연두빛 감성 (Hue Rotate 대체)
+    mapWidget = ColorFiltered(
+      colorFilter: ColorFilter.mode(
+        const Color(0xFFD4E157).withOpacity(0.15),
+        BlendMode.colorBurn,
+      ),
+      child: mapWidget,
+    );
+
+    return mapWidget;
   }
 }
