@@ -59,26 +59,12 @@ class _MapboxViewState extends State<MapboxView> {
   _onMapCreated(MapboxMap mapboxMap) async {
     this.mapboxMap = mapboxMap;
 
-    await mapboxMap.style.setStyleURI(MapboxStyles.OUTDOORS);
+    await mapboxMap.style.setStyleURI(MapboxStyles.STANDARD);
     
     try {
       final appState = context.read<AppState>();
       await mapboxMap.style.localizeLabels(appState.currentLanguage, null);
-      
-      // OUTDOORS 스타일의 모든 건물 및 잡동사니 완전 철거
-      final layersToHide = [
-        'poi-label', 'transit-label', 'settlement-subdivision-label', 'settlement-label', 
-        'state-label', 'natural-point-label', 'water-point-label', 'road-label', 
-        'waterway-label', 'building', 'building-extrusion', 'building-outline', 'building-top',
-        '3d-buildings', 'poi'
-      ];
-      for (var layer in layersToHide) {
-        try {
-          await mapboxMap.style.setStyleLayerProperty(layer, 'visibility', 'none');
-        } catch (_) {
-          // Ignore
-        }
-      }
+      // 건물을 지우지 않고 유지합니다.
     } catch (e) {
       print("Style update error: $e");
     }
@@ -123,10 +109,16 @@ class _MapboxViewState extends State<MapboxView> {
 
       // 다이내믹 포켓스탑 마커 생성
       final Uint8List markerImageBytes = await MarkerGenerator.createPokestopMarker(imageUrl: imageUrl);
+      
+      // Mapbox 스타일에 이미지 사전 등록
+      final String imageId = 'pokestop_marker_$title';
+      try {
+        await mapboxMap?.style.addImage(imageId, markerImageBytes);
+      } catch (_) {}
 
       optionsList.add(PointAnnotationOptions(
         geometry: Point(coordinates: Position(lng, lat)),
-        image: markerImageBytes, // Use dynamically generated image
+        iconImage: imageId, // 사전 등록된 이미지 ID 사용
         iconSize: 0.8, // Adjusted size for generated canvas
         iconAnchor: IconAnchor.BOTTOM, // Anchor to the bottom so it sits on the ground
         textField: title, 
@@ -163,7 +155,7 @@ class _MapboxViewState extends State<MapboxView> {
           id: 'hanok-layer',
           sourceId: 'hanok-points-source',
           modelId: 'hanok-model',
-          modelScale: [2.0, 2.0, 2.0], // 한옥 모델 스케일 (필요시 조정)
+          modelScale: [30.0, 30.0, 30.0], // 한옥 모델 스케일 대폭 증가 (건물 덮어쓰기 위해)
         ));
       }
     } catch (e) {
