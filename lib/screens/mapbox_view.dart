@@ -59,13 +59,7 @@ class _MapboxViewState extends State<MapboxView> {
 
     await mapboxMap.style.setStyleURI("mapbox://styles/jhjang0703/cmr09ioq7002e01stcrp2d9cq");
     
-    // Add 3D Terrain
-    try {
-      await mapboxMap.style.addSource(RasterDemSource(id: "mapbox-dem", url: "mapbox://mapbox.mapbox-terrain-dem-v1"));
-      await mapboxMap.style.setTerrain(Terrain(sourceId: "mapbox-dem", exaggeration: 1.5));
-    } catch (e) {
-      print("Terrain error: $e");
-    }
+    // Terrain is managed via Mapbox Studio style instead of programmatic adding
 
     // Add 3D Hanok Model
     try {
