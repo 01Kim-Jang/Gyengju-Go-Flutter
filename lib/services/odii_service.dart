@@ -27,10 +27,16 @@ class OdiiService {
         final items = data['response']?['body']?['items']?['item'] as List<dynamic>?;
         if (items != null) {
           // 경주시 데이터만 필터링
-          final gyeongjuSpots = items
-              .where((item) => item['addr2'] == '경주시')
-              .map((item) => Map<String, dynamic>.from(item))
-              .toList();
+          final gyeongjuSpots = items.where((i) {
+            final addr1 = i['addr1']?.toString().toLowerCase() ?? '';
+            final addr2 = i['addr2']?.toString().toLowerCase() ?? '';
+            final title = i['title']?.toString().toLowerCase() ?? '';
+            return addr1.contains('경주') || addr2.contains('경주') ||
+                   addr1.contains('gyeongju') || addr2.contains('gyeongju') ||
+                   title.contains('gyeongju') || title.contains('경주') ||
+                   addr1.contains('キョンジュ') || addr2.contains('キョンジュ') ||
+                   title.contains('キョンジュ');
+          }).map((item) => Map<String, dynamic>.from(item)).toList();
               
           if (gyeongjuSpots.isNotEmpty) {
             return gyeongjuSpots;

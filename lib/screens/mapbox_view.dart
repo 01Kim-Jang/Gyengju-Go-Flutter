@@ -59,18 +59,26 @@ class _MapboxViewState extends State<MapboxView> {
   _onMapCreated(MapboxMap mapboxMap) async {
     this.mapboxMap = mapboxMap;
 
-    await mapboxMap.style.setStyleURI(MapboxStyles.STANDARD);
+    await mapboxMap.style.setStyleURI(MapboxStyles.OUTDOORS);
     
     try {
       final appState = context.read<AppState>();
       await mapboxMap.style.localizeLabels(appState.currentLanguage, null);
       
-      // 최신 Mapbox Standard 스타일 전용 베이스맵 제어 스위치 (진짜 건물 제거 기능)
-      await mapboxMap.style.setStyleImportConfigProperty('basemap', 'showPointOfInterestLabels', false);
-      await mapboxMap.style.setStyleImportConfigProperty('basemap', 'show3dObjects', false);
-      await mapboxMap.style.setStyleImportConfigProperty('basemap', 'showTransitLabels', false);
-      await mapboxMap.style.setStyleImportConfigProperty('basemap', 'showPlaceLabels', false);
-      await mapboxMap.style.setStyleImportConfigProperty('basemap', 'showRoadLabels', true);
+      // OUTDOORS 스타일의 모든 건물 및 잡동사니 완전 철거
+      final layersToHide = [
+        'poi-label', 'transit-label', 'settlement-subdivision-label', 'settlement-label', 
+        'state-label', 'natural-point-label', 'water-point-label', 'road-label', 
+        'waterway-label', 'building', 'building-extrusion', 'building-outline', 'building-top',
+        '3d-buildings', 'poi'
+      ];
+      for (var layer in layersToHide) {
+        try {
+          await mapboxMap.style.setStyleLayerProperty(layer, 'visibility', 'none');
+        } catch (_) {
+          // Ignore
+        }
+      }
     } catch (e) {
       print("Style update error: $e");
     }
