@@ -7,7 +7,10 @@ class OdiiService {
   static const String _baseUrl = 'https://apis.data.go.kr/B551011/Odii';
 
   // 1. 테마 기반 스팟 정보 조회 (경주)
-  static Future<List<Map<String, dynamic>>> fetchGyeongjuSpots() async {
+  static Future<List<Map<String, dynamic>>> fetchGyeongjuSpots(String langCode) async {
+    // Convert generic language code to Odii specific code if needed
+    String odiiLang = langCode;
+    if (langCode == 'zh') odiiLang = 'zh-hans';
     final url = Uri.parse('$_baseUrl/themeBasedList'
         '?serviceKey=$_serviceKey'
         '&numOfRows=5000'
@@ -15,7 +18,7 @@ class OdiiService {
         '&MobileOS=AND'
         '&MobileApp=GyeongjuGo'
         '&_type=json'
-        '&langCode=ko'); // areaCode와 themeCd는 에러를 유발하므로 제거
+        '&langCode=$odiiLang'); // areaCode와 themeCd는 에러를 유발하므로 제거
 
     try {
       final response = await http.get(url);
