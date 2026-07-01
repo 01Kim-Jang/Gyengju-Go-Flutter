@@ -36,7 +36,19 @@ class OdiiService {
                    title.contains('gyeongju') || title.contains('경주') ||
                    addr1.contains('キョンジュ') || addr2.contains('キョンジュ') ||
                    title.contains('キョンジュ');
-          }).map((item) => Map<String, dynamic>.from(item)).toList();
+          }).map((item) {
+            final mapItem = Map<String, dynamic>.from(item);
+            // Odii API는 imageUrl을 주지만 비어있는 경우가 많으므로 임시 목업 이미지 주입 (BE 연동 전 FE 테스트용)
+            String title = mapItem['title']?.toString() ?? '';
+            if (title.contains('동궁과 월지') || title.contains('Donggung') || title.contains('雁鴨池')) {
+              mapItem['firstimage'] = 'https://www.gyeongju.go.kr/upload/content/thumb/20200527/159055973719000.jpg';
+            } else if (title.contains('불국사') || title.contains('Bulguksa')) {
+              mapItem['firstimage'] = 'https://www.gyeongju.go.kr/upload/content/thumb/20200527/159056006730100.jpg';
+            } else {
+              mapItem['firstimage'] = mapItem['imageUrl'] != '' ? mapItem['imageUrl'] : 'https://www.gyeongju.go.kr/upload/content/thumb/20200527/159055973719000.jpg'; // Default fallback
+            }
+            return mapItem;
+          }).toList();
               
           if (gyeongjuSpots.isNotEmpty) {
             return gyeongjuSpots;

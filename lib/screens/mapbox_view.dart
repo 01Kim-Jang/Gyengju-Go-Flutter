@@ -63,7 +63,9 @@ class _MapboxViewState extends State<MapboxView> {
     
     try {
       final appState = context.read<AppState>();
-      await mapboxMap.style.localizeLabels(appState.currentLanguage, null);
+      
+      // Mapbox Standard 스타일의 언어 설정은 basemap config로 제어
+      await mapboxMap.style.setStyleImportConfigProperty('basemap', 'language', appState.currentLanguage);
       
       // 사용자 요청: 짜장면, 버스정류장 등 불필요한 POI 제거 (건물은 유지)
       await mapboxMap.style.setStyleImportConfigProperty('basemap', 'showPointOfInterestLabels', false);
@@ -176,7 +178,7 @@ class _MapboxViewState extends State<MapboxView> {
       cameraOptions: CameraOptions(
         center: Point(coordinates: Position(129.2266, 35.8348)),
         zoom: 16.0,
-        pitch: 60.0, // 포켓몬고 스타일 항공샷(기울기)
+        pitch: 75.0, // 극단적인 포켓몬고 스타일 항공샷
         bearing: -20.0,
       ),
     );
