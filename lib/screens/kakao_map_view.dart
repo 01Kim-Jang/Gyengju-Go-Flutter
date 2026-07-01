@@ -6,7 +6,7 @@ import '../providers/app_state.dart';
 import '../utils/marker_generator.dart';
 import 'dart:convert';
 import 'dart:typed_data';
-import '../widgets/docent_sheet.dart';
+import '../components/docent_sheet.dart';
 class KakaoMapView extends StatefulWidget {
   const KakaoMapView({super.key});
 
