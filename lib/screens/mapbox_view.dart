@@ -69,10 +69,15 @@ class _MapboxViewState extends State<MapboxView> {
       final layersToHide = [
         'poi-label', 'transit-label', 'settlement-subdivision-label', 'settlement-label', 
         'state-label', 'natural-point-label', 'water-point-label', 'road-label', 
-        'waterway-label', 'building', 'building-extrusion', 'building-outline', 'building-top'
+        'waterway-label', 'building', 'building-extrusion', 'building-outline', 'building-top',
+        '3d-buildings', 'poi'
       ];
       for (var layer in layersToHide) {
-        await mapboxMap.style.setStyleLayerProperty(layer, 'visibility', 'none');
+        try {
+          await mapboxMap.style.setStyleLayerProperty(layer, 'visibility', 'none');
+        } catch (_) {
+          // Ignore error if layer doesn't exist
+        }
       }
     } catch (e) {
       print("Style update error: $e");
