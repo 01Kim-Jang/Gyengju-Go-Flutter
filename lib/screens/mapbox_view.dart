@@ -107,14 +107,29 @@ class _MapboxViewState extends State<MapboxView> {
       // 31개 전체 스팟에 대해 대표 이미지 할당
       String? imageUrl = spot['firstimage'];
 
-      // 다이내믹 포켓스탑 마커 생성
-      final Uint8List markerImageBytes = await MarkerGenerator.createPokestopMarker(imageUrl: imageUrl);
+      // 다이내믹 포켓스탑 마커 생성 (Mapbox v11용 Raw RGBA)
+      final rawData = await MarkerGenerator.createPokestopMarkerRaw(imageUrl: imageUrl);
       
       // Mapbox 스타일에 이미지 사전 등록
       final String imageId = 'pokestop_marker_$title';
       try {
-        await mapboxMap?.style.addImage(imageId, markerImageBytes);
-      } catch (_) {}
+        final mbxImage = MbxImage(
+          width: rawData['width'],
+          height: rawData['height'],
+          data: rawData['bytes'] as Uint8List,
+        );
+        await mapboxMap?.style.addStyleImage(
+          imageId,
+          1.0, // scale
+          mbxImage,
+          false, // sdf
+          [], // stretchX
+          [], // stretchY
+          null // content
+        );
+      } catch (e) {
+        print("Failed to add image to style: $e");
+      }
 
       optionsList.add(PointAnnotationOptions(
         geometry: Point(coordinates: Position(lng, lat)),
