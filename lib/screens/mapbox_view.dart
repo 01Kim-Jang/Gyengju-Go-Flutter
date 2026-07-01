@@ -57,7 +57,7 @@ class _MapboxViewState extends State<MapboxView> {
   _onMapCreated(MapboxMap mapboxMap) async {
     this.mapboxMap = mapboxMap;
 
-    await mapboxMap.style.setStyleURI("mapbox://styles/jhjang0703/cmr09ioq7002e01stcrp2d9cq");
+    await mapboxMap.style.setStyleURI(MapboxStyles.STANDARD);
     
     // Terrain is managed via Mapbox Studio style instead of programmatic adding
 
@@ -149,7 +149,7 @@ class _MapboxViewState extends State<MapboxView> {
       cameraOptions: CameraOptions(
         center: Point(coordinates: Position(129.2266, 35.8348)),
         zoom: 14.5, // Reverted to Web-like zoom
-        pitch: 60.0,
+        pitch: 65.0,
         bearing: -20.0,
       ),
     );
