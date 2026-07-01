@@ -10,7 +10,7 @@ class OdiiService {
   static Future<List<Map<String, dynamic>>> fetchGyeongjuSpots() async {
     final url = Uri.parse('$_baseUrl/themeBasedList'
         '?serviceKey=$_serviceKey'
-        '&numOfRows=300'
+        '&numOfRows=5000'
         '&pageNo=1'
         '&MobileOS=AND'
         '&MobileApp=GyeongjuGo'
