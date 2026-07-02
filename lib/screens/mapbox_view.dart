@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:geolocator/geolocator.dart';
+import 'package:geolocator/geolocator.dart' as geo;
 import '../services/odii_service.dart';
 import '../widgets/pokestop_modal.dart';
 import '../utils/marker_generator.dart';
@@ -45,7 +45,7 @@ class _MapboxViewState extends State<MapboxView> {
   final Map<String, dynamic> _spotsMap = {};
 
   List<Map<String, dynamic>> _spotsData = [];
-  Position? _currentPosition;
+  geo.Position? _currentPosition;
   bool _isRendering = false;
 
   @override
@@ -57,21 +57,21 @@ class _MapboxViewState extends State<MapboxView> {
   }
 
   Future<void> _checkLocationPermission() async {
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    bool serviceEnabled = await geo.Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) return;
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
+    geo.LocationPermission permission = await geo.Geolocator.checkPermission();
+    if (permission == geo.LocationPermission.denied) {
+      permission = await geo.Geolocator.requestPermission();
     }
   }
 
   void _startLocationStream() {
-    Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.high,
+    geo.Geolocator.getPositionStream(
+      locationSettings: const geo.LocationSettings(
+        accuracy: geo.LocationAccuracy.high,
         distanceFilter: 10,
       ),
-    ).listen((Position position) {
+    ).listen((geo.Position position) {
       _currentPosition = position;
       _updateMarkersGlow();
     });
@@ -214,11 +214,11 @@ class _MapboxViewState extends State<MapboxView> {
         // 거리가 50m 이내인지 체크하여 Glowing 활성화
         bool isGlowing = false;
         if (_currentPosition != null) {
-          double distance = Geolocator.distanceBetween(
-            _currentPosition!.latitude,
-            _currentPosition!.longitude,
-            lat,
-            lng,
+          double distance = geo.Geolocator.distanceBetween(
+            _currentPosition!.latitude, 
+            _currentPosition!.longitude, 
+            lat, 
+            lng
           );
           if (distance < 50) isGlowing = true;
         }
