@@ -32,16 +32,13 @@ class _KakaoMapViewState extends State<KakaoMapView> {
     
     Set<Marker> newMarkers = {};
     for (var spot in loadedSpots) {
-      final Uint8List bytes = await MarkerGenerator.createPokestopMarker(imageUrl: spot['firstimage']);
-      final base64Image = base64Encode(bytes);
-      
       newMarkers.add(Marker(
         markerId: spot['title'] ?? 'marker',
         latLng: LatLng(
           double.tryParse(spot['mapY'].toString()) ?? 35.8348,
           double.tryParse(spot['mapX'].toString()) ?? 129.2266,
         ),
-        markerImageSrc: 'data:image/png;base64,$base64Image',
+        infoWindowContent: spot['title'],
       ));
     }
     

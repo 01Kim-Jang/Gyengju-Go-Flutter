@@ -90,6 +90,8 @@ class _MapboxViewState extends State<MapboxView> {
 
     // 마커 매니저 생성
     pointAnnotationManager = await mapboxMap.annotations.createPointAnnotationManager();
+    await pointAnnotationManager?.setIconAllowOverlap(true);
+    await pointAnnotationManager?.setTextAllowOverlap(true);
     pointAnnotationManager?.addOnPointAnnotationClickListener(AnnotationClickListener(context, _spotsMap));
     
     // 데이터 불러오기 및 마커 렌더링
@@ -123,7 +125,7 @@ class _MapboxViewState extends State<MapboxView> {
       optionsList.add(PointAnnotationOptions(
         geometry: Point(coordinates: Position(lng, lat)),
         image: markerImageBytes, // Use PNG bytes directly
-        iconSize: 0.8,
+        iconSize: 0.3, // Reverted to 0.3 to prevent rendering drop due to size
         iconAnchor: IconAnchor.BOTTOM,
         textField: title, 
         textSize: 14.0,
