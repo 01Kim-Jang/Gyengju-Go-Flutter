@@ -20,7 +20,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final appState = context.watch<AppState>();
     final lang = appState.currentLanguage;
-    
+
     // 네비게이션용 탭 내용
     final List<Widget> _pages = [
       Center(child: Text(AppTranslations.get(lang, 'quest_dev'))),
@@ -29,12 +29,9 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           IndexedStack(
             index: appState.isMapboxMode ? 1 : 0,
-            children: const [
-              KakaoMapView(),
-              MapboxView(),
-            ],
+            children: const [KakaoMapView(), MapboxView()],
           ),
-          
+
           // 모드 전환 토글 버튼 및 AI 비서 버튼 (SafeArea 적용)
           SafeArea(
             child: Padding(
@@ -48,19 +45,23 @@ class _HomeScreenState extends State<HomeScreen> {
                     onPressed: () {
                       context.read<AppState>().toggleMapMode();
                     },
-                    backgroundColor: appState.isMapboxMode 
+                    backgroundColor: appState.isMapboxMode
                         ? const Color(0xFFD4AF37) // 사극풍 골드/브라운
                         : Colors.white,
                     icon: Icon(
                       appState.isMapboxMode ? Icons.map : Icons.layers,
-                      color: appState.isMapboxMode ? Colors.white : Colors.black,
+                      color: appState.isMapboxMode
+                          ? Colors.white
+                          : Colors.black,
                     ),
                     label: Text(
-                      appState.isMapboxMode 
-                          ? AppTranslations.get(lang, 'kakao_map_view') 
+                      appState.isMapboxMode
+                          ? AppTranslations.get(lang, 'kakao_map_view')
                           : AppTranslations.get(lang, 'mapbox_view'),
                       style: TextStyle(
-                        color: appState.isMapboxMode ? Colors.white : Colors.black,
+                        color: appState.isMapboxMode
+                            ? Colors.white
+                            : Colors.black,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -76,10 +77,17 @@ class _HomeScreenState extends State<HomeScreen> {
                       );
                     },
                     backgroundColor: Colors.white,
-                    icon: const Icon(Icons.support_agent, color: Color(0xFFD4AF37), size: 32),
+                    icon: const Icon(
+                      Icons.support_agent,
+                      color: Color(0xFFD4AF37),
+                      size: 32,
+                    ),
                     label: Text(
-                      AppTranslations.get(lang, 'ai_assistant'), 
-                      style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)
+                      AppTranslations.get(lang, 'ai_assistant'),
+                      style: const TextStyle(
+                        color: Colors.black,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],

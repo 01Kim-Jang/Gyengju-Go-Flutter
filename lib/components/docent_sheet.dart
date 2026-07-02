@@ -29,16 +29,20 @@ class _DocentSheetState extends State<DocentSheet> {
   Future<void> _initTts() async {
     if (flutterTts != null) return;
     flutterTts = FlutterTts();
-    
+
     // 언어 설정
     final appState = context.read<AppState>();
     final lang = appState.currentLanguage;
     String ttsLang = 'ko-KR';
-    if (lang == 'en') ttsLang = 'en-US';
-    else if (lang == 'ja') ttsLang = 'ja-JP';
-    else if (lang == 'zh') ttsLang = 'zh-CN';
-    else if (lang == 'th') ttsLang = 'th-TH';
-    
+    if (lang == 'en')
+      ttsLang = 'en-US';
+    else if (lang == 'ja')
+      ttsLang = 'ja-JP';
+    else if (lang == 'zh')
+      ttsLang = 'zh-CN';
+    else if (lang == 'th')
+      ttsLang = 'th-TH';
+
     await flutterTts!.setLanguage(ttsLang);
     await flutterTts!.setSpeechRate(0.5);
     await flutterTts!.setVolume(1.0);
@@ -59,7 +63,7 @@ class _DocentSheetState extends State<DocentSheet> {
     final appState = context.read<AppState>();
     final lang = appState.currentLanguage;
     final originalTitle = widget.spotData['title'] ?? '알 수 없는 장소';
-    
+
     // Odii 데이터에 overview가 없을 수 있으므로 AI로 생성
     String originalText = widget.spotData['overview'] ?? '';
     if (originalText.isEmpty) {
@@ -78,7 +82,7 @@ class _DocentSheetState extends State<DocentSheet> {
       // 제목과 내용 번역
       final tTitle = await OpenAIService.translateText(originalTitle, lang);
       final tSummary = await OpenAIService.translateText(originalText, lang);
-      
+
       if (mounted) {
         setState(() {
           translatedTitle = tTitle;
@@ -91,7 +95,7 @@ class _DocentSheetState extends State<DocentSheet> {
 
   Future<void> _speak() async {
     if (translatedSummary == null || translatedSummary!.isEmpty) return;
-    
+
     if (isPlaying) {
       await flutterTts?.stop();
       setState(() => isPlaying = false);
@@ -116,9 +120,13 @@ class _DocentSheetState extends State<DocentSheet> {
         children: [
           Center(
             child: Container(
-              width: 40, height: 4,
+              width: 40,
+              height: 4,
               margin: const EdgeInsets.only(bottom: 16),
-              decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
           ),
           Row(
@@ -127,11 +135,16 @@ class _DocentSheetState extends State<DocentSheet> {
               Expanded(
                 child: Text(
                   translatedTitle ?? widget.spotData['title'] ?? '알 수 없는 장소',
-                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               IconButton(
-                icon: Icon(isPlaying ? Icons.stop_circle : Icons.play_circle_fill),
+                icon: Icon(
+                  isPlaying ? Icons.stop_circle : Icons.play_circle_fill,
+                ),
                 color: const Color(0xFFD4AF37),
                 iconSize: 48,
                 onPressed: isLoading ? null : _speak,
@@ -139,7 +152,10 @@ class _DocentSheetState extends State<DocentSheet> {
             ],
           ),
           const SizedBox(height: 16),
-          const Text('오디오 도슨트 요약', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+          const Text(
+            '오디오 도슨트 요약',
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey),
+          ),
           const SizedBox(height: 8),
           isLoading
               ? const Center(child: CircularProgressIndicator())

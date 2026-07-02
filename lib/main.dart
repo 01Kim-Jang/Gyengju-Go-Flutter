@@ -13,9 +13,7 @@ void main() {
   // 앱 화면을 먼저 렌더링하도록 runApp을 즉시 실행
   runApp(
     MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => AppState()),
-      ],
+      providers: [ChangeNotifierProvider(create: (_) => AppState())],
       child: const GyeongjuGoApp(),
     ),
   );
@@ -28,9 +26,9 @@ Future<void> _initializeResources() async {
   try {
     await dotenv.load(fileName: ".env");
     print("Dotenv loaded");
-    
+
     AuthRepository.initialize(
-      appKey: '8ae79b4318ce3ff35ce6e3f09698b3b0', 
+      appKey: '8ae79b4318ce3ff35ce6e3f09698b3b0',
       baseUrl: 'https://localhost',
     );
     print("Kakao Auth initialized");

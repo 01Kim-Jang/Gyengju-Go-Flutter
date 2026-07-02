@@ -2,13 +2,18 @@ import 'dart:ui' as ui;
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 
 class MarkerGenerator {
-  static Future<Uint8List> createPokestopMarker({String? imageUrl}) async {
+  static Future<Uint8List> createPokestopMarker({
+    required String title,
+    String? imageUrl,
+    bool isGlowing = false,
+  }) async {
     const double size = 150.0;
     const double radius = 50.0;
-    
+
     final ui.PictureRecorder pictureRecorder = ui.PictureRecorder();
     final Canvas canvas = Canvas(pictureRecorder);
     final Paint paint = Paint()..isAntiAlias = true;
@@ -21,12 +26,16 @@ class MarkerGenerator {
       const Offset(size / 2, size - 20),
       paint,
     );
-    
+
     // Draw base shadow/circle
     paint.color = Colors.black26;
     paint.style = PaintingStyle.fill;
     canvas.drawOval(
-      Rect.fromCenter(center: const Offset(size / 2, size - 15), width: 40, height: 15),
+      Rect.fromCenter(
+        center: const Offset(size / 2, size - 15),
+        width: 40,
+        height: 15,
+      ),
       paint,
     );
 
@@ -43,19 +52,33 @@ class MarkerGenerator {
       try {
         final response = await http.get(Uri.parse(imageUrl));
         if (response.statusCode == 200) {
-          final ui.Codec codec = await ui.instantiateImageCodec(response.bodyBytes);
+          final ui.Codec codec = await ui.instantiateImageCodec(
+            response.bodyBytes,
+          );
           final ui.FrameInfo frameInfo = await codec.getNextFrame();
           final ui.Image image = frameInfo.image;
 
           // Clip to circle
           canvas.save();
-          Path clipPath = Path()..addOval(Rect.fromCircle(center: const Offset(size / 2, size / 2 - 20), radius: radius - 4));
+          Path clipPath = Path()
+            ..addOval(
+              Rect.fromCircle(
+                center: const Offset(size / 2, size / 2 - 20),
+                radius: radius - 4,
+              ),
+            );
           canvas.clipPath(clipPath);
 
           // Calculate destination rect to cover the circle
-          final Rect destRect = Rect.fromCircle(center: const Offset(size / 2, size / 2 - 20), radius: radius - 4);
-          final Size imageSize = Size(image.width.toDouble(), image.height.toDouble());
-          
+          final Rect destRect = Rect.fromCircle(
+            center: const Offset(size / 2, size / 2 - 20),
+            radius: radius - 4,
+          );
+          final Size imageSize = Size(
+            image.width.toDouble(),
+            image.height.toDouble(),
+          );
+
           // Source rect for cropping center of image
           double scale = destRect.width / imageSize.width;
           if (imageSize.height * scale < destRect.height) {
@@ -77,27 +100,46 @@ class MarkerGenerator {
         print("Failed to load image for marker: $e");
         // Fallback to empty center if image fails
         paint.color = Colors.white;
-        canvas.drawCircle(const Offset(size / 2, size / 2 - 20), radius - 4, paint);
+        canvas.drawCircle(
+          const Offset(size / 2, size / 2 - 20),
+          radius - 4,
+          paint,
+        );
       }
     } else {
       // Empty center (default Pokestop)
       paint.color = Colors.white;
-      canvas.drawCircle(const Offset(size / 2, size / 2 - 20), radius - 4, paint);
-      
+      canvas.drawCircle(
+        const Offset(size / 2, size / 2 - 20),
+        radius - 4,
+        paint,
+      );
+
       // Inner small circle
       paint.color = const Color(0xFF29B6F6);
-      canvas.drawCircle(const Offset(size / 2, size / 2 - 20), radius / 2, paint);
+      canvas.drawCircle(
+        const Offset(size / 2, size / 2 - 20),
+        radius / 2,
+        paint,
+      );
     }
 
-    final ui.Image markerAsImage = await pictureRecorder.endRecording().toImage(size.toInt(), size.toInt());
-    final ByteData? byteData = await markerAsImage.toByteData(format: ui.ImageByteFormat.png);
+    final ui.Image markerAsImage = await pictureRecorder.endRecording().toImage(
+      size.toInt(),
+      size.toInt(),
+    );
+    final ByteData? byteData = await markerAsImage.toByteData(
+      format: ui.ImageByteFormat.png,
+    );
     return byteData!.buffer.asUint8List();
   }
 
-  static Future<Map<String, dynamic>> createPokestopMarkerRaw({String? imageUrl}) async {
+  static Future<Map<String, dynamic>> createPokestopMarkerRaw({
+    String? imageUrl,
+  }) async {
     const double size = 150.0;
     const double radius = 50.0;
-    
+
     final ui.PictureRecorder pictureRecorder = ui.PictureRecorder();
     final Canvas canvas = Canvas(pictureRecorder);
     final Paint paint = Paint()..isAntiAlias = true;
@@ -110,12 +152,16 @@ class MarkerGenerator {
       const Offset(size / 2, size - 20),
       paint,
     );
-    
+
     // Draw base shadow/circle
     paint.color = Colors.black26;
     paint.style = PaintingStyle.fill;
     canvas.drawOval(
-      Rect.fromCenter(center: const Offset(size / 2, size - 15), width: 40, height: 15),
+      Rect.fromCenter(
+        center: const Offset(size / 2, size - 15),
+        width: 40,
+        height: 15,
+      ),
       paint,
     );
 
@@ -132,19 +178,33 @@ class MarkerGenerator {
       try {
         final response = await http.get(Uri.parse(imageUrl));
         if (response.statusCode == 200) {
-          final ui.Codec codec = await ui.instantiateImageCodec(response.bodyBytes);
+          final ui.Codec codec = await ui.instantiateImageCodec(
+            response.bodyBytes,
+          );
           final ui.FrameInfo frameInfo = await codec.getNextFrame();
           final ui.Image image = frameInfo.image;
 
           // Clip to circle
           canvas.save();
-          Path clipPath = Path()..addOval(Rect.fromCircle(center: const Offset(size / 2, size / 2 - 20), radius: radius - 4));
+          Path clipPath = Path()
+            ..addOval(
+              Rect.fromCircle(
+                center: const Offset(size / 2, size / 2 - 20),
+                radius: radius - 4,
+              ),
+            );
           canvas.clipPath(clipPath);
 
           // Calculate destination rect to cover the circle
-          final Rect destRect = Rect.fromCircle(center: const Offset(size / 2, size / 2 - 20), radius: radius - 4);
-          final Size imageSize = Size(image.width.toDouble(), image.height.toDouble());
-          
+          final Rect destRect = Rect.fromCircle(
+            center: const Offset(size / 2, size / 2 - 20),
+            radius: radius - 4,
+          );
+          final Size imageSize = Size(
+            image.width.toDouble(),
+            image.height.toDouble(),
+          );
+
           // Source rect for cropping center of image
           double scale = destRect.width / imageSize.width;
           if (imageSize.height * scale < destRect.height) {
@@ -166,24 +226,41 @@ class MarkerGenerator {
         print("Failed to load image for marker: $e");
         // Fallback to empty center if image fails
         paint.color = Colors.white;
-        canvas.drawCircle(const Offset(size / 2, size / 2 - 20), radius - 4, paint);
+        canvas.drawCircle(
+          const Offset(size / 2, size / 2 - 20),
+          radius - 4,
+          paint,
+        );
       }
     } else {
       // Empty center (default Pokestop)
       paint.color = Colors.white;
-      canvas.drawCircle(const Offset(size / 2, size / 2 - 20), radius - 4, paint);
-      
+      canvas.drawCircle(
+        const Offset(size / 2, size / 2 - 20),
+        radius - 4,
+        paint,
+      );
+
       // Inner small circle
       paint.color = const Color(0xFF29B6F6);
-      canvas.drawCircle(const Offset(size / 2, size / 2 - 20), radius / 2, paint);
+      canvas.drawCircle(
+        const Offset(size / 2, size / 2 - 20),
+        radius / 2,
+        paint,
+      );
     }
 
-    final ui.Image markerAsImage = await pictureRecorder.endRecording().toImage(size.toInt(), size.toInt());
-    final ByteData? byteData = await markerAsImage.toByteData(format: ui.ImageByteFormat.rawRgba);
+    final ui.Image markerAsImage = await pictureRecorder.endRecording().toImage(
+      size.toInt(),
+      size.toInt(),
+    );
+    final ByteData? byteData = await markerAsImage.toByteData(
+      format: ui.ImageByteFormat.rawRgba,
+    );
     return {
       'bytes': byteData!.buffer.asUint8List(),
       'width': size.toInt(),
-      'height': size.toInt()
+      'height': size.toInt(),
     };
   }
 }

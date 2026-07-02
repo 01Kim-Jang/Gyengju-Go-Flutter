@@ -23,7 +23,11 @@ class LandingScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.travel_explore, size: 100, color: Color(0xFFD4AF37)),
+            const Icon(
+              Icons.travel_explore,
+              size: 100,
+              color: Color(0xFFD4AF37),
+            ),
             const SizedBox(height: 16),
             const Text(
               'Gyeongju GO',
@@ -56,12 +60,17 @@ class LandingScreen extends StatelessWidget {
                     context.read<AppState>().setLanguage(lang['code']!);
                     Navigator.pushReplacement(
                       context,
-                      MaterialPageRoute(builder: (context) => const HomeScreen()),
+                      MaterialPageRoute(
+                        builder: (context) => const HomeScreen(),
+                      ),
                     );
                   },
                   child: Container(
                     width: 140,
-                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 16,
+                      horizontal: 12,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
@@ -75,7 +84,10 @@ class LandingScreen extends StatelessWidget {
                     ),
                     child: Column(
                       children: [
-                        Text(lang['flag']!, style: const TextStyle(fontSize: 32)),
+                        Text(
+                          lang['flag']!,
+                          style: const TextStyle(fontSize: 32),
+                        ),
                         const SizedBox(height: 8),
                         Text(
                           lang['name']!,

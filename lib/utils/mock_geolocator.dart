@@ -20,14 +20,7 @@ class Position {
   });
 }
 
-enum LocationAccuracy {
-  lowest,
-  low,
-  medium,
-  high,
-  best,
-  bestForNavigation
-}
+enum LocationAccuracy { lowest, low, medium, high, best, bestForNavigation }
 
 class LocationPermission {
   static const always = LocationPermission();
@@ -49,9 +42,6 @@ class Geolocator {
 
   static Future<Position> getCurrentPosition({dynamic desiredAccuracy}) async {
     // Return a dummy location in Gyeongju (Cheomseongdae area)
-    return Position(
-      latitude: 35.834710,
-      longitude: 129.219062,
-    );
+    return Position(latitude: 35.834710, longitude: 129.219062);
   }
 }

@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import '../utils/mock_geolocator.dart' hide Position;
+import 'package:geolocator/geolocator.dart';
 import '../services/odii_service.dart';
-import '../components/docent_sheet.dart';
+import '../widgets/pokestop_modal.dart';
 import '../utils/marker_generator.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
@@ -33,7 +33,7 @@ class AnnotationClickListener extends OnPointAnnotationClickListener {
         context: context,
         isScrollControlled: true,
         backgroundColor: Colors.transparent,
-        builder: (context) => DocentSheet(spotData: spot),
+        builder: (context) => PokestopModal(spotData: spot),
       );
     }
   }
@@ -44,40 +44,81 @@ class _MapboxViewState extends State<MapboxView> {
   PointAnnotationManager? pointAnnotationManager;
   final Map<String, dynamic> _spotsMap = {};
 
+  List<Map<String, dynamic>> _spotsData = [];
+  Position? _currentPosition;
+  bool _isRendering = false;
+
   @override
   void initState() {
     super.initState();
-    _checkLocationPermission();
+    _checkLocationPermission().then((_) {
+      _startLocationStream();
+    });
   }
 
   Future<void> _checkLocationPermission() async {
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) return;
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
     }
   }
+
+  void _startLocationStream() {
+    Geolocator.getPositionStream(
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 10,
+      ),
+    ).listen((Position position) {
+      _currentPosition = position;
+      _updateMarkersGlow();
+    });
+  }
+
   _onMapCreated(MapboxMap mapboxMap) async {
     this.mapboxMap = mapboxMap;
 
     await mapboxMap.style.setStyleURI(MapboxStyles.STANDARD);
-    
+
     try {
       final appState = context.read<AppState>();
-      
+
       // Mapbox Standard 스타일의 언어 설정은 basemap config로 제어
-      await mapboxMap.style.setStyleImportConfigProperty('basemap', 'language', appState.currentLanguage);
-      
-      // 사용자 요청: 짜장면, 버스정류장 등 불필요한 POI 제거 (건물은 유지)
-      await mapboxMap.style.setStyleImportConfigProperty('basemap', 'showPointOfInterestLabels', false);
-      await mapboxMap.style.setStyleImportConfigProperty('basemap', 'showTransitLabels', false);
-      await mapboxMap.style.setStyleImportConfigProperty('basemap', 'showPlaceLabels', false);
-      await mapboxMap.style.setStyleImportConfigProperty('basemap', 'showRoadLabels', true);
+      await mapboxMap.style.setStyleImportConfigProperty(
+        'basemap',
+        'language',
+        appState.currentLanguage,
+      );
+
+      // 사용자 요청: 짜장면 등 불필요한 POI 제거, 단 버스정류장(transit)은 복구
+      await mapboxMap.style.setStyleImportConfigProperty(
+        'basemap',
+        'showPointOfInterestLabels',
+        false,
+      );
+      await mapboxMap.style.setStyleImportConfigProperty(
+        'basemap',
+        'showTransitLabels',
+        true,
+      );
+      await mapboxMap.style.setStyleImportConfigProperty(
+        'basemap',
+        'showPlaceLabels',
+        false,
+      );
+      await mapboxMap.style.setStyleImportConfigProperty(
+        'basemap',
+        'showRoadLabels',
+        true,
+      );
     } catch (e) {
       print("Style update error: $e");
     }
-    
+
     // Terrain is managed via Mapbox Studio style instead of programmatic adding
-    
+
     // Enable user location component
     await mapboxMap.location.updateSettings(
       LocationComponentSettings(
@@ -85,15 +126,18 @@ class _MapboxViewState extends State<MapboxView> {
         pulsingEnabled: true, // Pulse effect
         pulsingColor: Colors.blue.value,
         pulsingMaxRadius: 50.0,
-      )
+      ),
     );
 
     // 마커 매니저 생성
-    pointAnnotationManager = await mapboxMap.annotations.createPointAnnotationManager();
+    pointAnnotationManager = await mapboxMap.annotations
+        .createPointAnnotationManager();
     await pointAnnotationManager?.setIconAllowOverlap(true);
     await pointAnnotationManager?.setTextAllowOverlap(true);
-    pointAnnotationManager?.addOnPointAnnotationClickListener(AnnotationClickListener(context, _spotsMap));
-    
+    pointAnnotationManager?.addOnPointAnnotationClickListener(
+      AnnotationClickListener(context, _spotsMap),
+    );
+
     // 데이터 불러오기 및 마커 렌더링
     _loadSpotsAndRender();
   }
@@ -101,72 +145,115 @@ class _MapboxViewState extends State<MapboxView> {
   Future<void> _loadSpotsAndRender() async {
     if (pointAnnotationManager == null) return;
     if (!mounted) return;
-    
+
     final appState = context.read<AppState>();
-    final spots = await OdiiService.fetchGyeongjuSpots(appState.currentLanguage);
-    
-    List<PointAnnotationOptions> optionsList = [];
-    for (var spot in spots) {
-      double lat = double.tryParse(spot['mapY'].toString()) ?? 35.8348;
-      double lng = double.tryParse(spot['mapX'].toString()) ?? 129.2266;
-      
-      // 제목에서 "(나레이션 ...)" 제거 및 "경주, " 제거
-      String rawTitle = spot['title'] ?? 'Unknown';
-      String title = rawTitle.replaceAll(RegExp(r'\([^)]*\)'), '').replaceAll('경주, ', '').trim();
-      
-      _spotsMap[title] = spot;
-
-      // 31개 전체 스팟에 대해 대표 이미지 할당
-      String? imageUrl = spot['firstimage'];
-
-      // 다이내믹 포켓스탑 마커 생성 (PNG bytes)
-      final Uint8List markerImageBytes = await MarkerGenerator.createPokestopMarker(imageUrl: imageUrl);
-      
-      optionsList.add(PointAnnotationOptions(
-        geometry: Point(coordinates: Position(lng, lat)),
-        image: markerImageBytes, // Use PNG bytes directly
-        iconSize: 0.3, // Reverted to 0.3 to prevent rendering drop due to size
-        iconAnchor: IconAnchor.BOTTOM,
-        textField: title, 
-        textSize: 14.0,
-        textColor: Colors.black.value,
-        textHaloColor: Colors.white.value,
-        textHaloWidth: 2.0,
-        textOffset: [0.0, 1.0],
-      ));
-    }
-    
-    await pointAnnotationManager?.createMulti(optionsList);
+    final spots = await OdiiService.fetchGyeongjuSpots(
+      appState.currentLanguage,
+    );
+    _spotsData = spots;
+    await _renderMarkers();
 
     // 3D Hanok Model 일괄 적용 (모든 스팟 좌표에)
     try {
       if (mapboxMap != null) {
-        await mapboxMap!.style.addStyleModel('hanok-model', 'asset://assets/scene.gltf');
-        
+        await mapboxMap!.style.addStyleModel(
+          'hanok-model',
+          'asset://assets/scene.gltf',
+        );
+
         List<String> features = [];
         for (var spot in spots) {
           double lat = double.tryParse(spot['mapY'].toString()) ?? 35.8348;
           double lng = double.tryParse(spot['mapX'].toString()) ?? 129.2266;
-          features.add('{"type": "Feature", "geometry": {"type": "Point", "coordinates": [$lng, $lat]}}');
+          features.add(
+            '{"type": "Feature", "geometry": {"type": "Point", "coordinates": [$lng, $lat]}}',
+          );
         }
-        
-        String geoJsonData = '{"type": "FeatureCollection", "features": [${features.join(",")}]}';
-        
-        await mapboxMap!.style.addSource(GeoJsonSource(
-          id: 'hanok-points-source',
-          data: geoJsonData
-        ));
 
-        await mapboxMap!.style.addLayer(ModelLayer(
-          id: 'hanok-layer',
-          sourceId: 'hanok-points-source',
-          modelId: 'hanok-model',
-          modelScale: [30.0, 30.0, 30.0], // 한옥 모델 스케일 대폭 증가 (건물 덮어쓰기 위해)
-        ));
+        String geoJsonData =
+            '{"type": "FeatureCollection", "features": [${features.join(",")}]}';
+
+        await mapboxMap!.style.addSource(
+          GeoJsonSource(id: 'hanok-points-source', data: geoJsonData),
+        );
+
+        await mapboxMap!.style.addLayer(
+          ModelLayer(
+            id: 'hanok-layer',
+            sourceId: 'hanok-points-source',
+            modelId: 'hanok-model',
+            modelScale: [30.0, 30.0, 30.0], // 한옥 모델 스케일 대폭 증가 (건물 덮어쓰기 위해)
+          ),
+        );
       }
     } catch (e) {
       print("Hanok Model load error: $e");
     }
+  }
+
+  Future<void> _renderMarkers() async {
+    if (pointAnnotationManager == null || _isRendering) return;
+    _isRendering = true;
+
+    try {
+      await pointAnnotationManager?.deleteAll();
+      List<PointAnnotationOptions> optionsList = [];
+
+      for (var spot in _spotsData) {
+        double lat = double.tryParse(spot['mapY'].toString()) ?? 35.8348;
+        double lng = double.tryParse(spot['mapX'].toString()) ?? 129.2266;
+
+        String rawTitle = spot['title'] ?? 'Unknown';
+        String title = rawTitle
+            .replaceAll(RegExp(r'\([^)]*\)'), '')
+            .replaceAll('경주, ', '')
+            .trim();
+        _spotsMap[title] = spot;
+        String? imageUrl = spot['firstimage'];
+
+        // 거리가 50m 이내인지 체크하여 Glowing 활성화
+        bool isGlowing = false;
+        if (_currentPosition != null) {
+          double distance = Geolocator.distanceBetween(
+            _currentPosition!.latitude,
+            _currentPosition!.longitude,
+            lat,
+            lng,
+          );
+          if (distance < 50) isGlowing = true;
+        }
+
+        final Uint8List markerImageBytes =
+            await MarkerGenerator.createPokestopMarker(
+              title: title,
+              imageUrl: imageUrl,
+              isGlowing: isGlowing,
+            );
+
+        optionsList.add(
+          PointAnnotationOptions(
+            geometry: Point(coordinates: Position(lng, lat)),
+            image: markerImageBytes,
+            iconSize: isGlowing ? 0.4 : 0.3, // 반짝일 땐 조금 더 크게
+            iconAnchor: IconAnchor.BOTTOM,
+            textField: title,
+            textSize: 14.0,
+            textColor: Colors.black.value,
+            textHaloColor: Colors.white.value,
+            textHaloWidth: 2.0,
+            textOffset: [0.0, 1.0],
+          ),
+        );
+      }
+
+      await pointAnnotationManager?.createMulti(optionsList);
+    } finally {
+      _isRendering = false;
+    }
+  }
+
+  void _updateMarkersGlow() {
+    _renderMarkers();
   }
 
   @override
@@ -186,7 +273,7 @@ class _MapboxViewState extends State<MapboxView> {
     );
 
     // CSS 필터 복원: saturate(130%) contrast(110%) hue-rotate(10deg) + 따뜻한 색감
-    
+
     // 1. Saturate (1.3)
     const double sat = 1.3;
     const double invSat = 1 - sat;
@@ -195,25 +282,57 @@ class _MapboxViewState extends State<MapboxView> {
     const double B = 0.0722 * invSat;
     mapWidget = ColorFiltered(
       colorFilter: const ColorFilter.matrix([
-        R + sat, G, B, 0, 0,
-        R, G + sat, B, 0, 0,
-        R, G, B + sat, 0, 0,
-        0, 0, 0, 1, 0,
+        R + sat,
+        G,
+        B,
+        0,
+        0,
+        R,
+        G + sat,
+        B,
+        0,
+        0,
+        R,
+        G,
+        B + sat,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
       ]),
       child: mapWidget,
     );
-    
+
     // 2. Contrast (1.1)
     mapWidget = ColorFiltered(
       colorFilter: const ColorFilter.matrix([
-        1.1, 0, 0, 0, -12.75,
-        0, 1.1, 0, 0, -12.75,
-        0, 0, 1.1, 0, -12.75,
-        0, 0, 0, 1, 0,
+        1.1,
+        0,
+        0,
+        0,
+        -12.75,
+        0,
+        1.1,
+        0,
+        0,
+        -12.75,
+        0,
+        0,
+        1.1,
+        0,
+        -12.75,
+        0,
+        0,
+        0,
+        1,
+        0,
       ]),
       child: mapWidget,
     );
-    
+
     // 3. 몽환적인 노란/연두빛 감성 (Hue Rotate 대체)
     mapWidget = ColorFiltered(
       colorFilter: ColorFilter.mode(

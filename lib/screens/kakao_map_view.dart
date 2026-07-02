@@ -7,6 +7,7 @@ import '../utils/marker_generator.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 import '../components/docent_sheet.dart';
+
 class KakaoMapView extends StatefulWidget {
   const KakaoMapView({super.key});
 
@@ -28,20 +29,24 @@ class _KakaoMapViewState extends State<KakaoMapView> {
   Future<void> _loadSpots() async {
     if (!mounted) return;
     final appState = context.read<AppState>();
-    final loadedSpots = await OdiiService.fetchGyeongjuSpots(appState.currentLanguage);
-    
+    final loadedSpots = await OdiiService.fetchGyeongjuSpots(
+      appState.currentLanguage,
+    );
+
     Set<Marker> newMarkers = {};
     for (var spot in loadedSpots) {
-      newMarkers.add(Marker(
-        markerId: spot['title'] ?? 'marker',
-        latLng: LatLng(
-          double.tryParse(spot['mapY'].toString()) ?? 35.8348,
-          double.tryParse(spot['mapX'].toString()) ?? 129.2266,
+      newMarkers.add(
+        Marker(
+          markerId: spot['title'] ?? 'marker',
+          latLng: LatLng(
+            double.tryParse(spot['mapY'].toString()) ?? 35.8348,
+            double.tryParse(spot['mapX'].toString()) ?? 129.2266,
+          ),
+          infoWindowContent: spot['title'],
         ),
-        infoWindowContent: spot['title'],
-      ));
+      );
     }
-    
+
     if (mounted) {
       setState(() {
         spots = loadedSpots;
@@ -49,7 +54,6 @@ class _KakaoMapViewState extends State<KakaoMapView> {
       });
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -60,7 +64,10 @@ class _KakaoMapViewState extends State<KakaoMapView> {
       markers: markers.toList(),
       center: LatLng(35.8348, 129.2266),
       onMarkerTap: (markerId, latLng, zoomLevel) {
-        final spot = spots.firstWhere((s) => s['title'] == markerId, orElse: () => {});
+        final spot = spots.firstWhere(
+          (s) => s['title'] == markerId,
+          orElse: () => {},
+        );
         if (spot.isNotEmpty) {
           showModalBottomSheet(
             context: context,

@@ -75,7 +75,8 @@ class AppTranslations {
   };
 
   static String get(String langCode, String key) {
-    if (translations.containsKey(langCode) && translations[langCode]!.containsKey(key)) {
+    if (translations.containsKey(langCode) &&
+        translations[langCode]!.containsKey(key)) {
       return translations[langCode]![key]!;
     }
     // Fallback to Korean
