@@ -6,7 +6,7 @@ import '../providers/app_state.dart';
 import '../utils/marker_generator.dart';
 import 'dart:convert';
 import 'dart:typed_data';
-import '../components/docent_sheet.dart';
+import '../widgets/pokestop_modal.dart';
 
 class KakaoMapView extends StatefulWidget {
   const KakaoMapView({super.key});
@@ -42,7 +42,6 @@ class _KakaoMapViewState extends State<KakaoMapView> {
             double.tryParse(spot['mapY'].toString()) ?? 35.8348,
             double.tryParse(spot['mapX'].toString()) ?? 129.2266,
           ),
-          infoWindowContent: spot['title'],
         ),
       );
     }
@@ -73,7 +72,7 @@ class _KakaoMapViewState extends State<KakaoMapView> {
             context: context,
             isScrollControlled: true,
             backgroundColor: Colors.transparent,
-            builder: (context) => DocentSheet(spotData: spot),
+            builder: (context) => PokestopModal(spotData: spot),
           );
         }
       },

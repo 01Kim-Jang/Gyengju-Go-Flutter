@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -47,6 +48,7 @@ class _MapboxViewState extends State<MapboxView> {
   List<Map<String, dynamic>> _spotsData = [];
   geo.Position? _currentPosition;
   bool _isRendering = false;
+  double _currentZoom = 16.0;
 
   @override
   void initState() {
@@ -223,19 +225,19 @@ class _MapboxViewState extends State<MapboxView> {
           if (distance < 50) isGlowing = true;
         }
 
-        final Uint8List markerImageBytes =
-            await MarkerGenerator.createPokestopMarker(
-              title: title,
-              imageUrl: imageUrl,
-              isGlowing: isGlowing,
-            );
-
-        optionsList.add(
-          PointAnnotationOptions(
-            geometry: Point(coordinates: Position(lng, lat)),
-            image: markerImageBytes,
-            iconSize: isGlowing ? 0.4 : 0.3, // 반짝일 땐 조금 더 크게
-            iconAnchor: IconAnchor.BOTTOM,
+        final Uint8List markerImageBytes = await MarkerGenerator.createPokestopMarker(
+          title: title, imageUrl: imageUrl, isGlowing: isGlowing);
+        
+        // Calculate dynamic scale based on zoom (base zoom 16.0)
+        double zoomScale = math.pow(2.0, _currentZoom - 16.0).toDouble();
+        zoomScale = zoomScale.clamp(0.5, 4.0);
+        double baseSize = isGlowing ? 1.0 : 0.8;
+        
+        optionsList.add(PointAnnotationOptions(
+          geometry: Point(coordinates: Position(lng, lat)),
+          image: markerImageBytes,
+          iconSize: baseSize * zoomScale,
+          iconAnchor: IconAnchor.BOTTOM,
             textField: title,
             textSize: 14.0,
             textColor: Colors.black.value,
