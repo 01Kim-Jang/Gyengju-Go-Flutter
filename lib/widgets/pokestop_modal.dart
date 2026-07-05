@@ -133,9 +133,24 @@ class _PokestopModalState extends State<PokestopModal> with TickerProviderStateM
     }
   }
 
+  String _cleanTitle(String rawTitle) {
+    String t = rawTitle;
+    // Remove parentheses/brackets and their contents
+    t = t.replaceAll(RegExp(r'\(.*?\)'), '');
+    t = t.replaceAll(RegExp(r'（.*?）'), '');
+    t = t.replaceAll(RegExp(r'\[.*?\]'), '');
+    // Remove 'Gyeongju' prefixes in different languages
+    t = t.replaceAll(RegExp(r'^경주\s*,?\s*'), '');
+    t = t.replaceAll(RegExp(r'^Gyeongju\s*,?\s*', caseSensitive: false), '');
+    t = t.replaceAll(RegExp(r'^慶州\s*,?\s*'), '');
+    t = t.replaceAll(RegExp(r'^キョンジュ\s*,?\s*'), '');
+    return t.trim();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final title = widget.spotData['title'] ?? 'Pokestop';
+    final rawTitle = widget.spotData['title'] ?? 'Pokestop';
+    final title = _cleanTitle(rawTitle);
     final imageUrl = widget.spotData['firstimage'] ?? '';
     final overview = widget.spotData['overview'] ?? '';
     final localAssetPath = 'assets/images/spots/${title.replaceAll(' ', '_').replaceAll('/', '_')}.jpg';
@@ -217,7 +232,7 @@ class _PokestopModalState extends State<PokestopModal> with TickerProviderStateM
                       length: 2,
                       child: Column(
                         children: [
-                          const TabBar(
+                          TabBar(
                             labelColor: Colors.blue,
                             unselectedLabelColor: Colors.grey,
                             indicatorColor: Colors.blue,
