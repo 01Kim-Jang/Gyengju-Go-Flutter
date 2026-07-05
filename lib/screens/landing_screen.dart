@@ -53,27 +53,34 @@ class _LandingScreenState extends State<LandingScreen> {
     ];
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F6F0), // 한지 느낌의 배경색
-      body: Center(
+      body: Container(
+        width: double.infinity,
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/images/landing_bg.jpg'),
+            fit: BoxFit.cover,
+          ),
+        ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              Icons.travel_explore,
-              size: 100,
-              color: Color(0xFFD4AF37),
-            ),
-            const SizedBox(height: 16),
+            const Spacer(),
             const Text(
-              'Gyeongju GO',
+              'Gyeongju Go',
               style: TextStyle(
-                fontSize: 36,
+                fontSize: 48,
                 fontWeight: FontWeight.bold,
-                fontFamily: 'Serif',
-                color: Color(0xFF4A3B32),
+                color: Colors.white,
+                shadows: [
+                  Shadow(
+                    blurRadius: 10.0,
+                    color: Colors.black54,
+                    offset: Offset(2.0, 2.0),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 100),
             const Text(
               '천년의 역사를 거닐다',
               style: TextStyle(fontSize: 16, color: Colors.grey),
