@@ -171,4 +171,76 @@ class OpenAIService {
 
     return '현재 이 장소에 대한 도슨트 정보를 불러올 수 없습니다.';
   }
+
+  // 4. 주변 음식점 다국어 번역
+  static Future<List<Map<String, dynamic>>> translateRestaurants(
+    List<Map<String, dynamic>> restaurants,
+    String targetLang,
+  ) async {
+    if (targetLang == 'ko' || restaurants.isEmpty) return restaurants;
+
+    final apiKey = dotenv.env['OPENAI_API_KEY'];
+    if (apiKey == null || apiKey.isEmpty) return restaurants;
+
+    String langName = 'English';
+    switch (targetLang) {
+      case 'ja': langName = 'Japanese'; break;
+      case 'zh-chs': langName = 'Simplified Chinese'; break;
+      case 'zh-cht': langName = 'Traditional Chinese'; break;
+      case 'vi': langName = 'Vietnamese'; break;
+      case 'th': langName = 'Thai'; break;
+    }
+
+    try {
+      final List<Map<String, String>> itemsToTranslate = restaurants.map((r) => {
+        'name': r['place_name']?.toString() ?? '',
+        'category': r['category_name']?.toString() ?? ''
+      }).toList();
+
+      final response = await http.post(
+        Uri.parse('https://api.openai.com/v1/chat/completions'),
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8',
+          'Authorization': 'Bearer $apiKey',
+        },
+        body: jsonEncode({
+          'model': 'gpt-4o-mini',
+          'response_format': { 'type': 'json_object' },
+          'messages': [
+            {
+              'role': 'system',
+              'content': 'You are a translator. Translate the "name" and "category" of the provided JSON array of restaurants into $langName. '
+                         'Return a JSON object with a single key "translated" containing the translated array of objects with "name" and "category".'
+            },
+            {'role': 'user', 'content': jsonEncode(itemsToTranslate)},
+          ],
+          'temperature': 0.1,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(utf8.decode(response.bodyBytes));
+        final content = data['choices'][0]['message']['content'];
+        final translatedJson = jsonDecode(content);
+        final translatedList = translatedJson['translated'] as List;
+
+        List<Map<String, dynamic>> result = [];
+        for (int i = 0; i < restaurants.length; i++) {
+          final translatedItem = translatedList.length > i ? translatedList[i] : null;
+          final mapItem = Map<String, dynamic>.from(restaurants[i]);
+          if (translatedItem != null) {
+            mapItem['place_name'] = translatedItem['name'];
+            mapItem['category_name'] = translatedItem['category'];
+          }
+          result.add(mapItem);
+        }
+        return result;
+      }
+    } catch (e) {
+      print('OpenAI Translate Restaurants Error: $e');
+    }
+
+    return restaurants;
+  }
 }
+

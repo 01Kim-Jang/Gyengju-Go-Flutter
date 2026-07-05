@@ -75,9 +75,12 @@ class _MapboxViewState extends State<MapboxView> {
         distanceFilter: 2, // smaller distance filter for smoother walking
       ),
     ).listen((geo.Position position) {
-      _currentPosition = position;
-      _updateMarkersGlow();
-      _updatePlayerAnnotation();
+      if (mounted) {
+        _currentPosition = position;
+        context.read<AppState>().updateUserLocation(position.latitude, position.longitude);
+        _updateMarkersGlow();
+        _updatePlayerAnnotation();
+      }
     });
   }
 
@@ -219,11 +222,17 @@ class _MapboxViewState extends State<MapboxView> {
   }
 
   Future<void> _renderMarkers() async {
-    if (pointAnnotationManager == null || _isRendering) return;
+    if (pointAnnotationManager == null || _isRendering || !mounted) return;
     _isRendering = true;
 
     try {
+      final appState = context.read<AppState>();
+      final activeQuest = appState.quests.where((q) => q.isActive).firstOrNull;
+      final targetTitle = activeQuest?.currentTargetSpot?['title']?.toString() ?? '';
+
       await pointAnnotationManager?.deleteAll();
+      playerAnnotation = null;
+
       List<PointAnnotationOptions> optionsList = [];
 
       for (var spot in _spotsData) {
@@ -238,8 +247,9 @@ class _MapboxViewState extends State<MapboxView> {
         _spotsMap[title] = spot;
         String? imageUrl = spot['firstimage'];
 
-        // 거리가 50m 이내인지 체크하여 Glowing 활성화
-        bool isGlowing = false;
+        bool isTarget = (spot['title'] == targetTitle);
+        bool isGlowing = isTarget;
+        
         if (_currentPosition != null) {
           double distance = geo.Geolocator.distanceBetween(
             _currentPosition!.latitude, 
@@ -256,7 +266,7 @@ class _MapboxViewState extends State<MapboxView> {
         // Calculate dynamic scale based on zoom (base zoom 16.0)
         double zoomScale = math.pow(2.0, _currentZoom - 16.0).toDouble();
         zoomScale = zoomScale.clamp(0.5, 4.0);
-        double baseSize = isGlowing ? 1.0 : 0.8;
+        double baseSize = isTarget ? 1.5 : (isGlowing ? 1.0 : 0.8);
         
         optionsList.add(PointAnnotationOptions(
           geometry: Point(coordinates: Position(lng, lat)),
@@ -264,8 +274,8 @@ class _MapboxViewState extends State<MapboxView> {
           iconSize: baseSize * zoomScale,
           iconAnchor: IconAnchor.BOTTOM,
             textField: title,
-            textSize: 14.0,
-            textColor: Colors.black.value,
+            textSize: isTarget ? 16.0 : 14.0,
+            textColor: isTarget ? Colors.red.value : Colors.black.value,
             textHaloColor: Colors.white.value,
             textHaloWidth: 2.0,
             textOffset: [0.0, 1.0],
@@ -274,6 +284,7 @@ class _MapboxViewState extends State<MapboxView> {
       }
 
       await pointAnnotationManager?.createMulti(optionsList);
+      _updatePlayerAnnotation();
     } finally {
       _isRendering = false;
     }
@@ -398,6 +409,43 @@ class _MapboxViewState extends State<MapboxView> {
               ],
             ),
           ),
+        ),
+        // Show active quest target floating banner at the top of the map
+        Consumer<AppState>(
+          builder: (context, appState, child) {
+            final activeQuest = appState.quests.where((q) => q.isActive).firstOrNull;
+            if (activeQuest?.currentTargetSpot != null) {
+              final target = activeQuest!.currentTargetSpot!;
+              return Positioned(
+                top: 50,
+                left: 20,
+                right: 20,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.9),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)],
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.flag, color: Colors.red),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          "목적지: ${target['title']}",
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          maxLines: 1, overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const Icon(Icons.chevron_right, color: Colors.grey),
+                    ],
+                  ),
+                ),
+              );
+            }
+            return const SizedBox.shrink();
+          },
         ),
         // My Location Button
         Positioned(
