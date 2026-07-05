@@ -43,6 +43,7 @@ class AnnotationClickListener extends OnPointAnnotationClickListener {
 class _MapboxViewState extends State<MapboxView> {
   MapboxMap? mapboxMap;
   PointAnnotationManager? pointAnnotationManager;
+  PointAnnotation? playerAnnotation;
   final Map<String, dynamic> _spotsMap = {};
 
   List<Map<String, dynamic>> _spotsData = [];
@@ -71,12 +72,37 @@ class _MapboxViewState extends State<MapboxView> {
     geo.Geolocator.getPositionStream(
       locationSettings: const geo.LocationSettings(
         accuracy: geo.LocationAccuracy.high,
-        distanceFilter: 10,
+        distanceFilter: 2, // smaller distance filter for smoother walking
       ),
     ).listen((geo.Position position) {
       _currentPosition = position;
       _updateMarkersGlow();
+      _updatePlayerAnnotation();
     });
+  }
+
+  Future<void> _updatePlayerAnnotation() async {
+    if (_currentPosition == null || pointAnnotationManager == null) return;
+    
+    double zoomScale = math.pow(2.0, _currentZoom - 16.0).toDouble();
+    zoomScale = zoomScale.clamp(0.5, 4.0);
+    double playerSize = 1.2 * zoomScale;
+
+    if (playerAnnotation == null) {
+      final Uint8List imageBytes = await MarkerGenerator.createPlayerMarker();
+      playerAnnotation = await pointAnnotationManager?.create(
+        PointAnnotationOptions(
+          geometry: Point(coordinates: Position(_currentPosition!.longitude, _currentPosition!.latitude)),
+          image: imageBytes,
+          iconSize: playerSize, // dynamically scaled based on zoom
+          iconAnchor: IconAnchor.BOTTOM,
+        )
+      );
+    } else {
+      playerAnnotation!.geometry = Point(coordinates: Position(_currentPosition!.longitude, _currentPosition!.latitude));
+      playerAnnotation!.iconSize = playerSize;
+      await pointAnnotationManager?.update(playerAnnotation!);
+    }
   }
 
   _onMapCreated(MapboxMap mapboxMap) async {
@@ -121,22 +147,13 @@ class _MapboxViewState extends State<MapboxView> {
 
     // Terrain is managed via Mapbox Studio style instead of programmatic adding
 
-    // Enable user location component with custom puck
-    final ByteData bytes = await rootBundle.load('assets/images/character.png');
-    final Uint8List imageBytes = bytes.buffer.asUint8List();
-
+    // Enable user location component with default puck (blue dot)
     await mapboxMap.location.updateSettings(
       LocationComponentSettings(
         enabled: true,
         pulsingEnabled: true, // Pulse effect
         pulsingColor: Colors.blue.value,
         pulsingMaxRadius: 50.0,
-        locationPuck: LocationPuck(
-          locationPuck2D: LocationPuck2D(
-            topImage: imageBytes,
-            scaleExpression: '["literal", 1.5]', // Fixed scaleExpression format
-          ),
-        ),
       ),
     );
 

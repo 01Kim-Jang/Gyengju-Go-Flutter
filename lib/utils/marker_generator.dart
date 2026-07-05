@@ -134,6 +134,17 @@ class MarkerGenerator {
     return byteData!.buffer.asUint8List();
   }
 
+  static Future<Uint8List> createPlayerMarker() async {
+    final ByteData bytes = await rootBundle.load('assets/images/character.png');
+    final ui.Codec codec = await ui.instantiateImageCodec(
+      bytes.buffer.asUint8List(),
+      targetWidth: 150, // Match the base size of Pokestops
+    );
+    final ui.FrameInfo frameInfo = await codec.getNextFrame();
+    final ByteData? resizedBytes = await frameInfo.image.toByteData(format: ui.ImageByteFormat.png);
+    return resizedBytes!.buffer.asUint8List();
+  }
+
   static Future<Map<String, dynamic>> createPokestopMarkerRaw({
     String? imageUrl,
   }) async {
