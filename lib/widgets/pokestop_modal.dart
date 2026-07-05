@@ -104,6 +104,9 @@ class _PokestopModalState extends State<PokestopModal> with TickerProviderStateM
   void _triggerScore() {
     setState(() { _showScore = true; });
     context.read<AppState>().addScore(50);
+    context.read<AppState>().updateQuestProgress('spin_1');
+    context.read<AppState>().updateQuestProgress('spin_5');
+    
     _scoreAnimationController.forward(from: 0.0).then((_) {
       if (mounted) setState(() { _showScore = false; });
     });

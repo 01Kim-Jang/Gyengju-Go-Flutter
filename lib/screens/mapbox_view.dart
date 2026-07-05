@@ -121,13 +121,22 @@ class _MapboxViewState extends State<MapboxView> {
 
     // Terrain is managed via Mapbox Studio style instead of programmatic adding
 
-    // Enable user location component
+    // Enable user location component with custom puck
+    final ByteData bytes = await rootBundle.load('assets/images/character.png');
+    final Uint8List imageBytes = bytes.buffer.asUint8List();
+
     await mapboxMap.location.updateSettings(
       LocationComponentSettings(
         enabled: true,
         pulsingEnabled: true, // Pulse effect
         pulsingColor: Colors.blue.value,
         pulsingMaxRadius: 50.0,
+        locationPuck: LocationPuck(
+          locationPuck2D: LocationPuck2D(
+            topImage: imageBytes,
+            scaleExpression: '1.5', // Scale up the character
+          ),
+        ),
       ),
     );
 
@@ -262,6 +271,7 @@ class _MapboxViewState extends State<MapboxView> {
   Widget build(BuildContext context) {
     final token = dotenv.env['MAPBOX_ACCESS_TOKEN'] ?? '';
     MapboxOptions.setAccessToken(token);
+    final appState = context.watch<AppState>();
 
     Widget mapWidget = MapWidget(
       key: const ValueKey("mapboxWidget"),
@@ -335,7 +345,7 @@ class _MapboxViewState extends State<MapboxView> {
       child: mapWidget,
     );
 
-    // 3. 몽환적인 노란/연두빛 감성 (Hue Rotate 대체)
+    // 3. 몽환적인 밤/어두운 감성 (Hue Rotate 등)
     mapWidget = ColorFiltered(
       colorFilter: ColorFilter.mode(
         const Color(0xFFD4E157).withOpacity(0.15),
@@ -344,6 +354,36 @@ class _MapboxViewState extends State<MapboxView> {
       child: mapWidget,
     );
 
-    return mapWidget;
+    return Stack(
+      children: [
+        mapWidget,
+        Positioned(
+          left: 16,
+          bottom: 100, // Above the bottom navigation bar
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.7),
+              borderRadius: BorderRadius.circular(15),
+              border: Border.all(color: const Color(0xFFD4AF37), width: 2), // Gold border
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.stars, color: Colors.amber, size: 24),
+                const SizedBox(width: 8),
+                Text(
+                  '${appState.score} XP',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }

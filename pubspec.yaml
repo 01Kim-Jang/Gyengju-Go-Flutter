@@ -69,6 +69,7 @@ flutter:
     - .env
     - assets/scene.gltf
     - assets/scene.bin
+    - assets/images/
     - assets/images/spots/
 
   # An image asset can refer to one or more resolution-specific "variants", see

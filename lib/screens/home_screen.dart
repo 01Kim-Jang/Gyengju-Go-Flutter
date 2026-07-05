@@ -5,6 +5,7 @@ import 'kakao_map_view.dart';
 import 'mapbox_view.dart';
 import '../components/chatbot_sheet.dart';
 import '../utils/translations.dart';
+import 'quest_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -23,7 +24,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // 네비게이션용 탭 내용
     final List<Widget> _pages = [
-      Center(child: Text(AppTranslations.get(lang, 'quest_dev'))),
+      const QuestScreen(),
       // 지도 화면 탭
       Stack(
         children: [
