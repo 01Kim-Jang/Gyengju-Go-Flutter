@@ -3,8 +3,8 @@ import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 import '../providers/app_state.dart';
 import '../services/odii_service.dart';
-import 'home_screen.dart';
-
+import '../services/odii_service.dart';
+import 'character_select_screen.dart';
 class LandingScreen extends StatefulWidget {
   const LandingScreen({super.key});
 
@@ -14,6 +14,17 @@ class LandingScreen extends StatefulWidget {
 
 class _LandingScreenState extends State<LandingScreen> {
   bool _isLoading = false;
+  bool _showLanguages = false;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        setState(() { _showLanguages = true; });
+      }
+    });
+  }
 
   Future<void> _selectLanguageAndLoad(String langCode) async {
     setState(() { _isLoading = true; });
@@ -35,7 +46,7 @@ class _LandingScreenState extends State<LandingScreen> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => const HomeScreen(),
+          builder: (context) => const CharacterSelectScreen(),
         ),
       );
     }
@@ -86,56 +97,69 @@ class _LandingScreenState extends State<LandingScreen> {
               style: TextStyle(fontSize: 16, color: Colors.grey),
             ),
             const SizedBox(height: 48),
-            const Text(
-              '언어를 선택해주세요\nSelect your language',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 24),
-            Wrap(
-              spacing: 16,
-              runSpacing: 16,
-              alignment: WrapAlignment.center,
-              children: languages.map((lang) {
-                return InkWell(
-                  onTap: _isLoading ? null : () => _selectLanguageAndLoad(lang['code']!),
-                  child: Container(
-                    width: 140,
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 16,
-                      horizontal: 12,
-                    ),
-                    decoration: BoxDecoration(
+            AnimatedOpacity(
+              opacity: _showLanguages ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 800),
+              child: Column(
+                children: [
+                  const Text(
+                    '언어를 선택해주세요\nSelect your language',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 18, 
+                      fontWeight: FontWeight.bold,
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      children: [
-                        Text(
-                          lang['flag']!,
-                          style: const TextStyle(fontSize: 32),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          lang['name']!,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF4A3B32),
-                          ),
-                        ),
-                      ],
+                      shadows: [Shadow(blurRadius: 5.0, color: Colors.black54, offset: Offset(1.0, 1.0))],
                     ),
                   ),
-                );
-              }).toList(),
+                  const SizedBox(height: 24),
+                  Wrap(
+                    spacing: 16,
+                    runSpacing: 16,
+                    alignment: WrapAlignment.center,
+                    children: languages.map((lang) {
+                      return InkWell(
+                        onTap: (!_showLanguages || _isLoading) ? null : () => _selectLanguageAndLoad(lang['code']!),
+                        child: Container(
+                          width: 140,
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 16,
+                            horizontal: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.1),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            children: [
+                              Text(
+                                lang['flag']!,
+                                style: const TextStyle(fontSize: 32),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                lang['name']!,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF4A3B32),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
             ),
             if (_isLoading)
               const Padding(

@@ -6,6 +6,7 @@ class AppState extends ChangeNotifier {
   bool _isMapboxMode = false;
   int _score = 0;
   List<Map<String, dynamic>> _spotsData = [];
+  String _selectedCharacterPath = 'assets/images/char_style1_male.png';
 
   final List<Quest> _quests = [
     Quest(
@@ -29,6 +30,7 @@ class AppState extends ChangeNotifier {
   int get score => _score;
   List<Map<String, dynamic>> get spotsData => _spotsData;
   List<Quest> get quests => _quests;
+  String get selectedCharacterPath => _selectedCharacterPath;
 
   void setSpotsData(List<Map<String, dynamic>> spots) {
     _spotsData = spots;
@@ -59,6 +61,11 @@ class AppState extends ChangeNotifier {
 
   void toggleMapMode() {
     _isMapboxMode = !_isMapboxMode;
+    notifyListeners();
+  }
+
+  void setCharacter(String path) {
+    _selectedCharacterPath = path;
     notifyListeners();
   }
 }

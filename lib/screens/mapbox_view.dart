@@ -82,14 +82,15 @@ class _MapboxViewState extends State<MapboxView> {
   }
 
   Future<void> _updatePlayerAnnotation() async {
-    if (_currentPosition == null || pointAnnotationManager == null) return;
+    if (_currentPosition == null || pointAnnotationManager == null || !mounted) return;
     
     double zoomScale = math.pow(2.0, _currentZoom - 16.0).toDouble();
     zoomScale = zoomScale.clamp(0.5, 4.0);
     double playerSize = 1.2 * zoomScale;
 
     if (playerAnnotation == null) {
-      final Uint8List imageBytes = await MarkerGenerator.createPlayerMarker();
+      final String charPath = context.read<AppState>().selectedCharacterPath;
+      final Uint8List imageBytes = await MarkerGenerator.createPlayerMarker(charPath);
       playerAnnotation = await pointAnnotationManager?.create(
         PointAnnotationOptions(
           geometry: Point(coordinates: Position(_currentPosition!.longitude, _currentPosition!.latitude)),

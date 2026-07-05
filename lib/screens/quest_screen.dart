@@ -15,8 +15,9 @@ class QuestScreen extends StatelessWidget {
     return Container(
       decoration: const BoxDecoration(
         image: DecorationImage(
-          image: AssetImage('assets/images/ancient_parchment_bg.png'),
+          image: AssetImage('assets/images/hanji_bg.png'),
           fit: BoxFit.cover,
+          colorFilter: ColorFilter.mode(Colors.black12, BlendMode.darken),
         ),
       ),
       child: SafeArea(
