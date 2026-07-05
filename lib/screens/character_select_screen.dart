@@ -14,32 +14,44 @@ class CharacterSelectScreen extends StatefulWidget {
 class _CharacterSelectScreenState extends State<CharacterSelectScreen> {
   final List<Map<String, dynamic>> _characters = [
     {
-      'id': 'style1_male',
-      'path': 'assets/images/char_style1_male.png',
-      'name': '깔끔한 남성',
-      'desc': '단정한 한복을 입은 선비',
+      'id': 'char_main',
+      'path': 'assets/images/char_main.png',
+      'nameKey': 'char_main',
+      'descKey': 'char_main_desc',
     },
     {
-      'id': 'style1_female',
-      'path': 'assets/images/char_style1_female.png',
-      'name': '깔끔한 여성',
-      'desc': '단아한 한복을 입은 여인',
+      'id': 'char_king',
+      'path': 'assets/images/char_king.png',
+      'nameKey': 'char_king',
+      'descKey': 'char_king_desc',
     },
     {
-      'id': 'style2_male',
-      'path': 'assets/images/char_style2_male.png',
-      'name': '도트 남성',
-      'desc': '레트로 감성의 선비',
+      'id': 'char_queen',
+      'path': 'assets/images/char_queen.png',
+      'nameKey': 'char_queen',
+      'descKey': 'char_queen_desc',
     },
     {
-      'id': 'style2_female',
-      'path': 'assets/images/char_style2_female.png',
-      'name': '도트 여성',
-      'desc': '레트로 감성의 여인',
+      'id': 'char_hwarang',
+      'path': 'assets/images/char_hwarang.png',
+      'nameKey': 'char_hwarang',
+      'descKey': 'char_hwarang_desc',
+    },
+    {
+      'id': 'char_merchant',
+      'path': 'assets/images/char_merchant.png',
+      'nameKey': 'char_merchant',
+      'descKey': 'char_merchant_desc',
+    },
+    {
+      'id': 'char_princess',
+      'path': 'assets/images/char_princess.png',
+      'nameKey': 'char_princess',
+      'descKey': 'char_princess_desc',
     },
   ];
 
-  String _selectedId = 'style1_male';
+  String _selectedId = 'char_main';
 
   @override
   Widget build(BuildContext context) {
@@ -66,13 +78,13 @@ class _CharacterSelectScreenState extends State<CharacterSelectScreen> {
               t['character_select_desc'] ?? '함께 여행할 캐릭터를 선택해주세요.',
               style: const TextStyle(fontSize: 16, color: Colors.grey),
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 30),
             Expanded(
               child: GridView.builder(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
-                  childAspectRatio: 0.75,
+                  childAspectRatio: 0.65, // Taller ratio for 8-head characters
                   crossAxisSpacing: 16,
                   mainAxisSpacing: 16,
                 ),
@@ -107,30 +119,41 @@ class _CharacterSelectScreenState extends State<CharacterSelectScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Expanded(
-                            flex: 3,
+                            flex: 4,
                             child: Padding(
-                              padding: const EdgeInsets.all(12.0),
-                              child: Image.asset(char['path']),
+                              padding: const EdgeInsets.all(8.0),
+                              child: Image.asset(char['path'], fit: BoxFit.contain),
                             ),
                           ),
                           Expanded(
                             flex: 1,
                             child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
-                                  char['name'],
+                                  t[char['nameKey']] ?? char['nameKey'],
                                   style: TextStyle(
                                     fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                                     color: const Color(0xFF4A3B32),
+                                    fontSize: 14,
                                   ),
+                                  textAlign: TextAlign.center,
                                 ),
-                                Text(
-                                  char['desc'],
-                                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                const SizedBox(height: 2),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                                  child: Text(
+                                    t[char['descKey']] ?? char['descKey'],
+                                    style: const TextStyle(fontSize: 10, color: Colors.grey),
+                                    textAlign: TextAlign.center,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
                               ],
                             ),
                           ),
+                          const SizedBox(height: 8),
                         ],
                       ),
                     ),
@@ -157,9 +180,9 @@ class _CharacterSelectScreenState extends State<CharacterSelectScreen> {
                     borderRadius: BorderRadius.circular(16),
                   ),
                 ),
-                child: const Text(
-                  '시작하기',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                child: Text(
+                  lang == 'ko' ? '시작하기' : (lang == 'en' ? 'Start' : 'OK'),
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
