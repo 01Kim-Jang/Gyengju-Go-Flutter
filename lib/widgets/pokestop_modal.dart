@@ -5,6 +5,8 @@ import '../providers/app_state.dart';
 import '../services/kakao_local_service.dart';
 import '../services/openai_service.dart';
 import '../utils/translations.dart';
+import '../data/spots_db.dart';
+import '../models/quest.dart';
 
 class PokestopModal extends StatefulWidget {
   final Map<String, dynamic> spotData;
@@ -28,6 +30,14 @@ class _PokestopModalState extends State<PokestopModal> with TickerProviderStateM
     super.initState();
     flutterTts = FlutterTts();
     _initTts();
+    
+    // If already visited globally, consider it "spun" to show docent
+    final title = _cleanTitle(widget.spotData['title'] ?? '');
+    final appState = context.read<AppState>();
+    if (appState.globalVisitedSpots.contains(title)) {
+      _isSpun = true;
+      _fetchNearbyPlaces();
+    }
   }
 
   Future<void> _initTts() async {
@@ -44,9 +54,18 @@ class _PokestopModalState extends State<PokestopModal> with TickerProviderStateM
   }
 
   Future<void> _playDocent() async {
-    final title = widget.spotData['title'] ?? '유적지';
-    final desc = widget.spotData['overview'] ?? '$title에 오신 것을 환영합니다.';
-    await flutterTts.speak(desc);
+    final title = _cleanTitle(widget.spotData['title'] ?? '');
+    final spotDetail = SpotsDB.get(title);
+    final currentLang = context.read<AppState>().currentLanguage;
+    
+    String textToSpeak = '';
+    if (spotDetail != null) {
+      textToSpeak = "${spotDetail.getFact(currentLang)}. ${spotDetail.getTip(currentLang)}";
+    } else {
+      textToSpeak = widget.spotData['overview'] ?? '$title에 오신 것을 환영합니다.';
+    }
+    
+    await flutterTts.speak(textToSpeak);
   }
 
   Future<void> _fetchNearbyPlaces() async {
@@ -90,6 +109,47 @@ class _PokestopModalState extends State<PokestopModal> with TickerProviderStateM
     });
   }
 
+  void _startMatchingQuest(BuildContext context, String title) {
+    final appState = context.read<AppState>();
+    Quest? matchingQuest;
+    for (var q in appState.quests) {
+      if (q.type == 'planner') {
+        for (var kw in q.keywords) {
+          if (title.toLowerCase().contains(kw.toLowerCase())) {
+            matchingQuest = q;
+            break;
+          }
+        }
+      }
+      if (matchingQuest != null) break;
+    }
+
+    if (matchingQuest != null) {
+      appState.setActiveQuest(matchingQuest.id);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            appState.currentLanguage == 'ko'
+                ? '${matchingQuest.title} 퀘스트가 시작되었습니다!'
+                : 'Quest "${matchingQuest.title}" has started!',
+          ),
+          backgroundColor: const Color(0xFFD4AF37),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            appState.currentLanguage == 'ko'
+                ? '일치하는 테마 퀘스트가 없습니다. 퀘스트 탭에서 직접 선택해 보세요!'
+                : 'No matching theme quest. Please select one in the Quest tab!',
+          ),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    }
+  }
+
   @override
   void dispose() {
     flutterTts.stop();
@@ -109,10 +169,14 @@ class _PokestopModalState extends State<PokestopModal> with TickerProviderStateM
   Widget build(BuildContext context) {
     final rawTitle = widget.spotData['title'] ?? 'Pokestop';
     final title = _cleanTitle(rawTitle);
-    final imageUrl = widget.spotData['firstimage'] ?? '';
+    final spotDetail = SpotsDB.get(title);
+    
+    final imageUrl = spotDetail?.imagePath ?? widget.spotData['firstimage'] ?? '';
     final overview = widget.spotData['overview'] ?? '';
-    final localAssetPath = 'assets/images/spots/${title.replaceAll(' ', '_').replaceAll('/', '_')}.jpg';
-    final currentLang = context.watch<AppState>().currentLanguage;
+    
+    final appState = context.watch<AppState>();
+    final currentLang = appState.currentLanguage;
+    final hasStamp = appState.globalVisitedSpots.contains(title);
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.85,
@@ -122,7 +186,7 @@ class _PokestopModalState extends State<PokestopModal> with TickerProviderStateM
       ),
       child: Column(
         children: [
-          // Header Image with close button
+          // Header Image with close button & Stamp status
           Stack(
             children: [
               ClipRRect(
@@ -130,16 +194,16 @@ class _PokestopModalState extends State<PokestopModal> with TickerProviderStateM
                 child: SizedBox(
                   height: 220,
                   width: double.infinity,
-                  child: Image.asset(
-                    localAssetPath,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      if (imageUrl.isNotEmpty && imageUrl.startsWith('http')) {
-                        return Image.network(imageUrl, fit: BoxFit.cover);
-                      }
-                      return Container(color: Colors.grey[300], child: const Icon(Icons.museum, size: 80, color: Colors.grey));
-                    },
-                  ),
+                  child: imageUrl.startsWith('assets/')
+                      ? Image.asset(imageUrl, fit: BoxFit.cover)
+                      : Image.network(
+                          imageUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Container(
+                            color: Colors.grey[300],
+                            child: const Icon(Icons.museum, size: 80, color: Colors.grey),
+                          ),
+                        ),
                 ),
               ),
               Positioned(
@@ -154,6 +218,44 @@ class _PokestopModalState extends State<PokestopModal> with TickerProviderStateM
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(Icons.close, color: Colors.white, size: 20),
+                  ),
+                ),
+              ),
+              // Stamp Acquisition Status Banner
+              Positioned(
+                top: 15,
+                left: 15,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: hasStamp 
+                        ? const Color(0xFFD4AF37).withValues(alpha: 0.9)
+                        : Colors.black.withValues(alpha: 0.6),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: hasStamp ? Colors.white : Colors.white30,
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        hasStamp ? Icons.verified : Icons.stars,
+                        color: hasStamp ? Colors.white : Colors.white60,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        hasStamp
+                            ? (currentLang == 'ko' ? '스탬프 획득 완료' : 'STAMP COLLECTED')
+                            : (currentLang == 'ko' ? '스탬프 미획득' : 'STAMP LOCKED'),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -187,11 +289,52 @@ class _PokestopModalState extends State<PokestopModal> with TickerProviderStateM
               textAlign: TextAlign.center,
             ),
           ),
-          const SizedBox(height: 20),
+          
+          // Shortcut Buttons (Always visible)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _playDocent,
+                    icon: const Icon(Icons.volume_up, color: Color(0xFF4A90E2)),
+                    label: Text(
+                      currentLang == 'ko' ? '도슨트 재생' : 'Play Docent',
+                      style: const TextStyle(color: Color(0xFF4A90E2), fontWeight: FontWeight.bold),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      side: const BorderSide(color: Color(0xFF4A90E2)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => _startMatchingQuest(context, title),
+                    icon: const Icon(Icons.navigation, color: Colors.white),
+                    label: Text(
+                      currentLang == 'ko' ? '퀘스트 시작' : 'Start Quest',
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      backgroundColor: const Color(0xFFD4AF37),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
 
           if (!_isSpun) ...[
+            const Spacer(),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 40),
+              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
               child: ElevatedButton(
                 onPressed: _triggerSpin,
                 style: ElevatedButton.styleFrom(
@@ -246,26 +389,48 @@ class _PokestopModalState extends State<PokestopModal> with TickerProviderStateM
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Row(
-                                  children: [
-                                    const Icon(Icons.volume_up, color: Colors.blue),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      AppTranslations.get(currentLang, 'docent_playing'),
-                                      style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  AppTranslations.get(currentLang, 'summary_desc'),
-                                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                                ),
-                                const SizedBox(height: 10),
-                                Text(
-                                  overview,
-                                  style: const TextStyle(fontSize: 16, height: 1.5, color: Colors.black87),
-                                ),
+                                if (spotDetail != null) ...[
+                                  Text(
+                                    currentLang == 'ko' ? '📚 역사적 사실' : '📚 Historical Facts',
+                                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF5D4037)),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    spotDetail.getFact(currentLang),
+                                    style: const TextStyle(fontSize: 15, height: 1.5, color: Colors.black87),
+                                  ),
+                                  const SizedBox(height: 20),
+                                  Text(
+                                    currentLang == 'ko' ? '💡 관람 팁' : '💡 Travel Tips',
+                                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF5D4037)),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    spotDetail.getTip(currentLang),
+                                    style: const TextStyle(fontSize: 15, height: 1.5, color: Colors.black87),
+                                  ),
+                                ] else ...[
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.volume_up, color: Colors.blue),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        AppTranslations.get(currentLang, 'docent_playing'),
+                                        style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    AppTranslations.get(currentLang, 'summary_desc'),
+                                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Text(
+                                    overview,
+                                    style: const TextStyle(fontSize: 16, height: 1.5, color: Colors.black87),
+                                  ),
+                                ],
                               ],
                             ),
                           ),

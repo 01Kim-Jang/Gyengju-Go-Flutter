@@ -8,6 +8,7 @@ class AppState extends ChangeNotifier {
   int _score = 0;
   List<Map<String, dynamic>> _spotsData = [];
   String _selectedCharacterPath = 'assets/images/char_style1_male.png';
+  final Set<String> _globalVisitedSpots = {};
 
   double? _userLat;
   double? _userLng;
@@ -90,6 +91,7 @@ class AppState extends ChangeNotifier {
   List<Map<String, dynamic>> get spotsData => _spotsData;
   List<Quest> get quests => _quests;
   String get selectedCharacterPath => _selectedCharacterPath;
+  Set<String> get globalVisitedSpots => _globalVisitedSpots;
 
   double? get userLat => _userLat;
   double? get userLng => _userLng;
@@ -191,6 +193,12 @@ class AppState extends ChangeNotifier {
   // New method specifically for planner spot spin
   void markSpotVisited(String spotTitle) {
     bool updated = false;
+
+    // Always add to global stamp book
+    if (!_globalVisitedSpots.contains(spotTitle)) {
+      _globalVisitedSpots.add(spotTitle);
+      updated = true;
+    }
     
     // Check if the visited spot was the target of an active planner quest
     final activeQuest = _quests.where((q) => q.isActive).firstOrNull;
