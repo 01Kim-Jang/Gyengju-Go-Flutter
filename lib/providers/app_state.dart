@@ -5,6 +5,7 @@ class AppState extends ChangeNotifier {
   String _currentLanguage = 'ko';
   bool _isMapboxMode = false;
   int _score = 0;
+  List<Map<String, dynamic>> _spotsData = [];
 
   final List<Quest> _quests = [
     Quest(
@@ -26,7 +27,13 @@ class AppState extends ChangeNotifier {
   String get currentLanguage => _currentLanguage;
   bool get isMapboxMode => _isMapboxMode;
   int get score => _score;
+  List<Map<String, dynamic>> get spotsData => _spotsData;
   List<Quest> get quests => _quests;
+
+  void setSpotsData(List<Map<String, dynamic>> spots) {
+    _spotsData = spots;
+    notifyListeners();
+  }
 
   void addScore(int points) {
     _score += points;

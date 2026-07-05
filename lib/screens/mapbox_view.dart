@@ -119,6 +119,127 @@ class _MapboxViewState extends State<MapboxView> {
       print("Style update error: $e");
     }
 
+import 'dart:typed_data';
+import 'package:flutter/material.dart';
+import 'dart:math' as math;
+import 'package:flutter/services.dart' show rootBundle;
+import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:geolocator/geolocator.dart' as geo;
+import '../services/odii_service.dart';
+import '../widgets/pokestop_modal.dart';
+import '../utils/marker_generator.dart';
+import 'package:provider/provider.dart';
+import '../providers/app_state.dart';
+
+class MapboxView extends StatefulWidget {
+  const MapboxView({super.key});
+
+  @override
+  State<MapboxView> createState() => _MapboxViewState();
+}
+
+class AnnotationClickListener extends OnPointAnnotationClickListener {
+  final BuildContext context;
+  final Map<String, dynamic> spotsMap;
+
+  AnnotationClickListener(this.context, this.spotsMap);
+
+  @override
+  void onPointAnnotationClick(PointAnnotation annotation) {
+    // Marker id matches spot id or title
+    final title = annotation.textField;
+    if (title != null && spotsMap.containsKey(title)) {
+      final spot = spotsMap[title];
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) => PokestopModal(spotData: spot),
+      );
+    }
+  }
+}
+
+class _MapboxViewState extends State<MapboxView> {
+  MapboxMap? mapboxMap;
+  PointAnnotationManager? pointAnnotationManager;
+  final Map<String, dynamic> _spotsMap = {};
+
+  List<Map<String, dynamic>> _spotsData = [];
+  geo.Position? _currentPosition;
+  bool _isRendering = false;
+  double _currentZoom = 16.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkLocationPermission().then((_) {
+      _startLocationStream();
+    });
+  }
+
+  Future<void> _checkLocationPermission() async {
+    bool serviceEnabled = await geo.Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) return;
+    geo.LocationPermission permission = await geo.Geolocator.checkPermission();
+    if (permission == geo.LocationPermission.denied) {
+      permission = await geo.Geolocator.requestPermission();
+    }
+  }
+
+  void _startLocationStream() {
+    geo.Geolocator.getPositionStream(
+      locationSettings: const geo.LocationSettings(
+        accuracy: geo.LocationAccuracy.high,
+        distanceFilter: 10,
+      ),
+    ).listen((geo.Position position) {
+      _currentPosition = position;
+      _updateMarkersGlow();
+    });
+  }
+
+  _onMapCreated(MapboxMap mapboxMap) async {
+    this.mapboxMap = mapboxMap;
+
+    await mapboxMap.style.setStyleURI(MapboxStyles.STANDARD);
+
+    try {
+      final appState = context.read<AppState>();
+
+      // Mapbox Standard 스타일의 언어 설정은 basemap config로 제어
+      await mapboxMap.style.setStyleImportConfigProperty(
+        'basemap',
+        'language',
+        appState.currentLanguage,
+      );
+
+      // 사용자 요청: 짜장면 등 불필요한 POI 제거, 단 버스정류장(transit)은 복구
+      await mapboxMap.style.setStyleImportConfigProperty(
+        'basemap',
+        'showPointOfInterestLabels',
+        false,
+      );
+      await mapboxMap.style.setStyleImportConfigProperty(
+        'basemap',
+        'showTransitLabels',
+        true,
+      );
+      await mapboxMap.style.setStyleImportConfigProperty(
+        'basemap',
+        'showPlaceLabels',
+        false,
+      );
+      await mapboxMap.style.setStyleImportConfigProperty(
+        'basemap',
+        'showRoadLabels',
+        true,
+      );
+    } catch (e) {
+      print("Style update error: $e");
+    }
+
     // Terrain is managed via Mapbox Studio style instead of programmatic adding
 
     // Enable user location component with custom puck
@@ -134,7 +255,7 @@ class _MapboxViewState extends State<MapboxView> {
         locationPuck: LocationPuck(
           locationPuck2D: LocationPuck2D(
             topImage: imageBytes,
-            scaleExpression: '1.5', // Scale up the character
+            scaleExpression: '["literal", 1.5]', // Fixed scaleExpression format
           ),
         ),
       ),
@@ -158,9 +279,7 @@ class _MapboxViewState extends State<MapboxView> {
     if (!mounted) return;
 
     final appState = context.read<AppState>();
-    final spots = await OdiiService.fetchGyeongjuSpots(
-      appState.currentLanguage,
-    );
+    final spots = appState.spotsData;
     _spotsData = spots;
     await _renderMarkers();
 
@@ -381,6 +500,29 @@ class _MapboxViewState extends State<MapboxView> {
                 ),
               ],
             ),
+          ),
+        ),
+        // My Location Button
+        Positioned(
+          right: 16,
+          bottom: 100,
+          child: FloatingActionButton(
+            heroTag: "myLocationMapbox",
+            backgroundColor: const Color(0xFFD4AF37),
+            child: const Icon(Icons.my_location, color: Colors.white),
+            onPressed: () {
+              if (_currentPosition != null && mapboxMap != null) {
+                mapboxMap!.flyTo(
+                  CameraOptions(
+                    center: Point(
+                      coordinates: Position(_currentPosition!.longitude, _currentPosition!.latitude),
+                    ),
+                    zoom: 16.0,
+                  ),
+                  MapAnimationOptions(duration: 1000),
+                );
+              }
+            },
           ),
         ),
       ],

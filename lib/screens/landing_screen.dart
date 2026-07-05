@@ -1,10 +1,45 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
+import '../providers/app_state.dart';
+import '../services/odii_service.dart';
 import 'home_screen.dart';
 
-class LandingScreen extends StatelessWidget {
+class LandingScreen extends StatefulWidget {
   const LandingScreen({super.key});
+
+  @override
+  State<LandingScreen> createState() => _LandingScreenState();
+}
+
+class _LandingScreenState extends State<LandingScreen> {
+  bool _isLoading = false;
+
+  Future<void> _selectLanguageAndLoad(String langCode) async {
+    setState(() { _isLoading = true; });
+    
+    // Set language
+    context.read<AppState>().setLanguage(langCode);
+    
+    // Pre-fetch spots data
+    try {
+      final spots = await OdiiService.fetchGyeongjuSpots(langCode);
+      if (mounted) {
+        context.read<AppState>().setSpotsData(spots);
+      }
+    } catch (e) {
+      print("Error prefetching spots: $e");
+    }
+
+    if (mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const HomeScreen(),
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,15 +91,7 @@ class LandingScreen extends StatelessWidget {
               alignment: WrapAlignment.center,
               children: languages.map((lang) {
                 return InkWell(
-                  onTap: () {
-                    context.read<AppState>().setLanguage(lang['code']!);
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const HomeScreen(),
-                      ),
-                    );
-                  },
+                  onTap: _isLoading ? null : () => _selectLanguageAndLoad(lang['code']!),
                   child: Container(
                     width: 140,
                     padding: const EdgeInsets.symmetric(
@@ -103,6 +130,17 @@ class LandingScreen extends StatelessWidget {
                 );
               }).toList(),
             ),
+            if (_isLoading)
+              const Padding(
+                padding: EdgeInsets.only(top: 40.0),
+                child: Column(
+                  children: [
+                    CircularProgressIndicator(color: Color(0xFFD4AF37)),
+                    SizedBox(height: 16),
+                    Text('데이터를 불러오는 중입니다...', style: TextStyle(color: Colors.grey)),
+                  ],
+                ),
+              ),
           ],
         ),
       ),

@@ -29,9 +29,7 @@ class _KakaoMapViewState extends State<KakaoMapView> {
   Future<void> _loadSpots() async {
     if (!mounted) return;
     final appState = context.read<AppState>();
-    final loadedSpots = await OdiiService.fetchGyeongjuSpots(
-      appState.currentLanguage,
-    );
+    final loadedSpots = appState.spotsData;
 
     Set<Marker> newMarkers = {};
     for (var spot in loadedSpots) {

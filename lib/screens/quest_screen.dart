@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 import '../models/quest.dart';
+import '../utils/translations.dart';
 
 class QuestScreen extends StatelessWidget {
   const QuestScreen({super.key});
@@ -26,9 +27,9 @@ class QuestScreen extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 20.0),
               child: Column(
                 children: [
-                  const Text(
-                    '여정의 기록',
-                    style: TextStyle(
+                  Text(
+                    AppTranslations.get(appState.currentLanguage, 'quest_title'),
+                    style: const TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
                       fontFamily: 'Serif', // Classic serif for ancient look
@@ -40,7 +41,7 @@ class QuestScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    '총 경험치: ${appState.score} XP',
+                    '${AppTranslations.get(appState.currentLanguage, 'total_xp')}: ${appState.score} XP',
                     style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
@@ -79,7 +80,7 @@ class QuestScreen extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              quest.title,
+                              AppTranslations.get(appState.currentLanguage, '${quest.id}_title'),
                               style: const TextStyle(
                                 fontSize: 22,
                                 fontWeight: FontWeight.bold,
@@ -101,7 +102,7 @@ class QuestScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          quest.description,
+                          AppTranslations.get(appState.currentLanguage, '${quest.id}_desc'),
                           style: const TextStyle(
                             fontSize: 16,
                             color: Color(0xFF4E342E),
