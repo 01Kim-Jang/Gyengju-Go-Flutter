@@ -1,88 +1,103 @@
-# Gyeongju-GO Flutter App
+# 🗺️ Gyeongju-GO (경주-GO)
 
-경주 외국인 관광객을 위한 게이미피케이션 여행 앱 **Gyeongju-GO**의 프론트엔드 앱입니다.
+경주를 찾는 외국인 관광객을 위한 게이미피케이션 여행 플래너 및 스마트 도슨트 앱 **Gyeongju-GO**의 프론트엔드 레포지토리입니다. 
 
-## 기술 스택
+---
 
-* **Flutter 3.22+ / Dart**
-* **상태 관리**: Provider
-* **지도 연동**: 
-  * Mapbox Maps Flutter (3D 사극풍 맵 및 지형)
-  * Kakao Map Plugin (한국형 지도)
-* **API 및 네트워킹**: HTTP (`http`)
-* **음성 안내 (TTS)**: Flutter TTS
-* **기타 주요 패키지**: 
-  * `flutter_dotenv` (환경 변수 관리)
-  * `geolocator` (GPS 기반 사용자 위치)
+## 🎨 주요 특징 (Key Features)
 
-## 주요 기능
+### 1. 🗺️ 듀얼 맵 시스템 & 실시간 번역 오버레이
+- **Mapbox 3D 역사 테마 맵**: 역사 소설이나 사극풍 분위기의 3D 지형지도를 제공하며, 실시간 시간대 기반 또는 설정 기준에 따라 주간(Standard) / 야간(Dark) 스타일로 자동 전환됩니다.
+- **Kakao 2D 정밀 맵**: 외국인 전용 관광공사 Odii API 명소 데이터를 정밀 2D 지도에 연동하여 사용자 중심의 길찾기를 지원합니다.
+- **다국어 오버레이 (CustomOverlay)**: 카카오 지도 타일 한글 문제를 보완하기 위해 마커 위에 선택 언어로 실시간 번역된 **이름 말풍선(CustomOverlay)**을 동적으로 렌더링합니다.
 
-| 기능 | 설명 |
-|---|---|
-| **듀얼 맵 시스템** | Mapbox 기반의 3D 입체 지도와 Kakao 기반의 2D 정밀 지도 제공 |
-| **다국어 지원** | 한국어, 영어, 일본어, 중국어(간체), 베트남어, 태국어 실시간 변경 |
-| **오디오 도슨트** | TTS와 AI(OpenAI)를 결합하여 다국어 명소 자동 해설 낭독 |
-| **AI 스마트 비서** | 경주 여행과 관련된 모든 것을 물어볼 수 있는 OpenAI 기반 챗봇 |
-| **위치 기반 서비스** | 사용자의 현재 위치를 기반으로 주변 관광 명소(포켓스탑) 탐색 |
+### 2. 🤖 AI 가이드 스마트 비서 & 3종 내비게이션 연동
+- **GPT-4o-mini 기반 AI 여행 비서**: 사용자의 현재 GPS 위치 정보를 컨텍스트로 받아 주변 맛집, 카페, 교통편, 역사적 정보에 최적화된 맞춤형 추천을 제공합니다.
+- **다국어 길찾기 링크**: AI 비서가 장소를 추천하면 메시지 하단에 **길찾기 카드**가 자동 파싱되어 노출됩니다.
+- **3개 이동수단 지원**: **자동차(Drive), 도보(Walk), 대중교통(Transit)** 버튼을 탭하면 사용자의 실시간 GPS 위치와 목적지의 위경도 좌표가 매핑된 카카오맵 외부 웹 길찾기 서비스로 다국어가 반영되어 바로 연결됩니다 (`url_launcher` 연동).
 
-## 시작하기
+### 3. 🎟️ 포켓스탑 팝업 카드 & 전역 스탬프 북 시스템
+- **하프 카드(Half-Sheet) UI**: 마커 터치 시 부드럽게 팝업되는 카드에 다국어 명소명, 고화질 랜드마크 미디어, 스탬프 잠금 상태를 직관적으로 표현합니다.
+- **스마트 오디오 도슨트**: '도슨트 재생'을 누르면 다국어 음성 안내(TTS)가 자동으로 재생됩니다. (베트남어, 태국어 등 일부 언어 부재 시 영어 우선 폴백 적용).
+- **테마 퀘스트 연동**: 명소에 맞춰 어울리는 테마별 여정(예: 절 ➔ 천년의 사찰 순례) 퀘스트를 즉시 실행할 수 있는 단축 단추를 지원합니다.
+- **골드 스탬프 북**: 지도상 명소를 터치 및 스핀(Spin)하면 경험치(+50 XP)를 획득하고, 획득한 골드 스탬프북 대시보드를 통해 6대 랜드마크 방문 상태를 아름답게 시각화합니다.
 
-### 사전 요구사항
+### 4. 🧭 테마별 여행 플래너 퀘스트 시스템
+- 신라 왕릉 탐방, 천년의 사찰 순례, 역사 유적지 산책, 예술과 문화, 자연과 휴식, 황리단길 핫플 탐험 등 6대 테마의 퀘스트 리스트를 지원합니다.
+- 퀘스트 시작 시 사용자의 실시간 좌표에서 가장 가까운 목적지를 계산해주고 도보/교통 거리를 시각화합니다.
 
-* Flutter SDK (3.22 이상 권장)
-* Android Studio (안드로이드 에뮬레이터 또는 실기기)
-* JDK 17
+### 5. ⚙️ 프리미엄 환경설정 (Settings)
+전통 한지 배경 디자인의 커스텀 UI를 적용했습니다.
+- **위치 서비스 권한**: 실시간 기기 GPS 권한 조회 및 앱 위치 권한 변경 페이지 즉시 이동.
+- **오디오 도슨트 토글**: TTS 가이드 음성을 전역으로 켜고 끕니다.
+- **지도 화면 테마**: 자동(06시~18시 주간, 18시~다음날 06시 야간 자동 적용) / 낮 모드 고정 / 밤 모드 고정을 지원합니다.
+- **캐릭터 스타일 스위처**: 
+  - 8등신 신라 전통 일러스트 6종(왕, 왕비, 화랑, 공주, 상인, 현대 여행자)
+  - 2등신 귀여운 chibi 픽셀 캐릭터 4종(왕, 왕비, 공주, 화랑)
+  - 두 가지 그래픽 모드와 캐릭터 구성을 실시간으로 커스텀 변경하여 모험을 떠날 수 있습니다.
+- **서비스 언어 변경**: 한국어, 영어, 일본어, 중국어(간체), 베트남어, 태국어 간의 실시간 전체 UI 다국어 번역 교체.
+- **데이터 초기화**: 획득한 스탬프 기록 및 점수를 모두 초기화하고 여정을 다시 시작하는 기능 지원.
 
-### 환경 설정
+---
 
-프로젝트 루트에 `.env` 파일을 생성하고 아래의 API 키들을 채워주세요.
+## 🛠️ 기술 스택 (Tech Stack)
 
-```env
-OPENAI_API_KEY=당신의_OPENAI_API_키
-MAPBOX_ACCESS_TOKEN=당신의_MAPBOX_ACCESS_TOKEN
-```
+- **Framework**: Flutter 3.22+ / Dart
+- **State Management**: Provider (전역 AppState 언어 및 게임 데이터 싱크)
+- **Maps API**: Mapbox Maps Flutter (3D), Kakao Map SDK (2D & CustomOverlay)
+- **AI Service**: OpenAI API (GPT-4o-mini 연동 및 다국어 식당 번역)
+- **TTS**: Flutter TTS
+- **GPS & Location**: Geolocator (실시간 좌표 및 거리 측정)
+- **Routing & Launcher**: url_launcher (카카오맵 외부 내비게이션 연결)
 
-### 실행
+---
 
-```bash
-# 의존성 패키지 설치
-flutter pub get
-
-# 앱 실행 (안드로이드)
-flutter run
-```
-
-## 지원 언어
-
-우측 하단의 설정 또는 챗봇에서 실시간 언어 변경이 가능합니다.
-
-| 코드 | 언어 |
-|---|---|
-| `ko` | 한국어 |
-| `en` | English |
-| `ja` | 日本語 |
-| `zh-chs` | 中文 |
-| `vi` | Tiếng Việt |
-| `th` | ภาษาไทย |
-
-## 프로젝트 구조
+## 📂 프로젝트 구조 (Directory Structure)
 
 ```text
 lib/
 ├── components/
-│   ├── chatbot_sheet.dart    # AI 스마트 비서 (챗봇) UI
-│   └── docent_sheet.dart     # 명소 상세 정보 및 오디오 도슨트 UI
+│   └── chatbot_sheet.dart    # AI 스마트 비서 (채팅창 & 내비게이션 연동)
+├── data/
+│   └── spots_db.dart         # 경주 6대 명소 다국어 백과사전 & 미디어 DB
+├── models/
+│   └── quest.dart            # 플래너 및 일반 퀘스트 데이터 모델
 ├── providers/
-│   └── app_state.dart        # 전역 상태 (언어, 맵 타입 등) 관리
+│   └── app_state.dart        # 전역 상태 (오디오, 테마 모드, 캐릭터, 스탬프 등) 관리
 ├── screens/
-│   ├── home_screen.dart      # 메인 탭 화면 (지도, 퀘스트, 설정 뷰)
-│   ├── kakao_map_view.dart   # 카카오맵 연동 뷰
-│   ├── landing_screen.dart   # 초기 스플래시/랜딩 화면
-│   └── mapbox_view.dart      # Mapbox 3D 뷰 및 포켓스탑 렌더링
+│   ├── home_screen.dart      # 탭 기반 메인 네비게이션 화면
+│   ├── kakao_map_view.dart   # 카카오맵 뷰 (다국어 CustomOverlay 연동)
+│   ├── landing_screen.dart   # 인트로 스플래시 화면
+│   ├── language_select_screen.dart # 최초 다국어 선택 화면
+│   ├── character_select_screen.dart # 최초 캐릭터 선택 화면
+│   ├── mapbox_view.dart      # Mapbox 3D 역사 테마 지도 뷰
+│   ├── quest_screen.dart     # 여정 기록, 스탬프 북 및 6대 테마 퀘스트 화면
+│   └── settings_screen.dart  # 환경설정 화면 (한지 테마, 자산 관리, 초기화)
 ├── services/
-│   ├── odii_service.dart     # 한국관광공사 Odii API 연동
-│   └── openai_service.dart   # ChatGPT 연동 (번역, 도슨트, 챗봇)
+│   ├── odii_service.dart     # 한국관광공사 Odii API 통신 연동
+│   └── openai_service.dart   # OpenAI API 통신 (식당 번역, AI 대화)
 └── utils/
-    ├── mock_geolocator.dart  # 에뮬레이터 테스트용 가상 GPS
-    └── translations.dart     # 다국어 번역 데이터
+    ├── marker_generator.dart # 다국어 오버레이 및 마커 드로잉 유틸
+    ├── mock_geolocator.dart  # 테스트용 Mock GPS 스트림
+    └── translations.dart     # 6개 국어 리소스 다국어 매트릭스
+```
+
+---
+
+## 🚀 시작하기 (Getting Started)
+
+### 1. 환경 설정 (.env)
+루트 폴더에 `.env` 파일을 만들고 키를 작성하세요.
+```env
+OPENAI_API_KEY=YOUR_OPENAI_API_KEY
+MAPBOX_ACCESS_TOKEN=YOUR_MAPBOX_ACCESS_TOKEN
+```
+
+### 2. 패키지 다운로드 & 실행
+```bash
+# 의존성 패키지 설치
+flutter pub get
+
+# 앱 실행
+flutter run
 ```
