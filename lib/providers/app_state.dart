@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'dart:math' as math;
 import '../models/quest.dart';
+import '../services/odii_service.dart';
 
 class AppState extends ChangeNotifier {
   String _currentLanguage = 'ko';
@@ -9,6 +10,8 @@ class AppState extends ChangeNotifier {
   List<Map<String, dynamic>> _spotsData = [];
   String _selectedCharacterPath = 'assets/images/char_style1_male.png';
   final Set<String> _globalVisitedSpots = {};
+  bool _audioEnabled = true;
+  String _mapThemeMode = 'auto'; // 'auto', 'day', 'night'
 
   double? _userLat;
   double? _userLng;
@@ -92,6 +95,15 @@ class AppState extends ChangeNotifier {
   List<Quest> get quests => _quests;
   String get selectedCharacterPath => _selectedCharacterPath;
   Set<String> get globalVisitedSpots => _globalVisitedSpots;
+  bool get audioEnabled => _audioEnabled;
+  String get mapThemeMode => _mapThemeMode;
+
+  bool get isNightMode {
+    if (_mapThemeMode == 'night') return true;
+    if (_mapThemeMode == 'day') return false;
+    final hour = DateTime.now().hour;
+    return hour < 6 || hour >= 18;
+  }
 
   double? get userLat => _userLat;
   double? get userLng => _userLng;
@@ -220,8 +232,38 @@ class AppState extends ChangeNotifier {
     if (updated) notifyListeners();
   }
 
-  void setLanguage(String lang) {
+  Future<void> setLanguage(String lang) async {
     _currentLanguage = lang;
+    try {
+      final loadedSpots = await OdiiService.fetchGyeongjuSpots(lang);
+      if (loadedSpots.isNotEmpty) {
+        _spotsData = loadedSpots;
+      }
+    } catch (e) {
+      print("Error fetching spots in new language: $e");
+    }
+    notifyListeners();
+  }
+
+  void setAudioEnabled(bool val) {
+    _audioEnabled = val;
+    notifyListeners();
+  }
+
+  void setMapThemeMode(String mode) {
+    _mapThemeMode = mode;
+    notifyListeners();
+  }
+
+  void resetProgress() {
+    _score = 0;
+    _globalVisitedSpots.clear();
+    for (var q in _quests) {
+      q.currentCount = 0;
+      q.isActive = false;
+      q.visitedSpotTitles.clear();
+      q.currentTargetSpot = null;
+    }
     notifyListeners();
   }
 

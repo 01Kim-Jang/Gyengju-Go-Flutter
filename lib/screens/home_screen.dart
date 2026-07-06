@@ -6,6 +6,7 @@ import 'mapbox_view.dart';
 import '../components/chatbot_sheet.dart';
 import '../utils/translations.dart';
 import 'quest_screen.dart';
+import 'settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -97,7 +98,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      Center(child: Text(AppTranslations.get(lang, 'settings_dev'))),
+      const SettingsScreen(),
     ];
 
     return Scaffold(

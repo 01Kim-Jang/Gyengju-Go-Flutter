@@ -111,7 +111,8 @@ class OpenAIService {
                   'You are a friendly and knowledgeable AI tour guide for Gyeongju, South Korea. '
                   '$locationContext '
                   'Provide recommendations for nearby restaurants, routes, or historical facts based on their location if asked. '
-                  'Always reply in $langName.',
+                  'Always reply in $langName. '
+                  'CRITICAL: If you recommend any specific restaurant, cafe, or tourist spot, you MUST append a tag in the format `[ROUTE:Name,Latitude,Longitude]` for EACH recommended place so the app can render get-directions buttons. For example, if you suggest Bulguksa, append `[ROUTE:Bulguksa Temple,35.7899,129.3320]`. If you suggest multiple places, append multiple tags, e.g., `[ROUTE:PlaceA,LatA,LngA][ROUTE:PlaceB,LatB,LngB]`. Make sure the coordinates are highly accurate for Gyeongju.',
             },
             {'role': 'user', 'content': question},
           ],

@@ -50,6 +50,7 @@ class _MapboxViewState extends State<MapboxView> {
   geo.Position? _currentPosition;
   bool _isRendering = false;
   double _currentZoom = 16.0;
+  bool? _lastNightMode;
 
   @override
   void initState() {
@@ -111,8 +112,10 @@ class _MapboxViewState extends State<MapboxView> {
 
   _onMapCreated(MapboxMap mapboxMap) async {
     this.mapboxMap = mapboxMap;
+    final isNight = context.read<AppState>().isNightMode;
+    _lastNightMode = isNight;
 
-    await mapboxMap.style.setStyleURI(MapboxStyles.STANDARD);
+    await mapboxMap.style.setStyleURI(isNight ? MapboxStyles.DARK : MapboxStyles.STANDARD);
 
     try {
       final appState = context.read<AppState>();
@@ -298,7 +301,16 @@ class _MapboxViewState extends State<MapboxView> {
   Widget build(BuildContext context) {
     final token = dotenv.env['MAPBOX_ACCESS_TOKEN'] ?? '';
     MapboxOptions.setAccessToken(token);
+    
+    // Listen to AppState changes (like quest target updates) to re-render markers
     final appState = context.watch<AppState>();
+    final isNight = appState.isNightMode;
+    if (mapboxMap != null && _lastNightMode != isNight) {
+      _lastNightMode = isNight;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        mapboxMap!.style.setStyleURI(isNight ? MapboxStyles.DARK : MapboxStyles.STANDARD);
+      });
+    }
 
     Widget mapWidget = MapWidget(
       key: const ValueKey("mapboxWidget"),

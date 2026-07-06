@@ -1,16 +1,19 @@
 class SpotDetail {
+  final Map<String, String> names;
   final Map<String, String> facts;
   final Map<String, String> tips;
   final String imagePath;
   final String stampImage;
 
   const SpotDetail({
+    required this.names,
     required this.facts,
     required this.tips,
     required this.imagePath,
     required this.stampImage,
   });
 
+  String getName(String lang) => names[lang] ?? names['ko'] ?? '';
   String getFact(String lang) => facts[lang] ?? facts['ko'] ?? '';
   String getTip(String lang) => tips[lang] ?? tips['ko'] ?? '';
 }
@@ -18,22 +21,38 @@ class SpotDetail {
 class SpotsDB {
   static const Map<String, SpotDetail> db = {
     '첨성대': SpotDetail(
+      names: {
+        'ko': '첨성대',
+        'en': 'Cheomseongdae',
+        'ja': '瞻星台',
+        'zh-chs': '瞻星台',
+        'vi': 'Cheomseongdae',
+        'th': 'ช็อมซ็องแด',
+      },
       facts: {
         'ko': '동양에서 가장 오래된 천문 관측대로, 신라 선덕여왕 때 지어졌습니다. 365개의 돌(음력 1년)로 이루어져 있으며, 신라의 고도화된 건축 기술과 천문학적 지혜를 엿볼 수 있습니다.',
         'en': 'The oldest surviving astronomical observatory in East Asia, built during the reign of Queen Seondeok of Silla. Made of 365 stones (representing the days in a lunar year), it showcases Silla\'s advanced architectural technology and astronomical wisdom.',
-        'ja': '東洋最古の天文観測台で、新羅の善徳女王の時代に建てられました。365個の石（太陰暦の1年）で構成されており、新羅の高度な建築技術と天文学的な知恵を垣間見ることができます。',
+        'ja': '東洋最古の天文観測台で、新羅の善徳女王의 時代에 建てられました。365個の石（太陰暦の1年）で構成されており、新羅の高度な建築技術と天文学的な知恵を垣間見ることができます。',
         'zh-chs': '这是东亚现存最古老的天文台，建于新罗善德女王时期。它由365块石头（代表阴历的一年）筑成，展示了新罗先进的建筑技术和天文学智慧。',
       },
       tips: {
         'ko': '일몰 후에 은은한 야간 조명이 켜질 때 방문하시는 것을 강력히 추천합니다. 주변의 넓은 핑크뮬리 정원과 꽃밭도 훌륭한 포토존입니다.',
         'en': 'Highly recommend visiting after sunset when the soft night lights turn on. The surrounding pink muhly garden and flower fields are also great photo spots.',
-        'ja': '日没後にほのかな夜間照明が点灯する時間帯の訪問を強くお勧めします。周辺の広いピンクミューリー庭園や花畑も素晴らしいフォトスポットです。',
+        'ja': '日没後にほのかな夜間照明が点灯する時間帯の訪問を強くお勧めします。周辺の広いピンクミューリー庭園や花畑도 素晴らしいフォトスポットです。',
         'zh-chs': '强烈建议在日落后柔和的夜灯亮起时前往。周围大片的粉黛乱子草花园和花田也是极佳的拍照打卡地。',
       },
       imagePath: 'assets/images/spots/경주_첨성대.jpg',
       stampImage: 'assets/images/spots/경주_첨성대.jpg',
     ),
     '동궁과 월지': SpotDetail(
+      names: {
+        'ko': '동궁과 월지',
+        'en': 'Donggung Palace & Wolji Pond',
+        'ja': '東宮と月池',
+        'zh-chs': '东宫与月池',
+        'vi': 'Cung điện Donggung & Ao Wolji',
+        'th': 'พระราชวังทงกุงและสระทงกุง',
+      },
       facts: {
         'ko': '신라 왕궁의 별궁 터로, 나라의 경사가 있을 때나 귀빈을 맞이할 때 연회를 베풀던 곳입니다. 인공 호수인 월지(안압지)와 어우러진 정원 배치는 통일신라 조경 예술의 극치를 보여줍니다.',
         'en': 'The site of a palace annex of the Silla Kingdom, used for banquets on national occasions and for welcoming important guests. The garden layout harmonizing with the artificial lake Wolji (Anapji) shows the pinnacle of Unified Silla landscape art.',
@@ -50,6 +69,14 @@ class SpotsDB {
       stampImage: 'assets/images/spots/동궁과_월지.jpg',
     ),
     '불국사': SpotDetail(
+      names: {
+        'ko': '불국사',
+        'en': 'Bulguksa Temple',
+        'ja': '仏国寺',
+        'zh-chs': '佛国寺',
+        'vi': 'Chùa Bulguksa',
+        'th': 'วัดบุลกุกซา',
+      },
       facts: {
         'ko': '유네스코 세계문화유산으로 지정된 사찰로, 신라 경덕왕 때 김대성이 현생의 부모를 위해 창건했습니다. 다보탑과 석가탑, 청운교와 백운교 등 불교 교리와 신라 예술이 조화를 이룬 걸작들로 가득합니다.',
         'en': 'A UNESCO World Heritage temple, founded by Kim Dae-seong during the reign of King Gyeongdeok of Silla for his parents in his present life. It is filled with masterpieces where Buddhist teachings and Silla art harmonize, including Dabotap, Seokgatap, Cheongungyo, and Baegungyo bridges.',
@@ -66,6 +93,14 @@ class SpotsDB {
       stampImage: 'assets/images/spots/경주_불국사.jpg',
     ),
     '석굴암': SpotDetail(
+      names: {
+        'ko': '석굴암',
+        'en': 'Seokguram Grotto',
+        'ja': '石窟庵',
+        'zh-chs': '石窟庵',
+        'vi': 'Động Seokguram',
+        'th': 'ซ็อกกูรัม',
+      },
       facts: {
         'ko': '통일신라 시대에 화강암을 다듬어 인공으로 축조한 석굴 사찰입니다. 굴 중앙에 안치된 본존불은 정교한 비례와 온화한 미소로 동양 불교 미술의 최고 정수로 손꼽힙니다.',
         'en': 'An artificial grotto temple built from carved granite during the Unified Silla period. The main Bonjonbul statue seated in the center is counted as the supreme masterpiece of East Asian Buddhist art with its exquisite proportions and gentle smile.',
@@ -82,10 +117,18 @@ class SpotsDB {
       stampImage: 'assets/images/spots/경주_석굴암_석굴.jpg',
     ),
     '대릉원': SpotDetail(
+      names: {
+        'ko': '대릉원',
+        'en': 'Daereungwon Tomb Complex',
+        'ja': '大陵苑',
+        'zh-chs': '大陵苑',
+        'vi': 'Khu lăng mộ Daereungwon',
+        'th': 'สุสานแดลึงวอน',
+      },
       facts: {
         'ko': '신라 시대의 왕과 귀족들의 거대한 고분들이 모여 있는 고분공원입니다. 유일하게 내부가 공개된 천마총을 비롯해 미추왕릉, 황남대총 등이 고즈넉한 능선을 그리고 있습니다.',
         'en': 'A tumuli park gathering huge ancient tombs of Silla kings and aristocrats. The scenic ridges are formed by Hwangnamdaechong, the Tomb of King Michu, and Cheonmachong, which is the only tomb with its interior open to the public.',
-        'ja': '新羅時代の王や貴族の巨大な古墳が集まっている古墳公園です。唯一内部が公開されている天馬塚をはじめ、味鄒王陵、皇南大塚などが静かな陵線を描いています。',
+        'ja': '新羅時代の王や貴族의 巨大な古墳が集まっている古墳公園です。唯一内部が公開されている天馬塚をはじめ、味鄒王陵、皇南大塚などが静かな陵線を描いています。',
         'zh-chs': '这是一座汇集了新罗时期国王和贵族巨大古墓的古墓公园。其中包括唯一内部向公众开放的天马冢，以及味邹王陵、皇南大冢等，勾勒出幽静的陵线。',
       },
       tips: {
@@ -98,6 +141,14 @@ class SpotsDB {
       stampImage: 'assets/images/spots/경주_대릉원.jpg',
     ),
     '황리단길': SpotDetail(
+      names: {
+        'ko': '황리단길',
+        'en': 'Hwangridan-gil',
+        'ja': '皇理団通り',
+        'zh-chs': '皇理团路',
+        'vi': 'Đường Hwangridan-gil',
+        'th': 'ถนนฮวังรีดันกิล',
+      },
       facts: {
         'ko': '황남동 일대의 전통 한옥들을 개조하여 트렌디한 카페, 레스토랑, 독립서점, 사진관 등이 들어선 경주의 대표 문화 거리입니다. 과거와 현대의 매력이 공존하는 핫플레이스입니다.',
         'en': 'Gyeongju\'s representative cultural street where traditional Hanok houses in Hwangnam-dong have been renovated into trendy cafes, restaurants, independent bookstores, and photo studios. It is a hot place where past and present charm coexist.',

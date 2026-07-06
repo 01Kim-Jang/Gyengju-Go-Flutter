@@ -316,7 +316,7 @@ class QuestScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          quest.description,
+                          AppTranslations.get(appState.currentLanguage, '${quest.id}_desc'),
                           style: const TextStyle(fontSize: 14, color: Color(0xFF5D4037)),
                         ),
                         const SizedBox(height: 12),
