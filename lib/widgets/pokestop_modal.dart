@@ -176,6 +176,7 @@ class _PokestopModalState extends State<PokestopModal> with TickerProviderStateM
     
     final appState = context.watch<AppState>();
     final currentLang = appState.currentLanguage;
+    final displayName = spotDetail != null ? spotDetail.getName(currentLang) : title;
     final hasStamp = appState.globalVisitedSpots.contains(title);
 
     return Container(
@@ -284,7 +285,7 @@ class _PokestopModalState extends State<PokestopModal> with TickerProviderStateM
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Text(
-              title,
+              displayName,
               style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Color(0xFF333333)),
               textAlign: TextAlign.center,
             ),
@@ -301,7 +302,7 @@ class _PokestopModalState extends State<PokestopModal> with TickerProviderStateM
                     onPressed: _playDocent,
                     icon: const Icon(Icons.volume_up, color: Color(0xFF4A90E2)),
                     label: Text(
-                      currentLang == 'ko' ? '도슨트 재생' : 'Play Docent',
+                      AppTranslations.get(currentLang, 'play_docent'),
                       style: const TextStyle(color: Color(0xFF4A90E2), fontWeight: FontWeight.bold),
                     ),
                     style: OutlinedButton.styleFrom(
@@ -317,7 +318,7 @@ class _PokestopModalState extends State<PokestopModal> with TickerProviderStateM
                     onPressed: () => _startMatchingQuest(context, title),
                     icon: const Icon(Icons.navigation, color: Colors.white),
                     label: Text(
-                      currentLang == 'ko' ? '퀘스트 시작' : 'Start Quest',
+                      AppTranslations.get(currentLang, 'start_quest'),
                       style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                     ),
                     style: ElevatedButton.styleFrom(
@@ -349,9 +350,13 @@ class _PokestopModalState extends State<PokestopModal> with TickerProviderStateM
                   children: [
                     const Icon(Icons.touch_app, size: 28),
                     const SizedBox(width: 12),
-                    Text(
-                      AppTranslations.get(currentLang, 'spin_hint'),
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    Flexible(
+                      child: Text(
+                        AppTranslations.get(currentLang, 'spin_hint'),
+                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ],
                 ),
@@ -391,7 +396,7 @@ class _PokestopModalState extends State<PokestopModal> with TickerProviderStateM
                               children: [
                                 if (spotDetail != null) ...[
                                   Text(
-                                    currentLang == 'ko' ? '📚 역사적 사실' : '📚 Historical Facts',
+                                    AppTranslations.get(currentLang, 'hist_facts'),
                                     style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF5D4037)),
                                   ),
                                   const SizedBox(height: 8),
@@ -401,7 +406,7 @@ class _PokestopModalState extends State<PokestopModal> with TickerProviderStateM
                                   ),
                                   const SizedBox(height: 20),
                                   Text(
-                                    currentLang == 'ko' ? '💡 관람 팁' : '💡 Travel Tips',
+                                    AppTranslations.get(currentLang, 'travel_tips'),
                                     style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF5D4037)),
                                   ),
                                   const SizedBox(height: 8),

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'dart:math' as math;
 import '../providers/app_state.dart';
 import '../utils/translations.dart';
+import '../data/spots_db.dart';
 
 class QuestScreen extends StatelessWidget {
   const QuestScreen({super.key});
@@ -219,10 +220,25 @@ class QuestScreen extends StatelessWidget {
                           const Icon(Icons.place, color: Colors.white70, size: 20),
                           const SizedBox(width: 8),
                           Expanded(
-                            child: Text(
-                              '${AppTranslations.get(appState.currentLanguage, 'planner_current_target')}: ${activeQuest.currentTargetSpot!['title']}',
-                              style: const TextStyle(color: Colors.white, fontSize: 16),
-                              maxLines: 2,
+                            child: Builder(
+                              builder: (context) {
+                                final rawTarget = activeQuest.currentTargetSpot!['title'] ?? '';
+                                final cleanTarget = rawTarget
+                                    .replaceAll(RegExp(r'\([^)]*\)'), '')
+                                    .replaceAll(RegExp(r'\[[^\]]*\]'), '')
+                                    .replaceAll(RegExp(r'^경주\s*,?\s*'), '')
+                                    .replaceAll(RegExp(r'^Gyeongju\s*,?\s*', caseSensitive: false), '')
+                                    .trim();
+                                final targetDetail = SpotsDB.get(cleanTarget);
+                                final targetDisplayName = targetDetail != null 
+                                    ? targetDetail.getName(appState.currentLanguage) 
+                                    : rawTarget;
+                                return Text(
+                                  '${AppTranslations.get(appState.currentLanguage, 'planner_current_target')}: $targetDisplayName',
+                                  style: const TextStyle(color: Colors.white, fontSize: 16),
+                                  maxLines: 2,
+                                );
+                              }
                             ),
                           ),
                         ],

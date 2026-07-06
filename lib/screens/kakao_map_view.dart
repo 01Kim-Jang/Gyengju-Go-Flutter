@@ -29,7 +29,6 @@ class _KakaoMapViewState extends State<KakaoMapView> {
     final appState = context.watch<AppState>();
     final currentLang = appState.currentLanguage;
     final loadedSpots = appState.spotsData;
-    final isNight = appState.isNightMode;
 
     // Create markers reactively
     final List<Marker> mapMarkers = loadedSpots.map((spot) {
@@ -99,25 +98,6 @@ class _KakaoMapViewState extends State<KakaoMapView> {
         }
       },
     );
-
-    // Apply Night filter overlay if it is night mode
-    if (isNight) {
-      mapWidget = ColorFiltered(
-        colorFilter: const ColorFilter.matrix([
-          0.3, 0.0, 0.0, 0.0, 0.0,   // Red
-          0.0, 0.35, 0.0, 0.0, 0.0,  // Green
-          0.0, 0.0, 0.55, 0.0, 0.0,  // Blue (keep blue tint higher)
-          0.0, 0.0, 0.0, 1.0, 0.0,   // Alpha
-        ]),
-        child: ColorFiltered(
-          colorFilter: ColorFilter.mode(
-            const Color(0xFF1A1A2E).withValues(alpha: 0.4),
-            BlendMode.multiply,
-          ),
-          child: mapWidget,
-        ),
-      );
-    }
 
     return mapWidget;
   }

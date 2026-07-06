@@ -1,15 +1,15 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
-import 'package:flutter/services.dart' show rootBundle;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:geolocator/geolocator.dart' as geo;
-import '../services/odii_service.dart';
 import '../widgets/pokestop_modal.dart';
 import '../utils/marker_generator.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
+import '../data/spots_db.dart';
+import '../utils/translations.dart';
 
 class MapboxView extends StatefulWidget {
   const MapboxView({super.key});
@@ -444,10 +444,26 @@ class _MapboxViewState extends State<MapboxView> {
                       const Icon(Icons.flag, color: Colors.red),
                       const SizedBox(width: 10),
                       Expanded(
-                        child: Text(
-                          "목적지: ${target['title']}",
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                          maxLines: 1, overflow: TextOverflow.ellipsis,
+                        child: Builder(
+                          builder: (context) {
+                            final rawTarget = target['title'] ?? '';
+                            final cleanTarget = rawTarget
+                                .replaceAll(RegExp(r'\([^)]*\)'), '')
+                                .replaceAll(RegExp(r'\[[^\]]*\]'), '')
+                                .replaceAll(RegExp(r'^경주\s*,?\s*'), '')
+                                .replaceAll(RegExp(r'^Gyeongju\s*,?\s*', caseSensitive: false), '')
+                                .trim();
+                            final targetDetail = SpotsDB.get(cleanTarget);
+                            final targetDisplayName = targetDetail != null 
+                                ? targetDetail.getName(appState.currentLanguage) 
+                                : rawTarget;
+                            final targetLabel = AppTranslations.get(appState.currentLanguage, 'planner_current_target');
+                            return Text(
+                              "$targetLabel: $targetDisplayName",
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                              maxLines: 1, overflow: TextOverflow.ellipsis,
+                            );
+                          }
                         ),
                       ),
                       const Icon(Icons.chevron_right, color: Colors.grey),
