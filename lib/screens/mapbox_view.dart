@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
@@ -21,8 +22,9 @@ class MapboxView extends StatefulWidget {
 class AnnotationClickListener extends OnPointAnnotationClickListener {
   final BuildContext context;
   final Map<String, dynamic> spotsMap;
+  final Function(Map<String, dynamic> spot) onSpotClick;
 
-  AnnotationClickListener(this.context, this.spotsMap);
+  AnnotationClickListener(this.context, this.spotsMap, this.onSpotClick);
 
   @override
   void onPointAnnotationClick(PointAnnotation annotation) {
@@ -30,12 +32,7 @@ class AnnotationClickListener extends OnPointAnnotationClickListener {
     final title = annotation.textField;
     if (title != null && spotsMap.containsKey(title)) {
       final spot = spotsMap[title];
-      showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        backgroundColor: Colors.transparent,
-        builder: (context) => PokestopModal(spotData: spot),
-      );
+      onSpotClick(spot);
     }
   }
 }
@@ -170,7 +167,17 @@ class _MapboxViewState extends State<MapboxView> {
     await pointAnnotationManager?.setIconAllowOverlap(true);
     await pointAnnotationManager?.setTextAllowOverlap(true);
     pointAnnotationManager?.addOnPointAnnotationClickListener(
-      AnnotationClickListener(context, _spotsMap),
+      AnnotationClickListener(context, _spotsMap, (spot) {
+        _startCinematicCamera(spot);
+        showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder: (context) => PokestopModal(spotData: spot),
+        ).then((_) {
+          _stopCinematicCamera();
+        });
+      }),
     );
 
     // 데이터 불러오기 및 마커 렌더링
@@ -500,5 +507,67 @@ class _MapboxViewState extends State<MapboxView> {
         ),
       ],
     );
+  }
+
+  Timer? _cinematicTimer;
+  double _cinematicBearing = 0.0;
+  bool _isCinematicRunning = false;
+
+  void _startCinematicCamera(Map<String, dynamic> spot) {
+    if (mapboxMap == null) return;
+    _stopCinematicCamera();
+
+    final double lat = double.tryParse(spot['mapY']?.toString() ?? '') ?? 35.8348;
+    final double lng = double.tryParse(spot['mapX']?.toString() ?? '') ?? 129.2266;
+
+    _isCinematicRunning = true;
+    _cinematicBearing = 0.0;
+
+    // 1. Fly to the spot
+    mapboxMap!.flyTo(
+      CameraOptions(
+        center: Point(coordinates: Position(lng, lat)),
+        zoom: 17.5,
+        pitch: 65.0,
+        bearing: _cinematicBearing,
+      ),
+      MapAnimationOptions(duration: 1500),
+    );
+
+    // 2. Start slow camera orbit rotation after the initial flyTo transition
+    Future.delayed(const Duration(milliseconds: 1500), () {
+      if (!_isCinematicRunning || mapboxMap == null) return;
+
+      _cinematicTimer = Timer.periodic(const Duration(milliseconds: 30), (timer) {
+        if (!_isCinematicRunning || mapboxMap == null) {
+          timer.cancel();
+          return;
+        }
+
+        _cinematicBearing = (_cinematicBearing + 0.3) % 360.0;
+
+        mapboxMap!.easeTo(
+          CameraOptions(
+            center: Point(coordinates: Position(lng, lat)),
+            zoom: 17.5,
+            pitch: 65.0,
+            bearing: _cinematicBearing,
+          ),
+          MapAnimationOptions(duration: 30),
+        );
+      });
+    });
+  }
+
+  void _stopCinematicCamera() {
+    _isCinematicRunning = false;
+    _cinematicTimer?.cancel();
+    _cinematicTimer = null;
+  }
+
+  @override
+  void dispose() {
+    _stopCinematicCamera();
+    super.dispose();
   }
 }
