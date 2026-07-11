@@ -164,6 +164,116 @@ class SpotsDB {
       imagePath: 'assets/images/spots/신라_역사_여행.jpg',
       stampImage: 'assets/images/spots/신라_역사_여행.jpg',
     ),
+    '계림': SpotDetail(
+      names: {
+        'ko': '경주 계림',
+        'en': 'Gyeongju Gyerim Forest',
+        'ja': '慶州 鷄林',
+        'zh-chs': '庆州 鸡林',
+      },
+      facts: {
+        'ko': '경주 월성과 첨성대 사이에 위치한 신성한 숲으로, 신라 김씨 왕조의 시조인 김알지가 태어난 전설을 간직하고 있습니다. 고목들이 울창하여 고풍스러운 분위기를 자아냅니다.',
+        'en': 'A sacred forest located between Wolseong and Cheomseongdae, preserving the legend of the birth of Kim Al-ji, the progenitor of the Silla Kim dynasty. It boasts dense ancient trees and a serene atmosphere.',
+        'ja': '慶州月城と瞻星台の間に位置する神聖な森で、新羅の金氏王朝の始祖である金閼智が誕生したという伝説が残っています。古木が鬱蒼と茂り、趣のある雰囲気を醸し出しています。',
+        'zh-chs': '位于庆州月城与瞻星台之间的神圣森林，流传着新罗金氏王朝始祖金阏智诞生的传说。古树参天，营造出古朴幽雅的气氛。',
+      },
+      tips: {
+        'ko': '낮에도 걷기 좋지만, 숲 사이로 햇살이 비쳐 들어오는 아침 시간대나 조명이 켜지는 밤 시간에 산책하기 매우 좋습니다.',
+        'en': 'While nice to walk in the daytime, it is highly recommended to stroll in the morning when sunlight filters through the trees or at night when the lights are lit.',
+        'ja': '昼間の散策も良いですが、森の隙間から陽光が差し込む朝の時間帯や、ライトアップされる夜間の散策が非常におすすめです。',
+        'zh-chs': '虽然白天的散步也很棒，但强烈推荐在阳光透过树梢洒下的清晨，或是华灯初上的夜晚前往散步。',
+      },
+      imagePath: 'https://www.gyeongju.go.kr/upload/content/thumb/20200527/159055998188100.jpg',
+      stampImage: 'https://www.gyeongju.go.kr/upload/content/thumb/20200527/159055998188100.jpg',
+    ),
+    '월성': SpotDetail(
+      names: {
+        'ko': '경주 월성',
+        'en': 'Gyeongju Wolseong Palace Site',
+        'ja': '慶州 月城',
+        'zh-chs': '庆州 月城',
+      },
+      facts: {
+        'ko': '신라 시대의 왕궁이 있던 자리로, 지형이 초승달 모양을 닮아 월성 또는 반월성이라 불렸습니다. 현재는 성터와 석빙고가 남아있으며 역사적 발굴 조사가 활발히 진행 중입니다.',
+        'en': 'The site where the royal palace of Silla once stood, named Wolseong or Banwolseong due to its crescent moon shape. Today, the fortress ruins and Seokbinggo (stone ice house) remain.',
+        'ja': '新羅時代の王宮があった場所で、地勢が三日月に似ていることから月城または半月城と呼ばれました。現在は城跡と石氷庫が残っており、歴史的な発掘調査が活发に行われています。',
+        'zh-chs': '这里是新罗时代王宫的所在地，因地形酷似新月而被称为月城或半月城。目前保留有城墙遗址和石冰库。',
+      },
+      tips: {
+        'ko': '성터 위에 우뚝 서 있는 조선시대의 얼음 창고인 석빙고를 꼭 방문해 보세요. 월성 위에서 바라보는 주변 경관이 탁 트여 있어 상쾌합니다.',
+        'en': 'Be sure to visit Seokbinggo, a Joseon-era stone ice house standing on the fortress site. The open view looking down from Wolseong is refreshing.',
+        'ja': '城跡の上にそびえ立つ朝鮮時代の氷の倉庫である石氷庫をぜひ訪れてみてください。月城から眺める周辺の景観は広々としていて爽快です。',
+        'zh-chs': '一定要去看看建在城墙遗址上的朝鲜时代冰库——石冰库。从月城俯瞰周围的景色开阔宜人。',
+      },
+      imagePath: 'https://www.gyeongju.go.kr/upload/content/thumb/20200527/159055990263600.jpg',
+      stampImage: 'https://www.gyeongju.go.kr/upload/content/thumb/20200527/159055990263600.jpg',
+    ),
+    '국립경주박물관': SpotDetail(
+      names: {
+        'ko': '국립경주박물관',
+        'en': 'Gyeongju National Museum',
+        'ja': '国立慶州博物館',
+        'zh-chs': '国立庆州博物馆',
+      },
+      facts: {
+        'ko': '신라 천년의 문화유산을 한눈에 볼 수 있는 대표적인 박물관입니다. 성덕대왕신종(에밀레종)과 황남대총 금관을 비롯하여 찬란한 불교 미술품들이 대거 전시되어 있습니다.',
+        'en': 'A museum showcasing Silla\'s thousand-year cultural heritage. It exhibits the Divine Bell of King Seongdeok (Emille Bell), the golden crown of Hwangnamdaechong, and magnificent Buddhist artworks.',
+        'ja': '新羅千年の文化遺産を一望できる代表的な博物館です。聖徳大王神鐘（エミレの鐘）や皇南大塚の金冠をはじめ、きらびやかな仏教美術品が多数展示されています。',
+        'zh-chs': '这是可以一览新罗千年文化遗产的代表性博物馆。馆内展示有圣德大王神钟（奉德寺钟）、皇南大冢金冠以及大量灿烂的佛教艺术品。',
+      },
+      tips: {
+        'ko': '야외 정원에 매달려 있는 성덕대왕신종은 매시간 정각마다 종소리 녹음본을 들려줍니다. 무료 관람이 가능하므로 여유롭게 둘러보세요.',
+        'en': 'The Divine Bell of King Seongdeok in the outdoor garden plays its recorded sound every hour. Admission is free, so take your time exploring.',
+        'ja': '屋外庭園にある聖徳大王神鐘は、毎正時に鐘の音の録音を再生します。入場料は無料ですので、ゆっくりと見学してください。',
+        'zh-chs': '悬挂在室外庭院的圣德大王神钟会在每个整点播放钟声录音。博物馆可免费参观，建议悠闲地漫步欣赏。',
+      },
+      imagePath: 'https://www.gyeongju.go.kr/upload/content/thumb/20200527/159056018318800.jpg',
+      stampImage: 'https://www.gyeongju.go.kr/upload/content/thumb/20200527/159056018318800.jpg',
+    ),
+    '황룡사지': SpotDetail(
+      names: {
+        'ko': '황룡사지',
+        'en': 'Hwangnyongsaji Temple Site',
+        'ja': '皇龍寺跡',
+        'zh-chs': '皇龙寺址',
+      },
+      facts: {
+        'ko': '신라 최대의 호국사찰이었던 황룡사의 옛 터입니다. 높이 약 80m에 달했던 거대한 황룡사 구층목탑이 있던 자리로, 웅장했던 신라 불교 문화의 규모를 실감할 수 있는 곳입니다.',
+        'en': 'The ancient site of Hwangnyongsa, the largest state-patronized temple of Silla. It is the location of the colossal 9-story wooden pagoda that rose about 80 meters high, reflecting Silla\'s grand Buddhist culture.',
+        'ja': '新羅最大の護国寺院であった皇龍寺の跡地です。高さ約80mに達した巨大な皇龍寺九重木塔が建てられていた場所で、壮大だった新羅仏教文化の規模を実感できます。',
+        'zh-chs': '这里曾是新罗最大的护国寺庙——皇龙寺的遗址。曾建有高达80米的巨大皇龙寺九层木塔，在此可切身感受到昔日新罗佛教文化的宏大规模。',
+      },
+      tips: {
+        'ko': '터 옆에 위치한 황룡사 역사문화관에 방문하시면 구층목탑의 1/10 복형 탑과 가상 복원 영상을 통해 당시의 웅장함을 더 생생히 느낄 수 있습니다.',
+        'en': 'Visiting the Hwangnyongsa History and Culture Museum nearby allows you to view a 1/10 scale model of the 9-story wooden pagoda and virtual restoration videos.',
+        'ja': '隣接する皇龍寺歴史文化館を訪れると、九重木塔の10分の1スケールの模型やバーチャル復元映像を通じて、当時の雄大さをより鮮明に感じることができます。',
+        'zh-chs': '前往遗址旁的皇龙寺历史文化馆，可以通过九层木塔的十分之一比例模型及虚拟复原视频，更生动地感受当年的雄伟。',
+      },
+      imagePath: 'https://www.gyeongju.go.kr/upload/content/thumb/20200527/159056001272600.jpg',
+      stampImage: 'https://www.gyeongju.go.kr/upload/content/thumb/20200527/159056001272600.jpg',
+    ),
+    '문무대왕릉': SpotDetail(
+      names: {
+        'ko': '문무대왕릉',
+        'en': 'Tomb of King Munmu',
+        'ja': '文武大王陵',
+        'zh-chs': '文武大王陵',
+      },
+      facts: {
+        'ko': '삼국통일을 완수한 신라 제30대 문무왕의 수중릉입니다. "내가 죽으면 동해의 용이 되어 나라를 지키겠다"는 유언에 따라 바다 바위 속에 장사 지낸 세계 유일의 수중 왕릉입니다.',
+        'en': 'The underwater tomb of King Munmu, the 30th monarch of Silla who completed the unification of the Three Kingdoms. Per his will to become a dragon of the East Sea to protect the nation, he was buried under this marine rock.',
+        'ja': '三国統一を成し遂げた新羅第30代・文武왕의 水中陵です。「自分が死んだら東海の竜となり国を守る」という遺言に従い、海の中の岩の下に葬られた、世界唯一의 水중왕릉입니다.',
+        'zh-chs': '这是完成了三国统一大业的新罗第30代国王文武王的水中陵墓。遵照他“死后化作东海神龙以报效国家”的遗言，将其安葬在海中礁石下，是世界上唯一的水中王陵。',
+      },
+      tips: {
+        'ko': '봉길대보 해수욕장 백사장에서 바라볼 수 있습니다. 갈매기 떼와 푸른 바다 바위가 어우러진 해돋이 풍경은 출사 장소로도 매우 유명합니다.',
+        'en': 'It can be viewed from the white sands of Bonggil Daebo Beach. The sunrise landscape harmony of seagulls and blue sea rocks is very famous for photography.',
+        'ja': '奉吉大宝海水浴場の白い砂浜から望むことができます。カモメの群れと青い海の岩が調和した日の出の風景は、写真撮影のスポットとしても非常に有名です。',
+        'zh-chs': '从奉吉大宝海水浴场的白沙滩上可以望见。海鸥群飞与蓝色海中礁石相映成趣的日出景观，是非常著名的摄影打卡地。',
+      },
+      imagePath: 'https://www.gyeongju.go.kr/upload/content/thumb/20200527/159056024317800.jpg',
+      stampImage: 'https://www.gyeongju.go.kr/upload/content/thumb/20200527/159056024317800.jpg',
+    ),
   };
 
   static SpotDetail? get(String rawTitle) {

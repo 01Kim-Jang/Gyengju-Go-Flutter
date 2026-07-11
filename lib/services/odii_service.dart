@@ -61,8 +61,23 @@ class OdiiService {
                     title.contains('Bulguksa')) {
                   mapItem['firstimage'] =
                       'https://www.gyeongju.go.kr/upload/content/thumb/20200527/159056006730100.jpg';
+                } else if (title.contains('계림') || title.contains('Gyerim')) {
+                  mapItem['firstimage'] =
+                      'https://www.gyeongju.go.kr/upload/content/thumb/20200527/159055998188100.jpg';
+                } else if (title.contains('월성') || title.contains('Wolseong')) {
+                  mapItem['firstimage'] =
+                      'https://www.gyeongju.go.kr/upload/content/thumb/20200527/159055990263600.jpg';
+                } else if (title.contains('박물관') || title.contains('Museum')) {
+                  mapItem['firstimage'] =
+                      'https://www.gyeongju.go.kr/upload/content/thumb/20200527/159056018318800.jpg';
+                } else if (title.contains('황룡사') || title.contains('Hwangnyongsa')) {
+                  mapItem['firstimage'] =
+                      'https://www.gyeongju.go.kr/upload/content/thumb/20200527/159056001272600.jpg';
+                } else if (title.contains('문무대왕') || title.contains('Munmu')) {
+                  mapItem['firstimage'] =
+                      'https://www.gyeongju.go.kr/upload/content/thumb/20200527/159056024317800.jpg';
                 } else {
-                  mapItem['firstimage'] = mapItem['imageUrl'] != ''
+                  mapItem['firstimage'] = (mapItem['imageUrl'] != null && mapItem['imageUrl'] != '')
                       ? mapItem['imageUrl']
                       : 'https://www.gyeongju.go.kr/upload/content/thumb/20200527/159055973719000.jpg'; // Default fallback
                 }

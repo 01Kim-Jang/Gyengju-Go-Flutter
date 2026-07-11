@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:math' as math;
+import 'package:url_launcher/url_launcher.dart';
 import '../providers/app_state.dart';
 import '../utils/translations.dart';
 import '../data/spots_db.dart';
@@ -138,45 +139,56 @@ class QuestScreen extends StatelessWidget {
       child: SafeArea(
         child: Column(
           children: [
-            // Title Header with Stamp Book button in top-right
+            // Title Header
             Padding(
               padding: const EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 10.0),
-              child: Stack(
-                alignment: Alignment.center,
+              child: Column(
                 children: [
-                  Column(
+                  Text(
+                    AppTranslations.get(appState.currentLanguage, 'quest_title'),
+                    style: const TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Serif',
+                      color: Color(0xFF3E2723),
+                      shadows: [
+                        Shadow(color: Colors.white70, blurRadius: 2, offset: Offset(1, 1))
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        AppTranslations.get(appState.currentLanguage, 'quest_title'),
-                        style: const TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'Serif',
-                          color: Color(0xFF3E2723),
-                          shadows: [
-                            Shadow(color: Colors.white70, blurRadius: 2, offset: Offset(1, 1))
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 10),
                       Text(
                         '${AppTranslations.get(appState.currentLanguage, 'total_xp')}: ${appState.score} XP',
                         style: const TextStyle(
-                          fontSize: 20,
+                          fontSize: 18,
                           fontWeight: FontWeight.w600,
                           color: Color(0xFF5D4037),
                         ),
                       ),
+                      OutlinedButton.icon(
+                        onPressed: () => _showStampBook(context, appState),
+                        icon: const Icon(Icons.stars, color: Color(0xFFD4AF37), size: 20),
+                        label: Text(
+                          appState.currentLanguage == 'ko' ? '스탬프 북' : 'Stamp Book',
+                          style: const TextStyle(
+                            color: Color(0xFF5D4037),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Color(0xFF8D6E63), width: 1.2),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                          backgroundColor: const Color(0xFFFFFDF9).withValues(alpha: 0.8),
+                        ),
+                      ),
                     ],
-                  ),
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    child: IconButton(
-                      icon: const Icon(Icons.stars, color: Color(0xFFD4AF37), size: 36),
-                      tooltip: appState.currentLanguage == 'ko' ? '스탬프 북' : 'Stamp Book',
-                      onPressed: () => _showStampBook(context, appState),
-                    ),
                   ),
                 ],
               ),
@@ -186,84 +198,134 @@ class QuestScreen extends StatelessWidget {
               child: Divider(color: Color(0xFF8D6E63), thickness: 2),
             ),
             
-            // Active Quest Banner
             if (activeQuest != null) ...[
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFD4AF37), Color(0xFFF9A825)],
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(color: Colors.orange.withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 5))
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.navigation, color: Colors.white),
-                        const SizedBox(width: 8),
-                        Text(
-                          AppTranslations.get(appState.currentLanguage, '${activeQuest.id}_title'),
-                          style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+              GestureDetector(
+                onTap: () async {
+                  if (activeQuest.currentTargetSpot != null) {
+                    final rawTarget = activeQuest.currentTargetSpot!['title'] ?? '';
+                    final cleanTarget = rawTarget
+                        .replaceAll(RegExp(r'\([^)]*\)'), '')
+                        .replaceAll(RegExp(r'\[[^\]]*\]'), '')
+                        .replaceAll(RegExp(r'^경주\s*,?\s*'), '')
+                        .replaceAll(RegExp(r'^Gyeongju\s*,?\s*', caseSensitive: false), '')
+                        .trim();
+                    
+                    final lat = activeQuest.currentTargetSpot!['mapY']?.toString() ?? '';
+                    final lng = activeQuest.currentTargetSpot!['mapX']?.toString() ?? '';
+                    
+                    final urlString = 'https://map.kakao.com/link/to/$cleanTarget,$lat,$lng';
+                    final uri = Uri.parse(urlString);
+                    
+                    final messenger = ScaffoldMessenger.of(context);
+                    final lang = appState.currentLanguage;
+                    
+                    if (await canLaunchUrl(uri)) {
+                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                    } else {
+                      messenger.showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            lang == 'ko'
+                                ? '길찾기를 연결할 수 없습니다.'
+                                : 'Could not launch map directions.',
+                          ),
                         ),
-                      ],
+                      );
+                    }
+                  }
+                },
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFD4AF37), Color(0xFFF9A825)],
                     ),
-                    const SizedBox(height: 12),
-                    if (activeQuest.currentTargetSpot != null) ...[
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(color: Colors.orange.withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 5))
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Row(
                         children: [
-                          const Icon(Icons.place, color: Colors.white70, size: 20),
+                          const Icon(Icons.navigation, color: Colors.white),
                           const SizedBox(width: 8),
-                          Expanded(
-                            child: Builder(
-                              builder: (context) {
-                                final rawTarget = activeQuest.currentTargetSpot!['title'] ?? '';
-                                final cleanTarget = rawTarget
-                                    .replaceAll(RegExp(r'\([^)]*\)'), '')
-                                    .replaceAll(RegExp(r'\[[^\]]*\]'), '')
-                                    .replaceAll(RegExp(r'^경주\s*,?\s*'), '')
-                                    .replaceAll(RegExp(r'^Gyeongju\s*,?\s*', caseSensitive: false), '')
-                                    .trim();
-                                final targetDetail = SpotsDB.get(cleanTarget);
-                                final targetDisplayName = targetDetail != null 
-                                    ? targetDetail.getName(appState.currentLanguage) 
-                                    : rawTarget;
-                                return Text(
-                                  '${AppTranslations.get(appState.currentLanguage, 'planner_current_target')}: $targetDisplayName',
-                                  style: const TextStyle(color: Colors.white, fontSize: 16),
-                                  maxLines: 2,
-                                );
-                              }
-                            ),
+                          Text(
+                            AppTranslations.get(appState.currentLanguage, '${activeQuest.id}_title'),
+                            style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                           ),
                         ],
                       ),
-                      if (appState.userLat != null && appState.userLng != null) ...[
-                        const SizedBox(height: 4),
-                        Builder(
-                          builder: (context) {
-                            double tLat = double.tryParse(activeQuest.currentTargetSpot!['mapY'].toString()) ?? 0;
-                            double tLng = double.tryParse(activeQuest.currentTargetSpot!['mapX'].toString()) ?? 0;
-                            double dist = _calculateDistance(appState.userLat!, appState.userLng!, tLat, tLng);
-                            return Padding(
-                              padding: const EdgeInsets.only(left: 28.0),
-                              child: Text(
-                                '${AppTranslations.get(appState.currentLanguage, 'planner_distance')}: ${dist.toStringAsFixed(1)} km',
-                                style: const TextStyle(color: Colors.white70, fontSize: 14),
+                      const SizedBox(height: 12),
+                      if (activeQuest.currentTargetSpot != null) ...[
+                        Row(
+                          children: [
+                            const Icon(Icons.place, color: Colors.white70, size: 20),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Builder(
+                                builder: (context) {
+                                  final rawTarget = activeQuest.currentTargetSpot!['title'] ?? '';
+                                  final cleanTarget = rawTarget
+                                      .replaceAll(RegExp(r'\([^)]*\)'), '')
+                                      .replaceAll(RegExp(r'\[[^\]]*\]'), '')
+                                      .replaceAll(RegExp(r'^경주\s*,?\s*'), '')
+                                      .replaceAll(RegExp(r'^Gyeongju\s*,?\s*', caseSensitive: false), '')
+                                      .trim();
+                                  final targetDetail = SpotsDB.get(cleanTarget);
+                                  final targetDisplayName = targetDetail != null 
+                                      ? targetDetail.getName(appState.currentLanguage) 
+                                      : rawTarget;
+                                  return Text(
+                                    '${AppTranslations.get(appState.currentLanguage, 'planner_current_target')}: $targetDisplayName',
+                                    style: const TextStyle(color: Colors.white, fontSize: 16),
+                                    maxLines: 2,
+                                  );
+                                }
                               ),
-                            );
-                          }
-                        )
+                            ),
+                          ],
+                        ),
+                        if (appState.userLat != null && appState.userLng != null) ...[
+                          const SizedBox(height: 4),
+                          Builder(
+                            builder: (context) {
+                              double tLat = double.tryParse(activeQuest.currentTargetSpot!['mapY'].toString()) ?? 0;
+                              double tLng = double.tryParse(activeQuest.currentTargetSpot!['mapX'].toString()) ?? 0;
+                              double dist = _calculateDistance(appState.userLat!, appState.userLng!, tLat, tLng);
+                              return Padding(
+                                padding: const EdgeInsets.only(left: 28.0),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      '${AppTranslations.get(appState.currentLanguage, 'planner_distance')}: ${dist.toStringAsFixed(1)} km',
+                                      style: const TextStyle(color: Colors.white70, fontSize: 14),
+                                    ),
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.directions, color: Colors.white, size: 16),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          appState.currentLanguage == 'ko' ? '길찾기' : 'Directions',
+                                          style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }
+                          )
+                        ]
+                      ] else ...[
+                        const Text('목적지를 찾는 중입니다...', style: TextStyle(color: Colors.white)),
                       ]
-                    ] else ...[
-                      const Text('목적지를 찾는 중입니다...', style: TextStyle(color: Colors.white)),
-                    ]
-                  ],
+                    ],
+                  ),
                 ),
               ),
               const Padding(
