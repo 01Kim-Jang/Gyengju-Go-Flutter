@@ -11,6 +11,7 @@ import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 import '../data/spots_db.dart';
 import '../utils/translations.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class MapboxView extends StatefulWidget {
   const MapboxView({super.key});
@@ -255,7 +256,10 @@ class _MapboxViewState extends State<MapboxView> {
             .replaceAll('경주, ', '')
             .trim();
         _spotsMap[title] = spot;
-        String? imageUrl = spot['firstimage'];
+        
+        // Use local image if available, fallback to remote firstimage
+        final String? localPath = MarkerGenerator.getLocalImagePath(spot['title'] ?? '');
+        String? imageUrl = localPath ?? spot['firstimage'];
 
         bool isTarget = (spot['title'] == targetTitle);
         bool isGlowing = isTarget;
@@ -439,42 +443,73 @@ class _MapboxViewState extends State<MapboxView> {
                 top: 50,
                 left: 20,
                 right: 20,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.9),
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)],
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.flag, color: Colors.red),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Builder(
-                          builder: (context) {
-                            final rawTarget = target['title'] ?? '';
-                            final cleanTarget = rawTarget
-                                .replaceAll(RegExp(r'\([^)]*\)'), '')
-                                .replaceAll(RegExp(r'\[[^\]]*\]'), '')
-                                .replaceAll(RegExp(r'^경주\s*,?\s*'), '')
-                                .replaceAll(RegExp(r'^Gyeongju\s*,?\s*', caseSensitive: false), '')
-                                .trim();
-                            final targetDetail = SpotsDB.get(cleanTarget);
-                            final targetDisplayName = targetDetail != null 
-                                ? targetDetail.getName(appState.currentLanguage) 
-                                : rawTarget;
-                            final targetLabel = AppTranslations.get(appState.currentLanguage, 'planner_current_target');
-                            return Text(
-                              "$targetLabel: $targetDisplayName",
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                              maxLines: 1, overflow: TextOverflow.ellipsis,
-                            );
-                          }
+                child: GestureDetector(
+                  onTap: () async {
+                    final rawTarget = target['title'] ?? '';
+                    final cleanTarget = rawTarget
+                        .replaceAll(RegExp(r'\([^)]*\)'), '')
+                        .replaceAll(RegExp(r'\[[^\]]*\]'), '')
+                        .replaceAll(RegExp(r'^경주\s*,?\s*'), '')
+                        .replaceAll(RegExp(r'^Gyeongju\s*,?\s*', caseSensitive: false), '')
+                        .trim();
+                    
+                    final lat = target['mapY']?.toString() ?? '';
+                    final lng = target['mapX']?.toString() ?? '';
+                    
+                    final urlString = 'https://map.kakao.com/link/to/$cleanTarget,$lat,$lng';
+                    final uri = Uri.parse(urlString);
+                    
+                    try {
+                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              AppTranslations.get(appState.currentLanguage, 'cannot_launch_directions'),
+                            ),
+                          ),
+                        );
+                      }
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.9),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)],
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.navigation, color: Color(0xFFD4AF37)),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Builder(
+                            builder: (context) {
+                              final rawTarget = target['title'] ?? '';
+                              final cleanTarget = rawTarget
+                                  .replaceAll(RegExp(r'\([^)]*\)'), '')
+                                  .replaceAll(RegExp(r'\[[^\]]*\]'), '')
+                                  .replaceAll(RegExp(r'^경주\s*,?\s*'), '')
+                                  .replaceAll(RegExp(r'^Gyeongju\s*,?\s*', caseSensitive: false), '')
+                                  .trim();
+                              final targetDetail = SpotsDB.get(cleanTarget);
+                              final targetDisplayName = targetDetail != null 
+                                  ? targetDetail.getName(appState.currentLanguage) 
+                                  : rawTarget;
+                              final targetLabel = AppTranslations.get(appState.currentLanguage, 'planner_current_target');
+                              return Text(
+                                "$targetLabel: $targetDisplayName",
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                maxLines: 1, overflow: TextOverflow.ellipsis,
+                              );
+                            }
+                          ),
                         ),
-                      ),
-                      const Icon(Icons.chevron_right, color: Colors.grey),
-                    ],
+                        const Icon(Icons.chevron_right, color: Colors.grey),
+                      ],
+                    ),
                   ),
                 ),
               );

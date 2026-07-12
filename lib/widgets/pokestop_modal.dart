@@ -8,6 +8,7 @@ import '../services/openai_service.dart';
 import '../utils/translations.dart';
 import '../data/spots_db.dart';
 import '../models/quest.dart';
+import '../utils/marker_generator.dart';
 
 class PokestopModal extends StatefulWidget {
   final Map<String, dynamic> spotData;
@@ -155,19 +156,40 @@ class _PokestopModalState extends State<PokestopModal> with TickerProviderStateM
 
     if (matchingQuest != null) {
       appState.setActiveQuest(matchingQuest.id);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            appState.currentLanguage == 'ko'
-                ? '${AppTranslations.get(appState.currentLanguage, '${matchingQuest.id}_title')} 퀘스트가 시작되었습니다!'
-                : appState.currentLanguage == 'ja'
-                    ? 'クエスト「${AppTranslations.get(appState.currentLanguage, '${matchingQuest.id}_title')}」が開始されました！'
-                    : appState.currentLanguage == 'zh-chs'
-                        ? '任务“${AppTranslations.get(appState.currentLanguage, '${matchingQuest.id}_title')}”已开始！'
-                        : 'Quest "${AppTranslations.get(appState.currentLanguage, '${matchingQuest.id}_title')}" has started!',
-          ),
-          backgroundColor: const Color(0xFFD4AF37),
-        ),
+      
+      // Close the modal sheet first so the dialog appears cleanly on top of the map
+      Navigator.pop(context);
+
+      // Show the beautiful 5-second auto-dismiss dialog
+      final currentLang = appState.currentLanguage;
+      final questTitle = AppTranslations.get(currentLang, '${matchingQuest.id}_title');
+      final questDesc = AppTranslations.get(currentLang, '${matchingQuest.id}_desc');
+      
+      final targetSpot = matchingQuest.currentTargetSpot;
+      String targetName = '';
+      if (targetSpot != null) {
+        final rawTarget = targetSpot['title'] ?? '';
+        final cleanTarget = rawTarget
+            .replaceAll(RegExp(r'\([^)]*\)'), '')
+            .replaceAll(RegExp(r'\[[^\]]*\]'), '')
+            .replaceAll(RegExp(r'^경주\s*,?\s*'), '')
+            .replaceAll(RegExp(r'^Gyeongju\s*,?\s*', caseSensitive: false), '')
+            .trim();
+        final targetDetail = SpotsDB.get(cleanTarget);
+        targetName = targetDetail != null ? targetDetail.getName(currentLang) : rawTarget;
+      }
+
+      showDialog(
+        context: context,
+        barrierDismissible: true,
+        builder: (context) {
+          return _QuestStartPopup(
+            questTitle: questTitle,
+            questDesc: questDesc,
+            targetName: targetName,
+            currentLang: currentLang,
+          );
+        },
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -219,7 +241,8 @@ class _PokestopModalState extends State<PokestopModal> with TickerProviderStateM
     final title = _cleanTitle(rawTitle);
     final spotDetail = SpotsDB.get(title);
     
-    final imageUrl = spotDetail?.imagePath ?? widget.spotData['firstimage'] ?? '';
+    final String? localPath = MarkerGenerator.getLocalImagePath(title);
+    final imageUrl = localPath ?? spotDetail?.imagePath ?? widget.spotData['firstimage'] ?? '';
     final overview = widget.spotData['overview'] ?? '';
     
     final appState = context.watch<AppState>();
@@ -619,6 +642,162 @@ class _PokestopModalState extends State<PokestopModal> with TickerProviderStateM
                 ),
               ),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuestStartPopup extends StatefulWidget {
+  final String questTitle;
+  final String questDesc;
+  final String targetName;
+  final String currentLang;
+
+  const _QuestStartPopup({
+    required this.questTitle,
+    required this.questDesc,
+    required this.targetName,
+    required this.currentLang,
+  });
+
+  @override
+  State<_QuestStartPopup> createState() => _QuestStartPopupState();
+}
+
+class _QuestStartPopupState extends State<_QuestStartPopup> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 5),
+    );
+    _controller.reverse(from: 1.0).then((_) {
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    String titleText = '여정이 시작되었습니다!';
+    String destinationLabel = '현재 목적지';
+    if (widget.currentLang == 'en') {
+      titleText = 'Journey Started!';
+      destinationLabel = 'Target Destination';
+    } else if (widget.currentLang == 'ja') {
+      titleText = '旅が始まりました！';
+      destinationLabel = '現在の目的地';
+    } else if (widget.currentLang == 'zh-chs') {
+      titleText = '旅程已开始！';
+      destinationLabel = '当前目的地';
+    } else if (widget.currentLang == 'vi') {
+      titleText = 'Hành trình bắt đầu!';
+      destinationLabel = 'Mục tiêu hiện tại';
+    } else if (widget.currentLang == 'th') {
+      titleText = 'การเดินทางเริ่มต้นขึ้นแล้ว!';
+      destinationLabel = 'เป้าหมายปัจจุบัน';
+    }
+
+    return Dialog(
+      backgroundColor: const Color(0xFFFDFBF7),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(24),
+        side: const BorderSide(color: Color(0xFFD4AF37), width: 3),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              children: [
+                const Icon(Icons.auto_awesome, color: Color(0xFFD4AF37), size: 48),
+                const SizedBox(height: 16),
+                Text(
+                  titleText,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Serif',
+                    color: Color(0xFF3E2723),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+                const Divider(color: Color(0xFFD7CCC8), thickness: 1),
+                const SizedBox(height: 12),
+                Text(
+                  widget.questTitle,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF5D4037),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  widget.questDesc,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                if (widget.targetName.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF3E0),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.orangeAccent.withOpacity(0.3)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.place, color: Colors.orange, size: 20),
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            '$destinationLabel: ${widget.targetName}',
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF3E2723),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          // Shrinking progress indicator at the bottom
+          AnimatedBuilder(
+            animation: _controller,
+            builder: (context, child) {
+              return LinearProgressIndicator(
+                value: _controller.value,
+                minHeight: 6,
+                backgroundColor: Colors.transparent,
+                valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFD4AF37)),
+              );
+            },
+          ),
         ],
       ),
     );

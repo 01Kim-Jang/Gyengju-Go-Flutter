@@ -219,9 +219,9 @@ class QuestScreen extends StatelessWidget {
                     final messenger = ScaffoldMessenger.of(context);
                     final lang = appState.currentLanguage;
                     
-                    if (await canLaunchUrl(uri)) {
+                    try {
                       await launchUrl(uri, mode: LaunchMode.externalApplication);
-                    } else {
+                    } catch (e) {
                       messenger.showSnackBar(
                         SnackBar(
                           content: Text(
