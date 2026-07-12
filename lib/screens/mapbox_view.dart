@@ -515,7 +515,17 @@ class _MapboxViewState extends State<MapboxView> {
                 const SizedBox(width: 8),
                 Text(
                   '${appState.score} XP',
-                  style: con        // Show active quest target floating banner at the top of the map
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        // Show active quest target floating banner at the top of the map
         Consumer<AppState>(
           builder: (context, appState, child) {
             final activeQuest = appState.quests.where((q) => q.isActive).firstOrNull;
@@ -744,11 +754,5 @@ class _MapboxViewState extends State<MapboxView> {
         ),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _stopCinematicCamera();
-    super.dispose();
   }
 }

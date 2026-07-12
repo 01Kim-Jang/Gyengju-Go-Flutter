@@ -266,7 +266,7 @@ class QuestScreen extends StatelessWidget {
                               padding: const EdgeInsets.only(left: 28.0),
                               child: Text(
                                 '${AppTranslations.get(appState.currentLanguage, 'planner_distance')}: ${dist.toStringAsFixed(1)} km',
-                                style: const TextStyle(color: Colors.white90, fontSize: 14),
+                                style: const TextStyle(color: Colors.white70, fontSize: 14),
                               ),
                             );
                           }
