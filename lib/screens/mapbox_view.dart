@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
@@ -12,6 +13,7 @@ import '../providers/app_state.dart';
 import '../data/spots_db.dart';
 import '../utils/translations.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../widgets/in_app_route_webview.dart';
 
 class MapboxView extends StatefulWidget {
   const MapboxView({super.key});
@@ -49,6 +51,91 @@ class _MapboxViewState extends State<MapboxView> {
   bool _isRendering = false;
   double _currentZoom = 16.0;
   bool? _lastNightMode;
+
+  AppState? _appState;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final newAppState = Provider.of<AppState>(context);
+    if (_appState != newAppState) {
+      _appState?.removeListener(_onAppStateChanged);
+      _appState = newAppState;
+      _appState?.addListener(_onAppStateChanged);
+      
+      // If map is already loaded, draw immediately on state change
+      if (mapboxMap != null) {
+        _drawRoutePolyline(newAppState.routeCoordinates);
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _appState?.removeListener(_onAppStateChanged);
+    _stopCinematicCamera();
+    super.dispose();
+  }
+
+  void _onAppStateChanged() {
+    if (mapboxMap != null && _appState != null) {
+      _drawRoutePolyline(_appState!.routeCoordinates);
+    }
+  }
+
+  Future<void> _drawRoutePolyline(List<List<double>> coordinates) async {
+    if (mapboxMap == null) return;
+    
+    try {
+      final isLoaded = await mapboxMap!.style.styleSourceExists('route-source');
+      
+      if (coordinates.isEmpty) {
+        if (isLoaded) {
+          await mapboxMap!.style.removeStyleLayer('route-layer');
+          await mapboxMap!.style.removeStyleSource('route-source');
+        }
+        return;
+      }
+
+      final routeGeoJson = {
+        "type": "FeatureCollection",
+        "features": [
+          {
+            "type": "Feature",
+            "properties": {},
+            "geometry": {
+              "type": "LineString",
+              "coordinates": coordinates,
+            }
+          }
+        ]
+      };
+      final geoJsonStr = jsonEncode(routeGeoJson);
+
+      if (isLoaded) {
+        // Safe recreate to bypass different SDK version signature variations of updateStyleGeoJSONSource
+        await mapboxMap!.style.removeStyleLayer('route-layer');
+        await mapboxMap!.style.removeStyleSource('route-source');
+      }
+      
+      await mapboxMap!.style.addSource(
+        GeoJsonSource(id: 'route-source', data: geoJsonStr),
+      );
+      
+      await mapboxMap!.style.addLayer(
+        LineLayer(
+          id: 'route-layer',
+          sourceId: 'route-source',
+          lineColor: Colors.amber.value, // Beautiful glowing golden trail
+          lineWidth: 6.0,
+          lineCap: LineCap.ROUND,
+          lineJoin: LineJoin.ROUND,
+        ),
+      );
+    } catch (e) {
+      print('Error drawing route on Mapbox: $e');
+    }
+  }
 
   @override
   void initState() {
@@ -183,6 +270,11 @@ class _MapboxViewState extends State<MapboxView> {
 
     // 데이터 불러오기 및 마커 렌더링
     _loadSpotsAndRender();
+
+    // Draw route if already exists in AppState
+    if (context.read<AppState>().routeCoordinates.isNotEmpty) {
+      _drawRoutePolyline(context.read<AppState>().routeCoordinates);
+    }
   }
 
   Future<void> _loadSpotsAndRender() async {
@@ -423,17 +515,7 @@ class _MapboxViewState extends State<MapboxView> {
                 const SizedBox(width: 8),
                 Text(
                   '${appState.score} XP',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        // Show active quest target floating banner at the top of the map
+                  style: con        // Show active quest target floating banner at the top of the map
         Consumer<AppState>(
           builder: (context, appState, child) {
             final activeQuest = appState.quests.where((q) => q.isActive).firstOrNull;
@@ -443,50 +525,75 @@ class _MapboxViewState extends State<MapboxView> {
                 top: 50,
                 left: 20,
                 right: 20,
-                child: GestureDetector(
-                  onTap: () async {
-                    final rawTarget = target['title'] ?? '';
-                    final cleanTarget = rawTarget
-                        .replaceAll(RegExp(r'\([^)]*\)'), '')
-                        .replaceAll(RegExp(r'\[[^\]]*\]'), '')
-                        .replaceAll(RegExp(r'^경주\s*,?\s*'), '')
-                        .replaceAll(RegExp(r'^Gyeongju\s*,?\s*', caseSensitive: false), '')
-                        .trim();
-                    
-                    final lat = target['mapY']?.toString() ?? '';
-                    final lng = target['mapX']?.toString() ?? '';
-                    
-                    final urlString = 'https://map.kakao.com/link/to/$cleanTarget,$lat,$lng';
-                    final uri = Uri.parse(urlString);
-                    
-                    try {
-                      await launchUrl(uri, mode: LaunchMode.externalApplication);
-                    } catch (e) {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              AppTranslations.get(appState.currentLanguage, 'cannot_launch_directions'),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.95),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.navigation, color: Color(0xFFD4AF37)),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Builder(
+                              builder: (context) {
+                                final rawTarget = target['title'] ?? '';
+                                final cleanTarget = rawTarget
+                                    .replaceAll(RegExp(r'\([^)]*\)'), '')
+                                    .replaceAll(RegExp(r'\[[^\]]*\]'), '')
+                                    .replaceAll(RegExp(r'^경주\s*,?\s*'), '')
+                                    .replaceAll(RegExp(r'^Gyeongju\s*,?\s*', caseSensitive: false), '')
+                                    .trim();
+                                final targetDetail = SpotsDB.get(cleanTarget);
+                                final targetDisplayName = targetDetail != null 
+                                    ? targetDetail.getName(appState.currentLanguage) 
+                                    : rawTarget;
+                                final targetLabel = AppTranslations.get(appState.currentLanguage, 'planner_current_target');
+                                return Text(
+                                  "$targetLabel: $targetDisplayName",
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                                  maxLines: 1, overflow: TextOverflow.ellipsis,
+                                );
+                              }
                             ),
                           ),
-                        );
-                      }
-                    }
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.9),
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)],
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.navigation, color: Color(0xFFD4AF37)),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Builder(
-                            builder: (context) {
+                          if (appState.isFetchingRoute)
+                            const SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFD4AF37)),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _buildModeButton(
+                            context: context,
+                            icon: Icons.directions_walk,
+                            label: AppTranslations.get(appState.currentLanguage, 'current_language') == '日本語' ? '徒歩' : (AppTranslations.get(appState.currentLanguage, 'current_language') == 'English' ? 'Walk' : '도보'),
+                            isActive: appState.navigationMode == 'walk' && appState.routeCoordinates.isNotEmpty,
+                            onTap: () => appState.setNavigationMode('walk'),
+                          ),
+                          _buildModeButton(
+                            context: context,
+                            icon: Icons.directions_car,
+                            label: AppTranslations.get(appState.currentLanguage, 'current_language') == '日本語' ? '車' : (AppTranslations.get(appState.currentLanguage, 'current_language') == 'English' ? 'Drive' : '차량'),
+                            isActive: appState.navigationMode == 'drive' && appState.routeCoordinates.isNotEmpty,
+                            onTap: () => appState.setNavigationMode('drive'),
+                          ),
+                          _buildModeButton(
+                            context: context,
+                            icon: Icons.directions_bus,
+                            label: AppTranslations.get(appState.currentLanguage, 'current_language') == '日本語' ? '公共交通' : (AppTranslations.get(appState.currentLanguage, 'current_language') == 'English' ? 'Transit' : '대중교통'),
+                            isActive: false,
+                            onTap: () {
                               final rawTarget = target['title'] ?? '';
                               final cleanTarget = rawTarget
                                   .replaceAll(RegExp(r'\([^)]*\)'), '')
@@ -494,22 +601,27 @@ class _MapboxViewState extends State<MapboxView> {
                                   .replaceAll(RegExp(r'^경주\s*,?\s*'), '')
                                   .replaceAll(RegExp(r'^Gyeongju\s*,?\s*', caseSensitive: false), '')
                                   .trim();
+                              final lat = target['mapY']?.toString() ?? '';
+                              final lng = target['mapX']?.toString() ?? '';
                               final targetDetail = SpotsDB.get(cleanTarget);
                               final targetDisplayName = targetDetail != null 
                                   ? targetDetail.getName(appState.currentLanguage) 
                                   : rawTarget;
-                              final targetLabel = AppTranslations.get(appState.currentLanguage, 'planner_current_target');
-                              return Text(
-                                "$targetLabel: $targetDisplayName",
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                                maxLines: 1, overflow: TextOverflow.ellipsis,
+                              final url = 'https://map.kakao.com/link/to/$cleanTarget,$lat,$lng';
+                              
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => InAppRouteWebView(
+                                    url: url,
+                                    title: '$targetDisplayName ${AppTranslations.get(appState.currentLanguage, 'current_language') == '日本語' ? '道順' : (AppTranslations.get(appState.currentLanguage, 'current_language') == 'English' ? 'Directions' : '길찾기')}',
+                                  ),
+                                ),
                               );
-                            }
+                            },
                           ),
-                        ),
-                        const Icon(Icons.chevron_right, color: Colors.grey),
-                      ],
-                    ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               );
@@ -598,6 +710,40 @@ class _MapboxViewState extends State<MapboxView> {
     _isCinematicRunning = false;
     _cinematicTimer?.cancel();
     _cinematicTimer = null;
+  }
+
+  Widget _buildModeButton({
+    required BuildContext context,
+    required IconData icon,
+    required String label,
+    required bool isActive,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isActive ? const Color(0xFFD4AF37) : Colors.grey.shade200,
+          borderRadius: BorderRadius.circular(15),
+          boxShadow: isActive ? [BoxShadow(color: const Color(0xFFD4AF37).withOpacity(0.4), blurRadius: 4, offset: const Offset(0, 2))] : [],
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: isActive ? Colors.white : Colors.grey.shade700, size: 18),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color: isActive ? Colors.white : Colors.grey.shade800,
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override

@@ -1,5 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'dart:math' as math;
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../models/quest.dart';
 import '../services/odii_service.dart';
 import '../data/spots_db.dart';
@@ -16,6 +19,23 @@ class AppState extends ChangeNotifier {
 
   double? _userLat;
   double? _userLng;
+
+  List<List<double>> _routeCoordinates = [];
+  List<List<double>> get routeCoordinates => _routeCoordinates;
+
+  String _navigationMode = 'walk'; // 'walk' or 'drive'
+  String get navigationMode => _navigationMode;
+
+  bool _isFetchingRoute = false;
+  bool get isFetchingRoute => _isFetchingRoute;
+
+  int _currentTabIndex = 1; // Default to Map tab (index 1)
+  int get currentTabIndex => _currentTabIndex;
+
+  void setCurrentTabIndex(int index) {
+    _currentTabIndex = index;
+    notifyListeners();
+  }
 
   final List<Quest> _quests = [
     Quest(
@@ -125,8 +145,11 @@ class AppState extends ChangeNotifier {
     
     // Update active quest target if needed
     final activeQuest = _quests.where((q) => q.isActive).firstOrNull;
-    if (activeQuest != null && activeQuest.currentTargetSpot == null) {
-      _findNextTarget(activeQuest);
+    if (activeQuest != null) {
+      if (activeQuest.currentTargetSpot == null) {
+        _findNextTarget(activeQuest);
+      }
+      triggerRouteFetch();
     }
   }
 
@@ -140,6 +163,7 @@ class AppState extends ChangeNotifier {
     quest.isActive = true;
     _findNextTarget(quest);
     
+    triggerRouteFetch();
     notifyListeners();
   }
 
@@ -233,9 +257,11 @@ class AppState extends ChangeNotifier {
         if (activeQuest.isCompleted) {
           addScore(activeQuest.rewardXP);
           activeQuest.isActive = false;
+          clearRoute();
         } else {
           // Find next target
           _findNextTarget(activeQuest);
+          triggerRouteFetch();
         }
         updated = true;
       }
@@ -270,6 +296,7 @@ class AppState extends ChangeNotifier {
   void resetProgress() {
     _score = 0;
     _globalVisitedSpots.clear();
+    _routeCoordinates.clear();
     for (var q in _quests) {
       q.currentCount = 0;
       q.isActive = false;
@@ -282,6 +309,79 @@ class AppState extends ChangeNotifier {
   void toggleMapMode() {
     _isMapboxMode = !_isMapboxMode;
     notifyListeners();
+  }
+
+  void setNavigationMode(String mode) {
+    _navigationMode = mode;
+    notifyListeners();
+    triggerRouteFetch();
+  }
+
+  void clearRoute() {
+    _routeCoordinates.clear();
+    notifyListeners();
+  }
+
+  Future<void> triggerRouteFetch() async {
+    final activeQuest = _quests.where((q) => q.isActive).firstOrNull;
+    if (activeQuest == null || activeQuest.currentTargetSpot == null) {
+      clearRoute();
+      return;
+    }
+    final spot = activeQuest.currentTargetSpot!;
+    final double endLat = double.tryParse(spot['mapY'].toString()) ?? 0;
+    final double endLng = double.tryParse(spot['mapX'].toString()) ?? 0;
+    if (endLat == 0 || endLng == 0 || _userLat == null || _userLng == null) {
+      clearRoute();
+      return;
+    }
+    await fetchRoutePoints(_userLat!, _userLng!, endLat, endLng);
+  }
+
+  Future<void> fetchRoutePoints(double startLat, double startLng, double endLat, double endLng) async {
+    if (_isFetchingRoute) return; // Prevent concurrent duplicate fetches
+    _isFetchingRoute = true;
+    notifyListeners();
+
+    try {
+      final token = dotenv.env['MAPBOX_ACCESS_TOKEN'] ?? '';
+      if (token.isEmpty) {
+        print('Mapbox access token is empty. Cannot fetch route.');
+        _routeCoordinates.clear();
+        return;
+      }
+      
+      final profile = _navigationMode == 'drive' ? 'driving' : 'walking';
+      final url = 'https://api.mapbox.com/directions/v5/mapbox/$profile/$startLng,$startLat;$endLng,$endLat?geometries=geojson&access_token=$token';
+      
+      final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 10));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final routes = data['routes'] as List;
+        if (routes.isNotEmpty) {
+          final geometry = routes[0]['geometry'] as Map;
+          final coordinates = geometry['coordinates'] as List;
+          
+          _routeCoordinates = coordinates.map<List<double>>((coordsList) {
+            return [
+              double.parse(coordsList[0].toString()), // Lng
+              double.parse(coordsList[1].toString()), // Lat
+            ];
+          }).toList();
+        } else {
+          _routeCoordinates.clear();
+        }
+      } else {
+        print('Mapbox Directions API Error: ${response.statusCode}');
+        _routeCoordinates.clear();
+      }
+    } catch (e) {
+      print('Error fetching route points: $e');
+      _routeCoordinates.clear();
+    } finally {
+      _isFetchingRoute = false;
+      notifyListeners();
+    }
   }
 
   void setCharacter(String path) {

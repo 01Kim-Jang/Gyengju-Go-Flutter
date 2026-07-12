@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../providers/app_state.dart';
 import '../utils/translations.dart';
 import '../data/spots_db.dart';
+import '../widgets/in_app_route_webview.dart';
 
 class QuestScreen extends StatelessWidget {
   const QuestScreen({super.key});
@@ -199,131 +200,133 @@ class QuestScreen extends StatelessWidget {
             ),
             
             if (activeQuest != null) ...[
-              GestureDetector(
-                onTap: () async {
-                  if (activeQuest.currentTargetSpot != null) {
-                    final rawTarget = activeQuest.currentTargetSpot!['title'] ?? '';
-                    final cleanTarget = rawTarget
-                        .replaceAll(RegExp(r'\([^)]*\)'), '')
-                        .replaceAll(RegExp(r'\[[^\]]*\]'), '')
-                        .replaceAll(RegExp(r'^경주\s*,?\s*'), '')
-                        .replaceAll(RegExp(r'^Gyeongju\s*,?\s*', caseSensitive: false), '')
-                        .trim();
-                    
-                    final lat = activeQuest.currentTargetSpot!['mapY']?.toString() ?? '';
-                    final lng = activeQuest.currentTargetSpot!['mapX']?.toString() ?? '';
-                    
-                    final urlString = 'https://map.kakao.com/link/to/$cleanTarget,$lat,$lng';
-                    final uri = Uri.parse(urlString);
-                    
-                    final messenger = ScaffoldMessenger.of(context);
-                    final lang = appState.currentLanguage;
-                    
-                    try {
-                      await launchUrl(uri, mode: LaunchMode.externalApplication);
-                    } catch (e) {
-                      messenger.showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            AppTranslations.get(lang, 'cannot_launch_directions'),
-                          ),
-                        ),
-                      );
-                    }
-                  }
-                },
-                child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFD4AF37), Color(0xFFF9A825)],
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(color: Colors.orange.withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 5))
-                    ],
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFD4AF37), Color(0xFFF9A825)],
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(color: Colors.orange.withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 5))
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.navigation, color: Colors.white),
+                        const SizedBox(width: 8),
+                        Text(
+                          AppTranslations.get(appState.currentLanguage, '${activeQuest.id}_title'),
+                          style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    if (activeQuest.currentTargetSpot != null) ...[
                       Row(
                         children: [
-                          const Icon(Icons.navigation, color: Colors.white),
+                          const Icon(Icons.place, color: Colors.white70, size: 20),
                           const SizedBox(width: 8),
-                          Text(
-                            AppTranslations.get(appState.currentLanguage, '${activeQuest.id}_title'),
-                            style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                          Expanded(
+                            child: Builder(
+                              builder: (context) {
+                                final rawTarget = activeQuest.currentTargetSpot!['title'] ?? '';
+                                final cleanTarget = rawTarget
+                                    .replaceAll(RegExp(r'\([^)]*\)'), '')
+                                    .replaceAll(RegExp(r'\[[^\]]*\]'), '')
+                                    .replaceAll(RegExp(r'^경주\s*,?\s*'), '')
+                                    .replaceAll(RegExp(r'^Gyeongju\s*,?\s*', caseSensitive: false), '')
+                                    .trim();
+                                final targetDetail = SpotsDB.get(cleanTarget);
+                                final targetDisplayName = targetDetail != null 
+                                    ? targetDetail.getName(appState.currentLanguage) 
+                                    : rawTarget;
+                                return Text(
+                                  '${AppTranslations.get(appState.currentLanguage, 'planner_current_target')}: $targetDisplayName',
+                                  style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                                  maxLines: 2,
+                                );
+                              }
+                            ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
-                      if (activeQuest.currentTargetSpot != null) ...[
-                        Row(
-                          children: [
-                            const Icon(Icons.place, color: Colors.white70, size: 20),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Builder(
-                                builder: (context) {
-                                  final rawTarget = activeQuest.currentTargetSpot!['title'] ?? '';
-                                  final cleanTarget = rawTarget
-                                      .replaceAll(RegExp(r'\([^)]*\)'), '')
-                                      .replaceAll(RegExp(r'\[[^\]]*\]'), '')
-                                      .replaceAll(RegExp(r'^경주\s*,?\s*'), '')
-                                      .replaceAll(RegExp(r'^Gyeongju\s*,?\s*', caseSensitive: false), '')
-                                      .trim();
-                                  final targetDetail = SpotsDB.get(cleanTarget);
-                                  final targetDisplayName = targetDetail != null 
-                                      ? targetDetail.getName(appState.currentLanguage) 
-                                      : rawTarget;
-                                  return Text(
-                                    '${AppTranslations.get(appState.currentLanguage, 'planner_current_target')}: $targetDisplayName',
-                                    style: const TextStyle(color: Colors.white, fontSize: 16),
-                                    maxLines: 2,
-                                  );
-                                }
+                      if (appState.userLat != null && appState.userLng != null) ...[
+                        const SizedBox(height: 6),
+                        Builder(
+                          builder: (context) {
+                            double tLat = double.tryParse(activeQuest.currentTargetSpot!['mapY'].toString()) ?? 0;
+                            double tLng = double.tryParse(activeQuest.currentTargetSpot!['mapX'].toString()) ?? 0;
+                            double dist = _calculateDistance(appState.userLat!, appState.userLng!, tLat, tLng);
+                            return Padding(
+                              padding: const EdgeInsets.only(left: 28.0),
+                              child: Text(
+                                '${AppTranslations.get(appState.currentLanguage, 'planner_distance')}: ${dist.toStringAsFixed(1)} km',
+                                style: const TextStyle(color: Colors.white90, fontSize: 14),
                               ),
-                            ),
-                          ],
+                            );
+                          }
                         ),
-                        if (appState.userLat != null && appState.userLng != null) ...[
-                          const SizedBox(height: 4),
-                          Builder(
-                            builder: (context) {
-                              double tLat = double.tryParse(activeQuest.currentTargetSpot!['mapY'].toString()) ?? 0;
-                              double tLng = double.tryParse(activeQuest.currentTargetSpot!['mapX'].toString()) ?? 0;
-                              double dist = _calculateDistance(appState.userLat!, appState.userLng!, tLat, tLng);
-                              return Padding(
-                                padding: const EdgeInsets.only(left: 28.0),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      '${AppTranslations.get(appState.currentLanguage, 'planner_distance')}: ${dist.toStringAsFixed(1)} km',
-                                      style: const TextStyle(color: Colors.white70, fontSize: 14),
-                                    ),
-                                    Row(
-                                      children: [
-                                        const Icon(Icons.directions, color: Colors.white, size: 16),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          AppTranslations.get(appState.currentLanguage, 'directions'),
-                                          style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
+                      ],
+                      const SizedBox(height: 14),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _buildInCardModeButton(
+                            icon: Icons.directions_walk,
+                            label: AppTranslations.get(appState.currentLanguage, 'current_language') == '日本語' ? '徒歩' : (AppTranslations.get(appState.currentLanguage, 'current_language') == 'English' ? 'Walk' : '도보'),
+                            onTap: () {
+                              appState.setNavigationMode('walk');
+                              appState.setCurrentTabIndex(1);
+                            },
+                          ),
+                          _buildInCardModeButton(
+                            icon: Icons.directions_car,
+                            label: AppTranslations.get(appState.currentLanguage, 'current_language') == '日本語' ? '車' : (AppTranslations.get(appState.currentLanguage, 'current_language') == 'English' ? 'Drive' : '차량'),
+                            onTap: () {
+                              appState.setNavigationMode('drive');
+                              appState.setCurrentTabIndex(1);
+                            },
+                          ),
+                          _buildInCardModeButton(
+                            icon: Icons.directions_bus,
+                            label: AppTranslations.get(appState.currentLanguage, 'current_language') == '日本語' ? '公共交通' : (AppTranslations.get(appState.currentLanguage, 'current_language') == 'English' ? 'Transit' : '대중교통'),
+                            onTap: () {
+                              final rawTarget = activeQuest.currentTargetSpot!['title'] ?? '';
+                              final cleanTarget = rawTarget
+                                  .replaceAll(RegExp(r'\([^)]*\)'), '')
+                                  .replaceAll(RegExp(r'\[[^\]]*\]'), '')
+                                  .replaceAll(RegExp(r'^경주\s*,?\s*'), '')
+                                  .replaceAll(RegExp(r'^Gyeongju\s*,?\s*', caseSensitive: false), '')
+                                  .trim();
+                              final lat = activeQuest.currentTargetSpot!['mapY']?.toString() ?? '';
+                              final lng = activeQuest.currentTargetSpot!['mapX']?.toString() ?? '';
+                              final targetDetail = SpotsDB.get(cleanTarget);
+                              final targetDisplayName = targetDetail != null 
+                                  ? targetDetail.getName(appState.currentLanguage) 
+                                  : rawTarget;
+                              final url = 'https://map.kakao.com/link/to/$cleanTarget,$lat,$lng';
+                              
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => InAppRouteWebView(
+                                    url: url,
+                                    title: '$targetDisplayName ${AppTranslations.get(appState.currentLanguage, 'current_language') == '日本語' ? '道順' : (AppTranslations.get(appState.currentLanguage, 'current_language') == 'English' ? 'Directions' : '길찾기')}',
+                                  ),
                                 ),
                               );
-                            }
-                          )
-                        ]
-                      ] else ...[
-                        Text(AppTranslations.get(appState.currentLanguage, 'searching_target'), style: const TextStyle(color: Colors.white)),
-                      ]
-                    ],
-                  ),
+                            },
+                          ),
+                        ],
+                      ),
+                    ] else ...[
+                      Text(AppTranslations.get(appState.currentLanguage, 'searching_target'), style: const TextStyle(color: Colors.white)),
+                    ]
+                  ],
                 ),
               ),
               const Padding(
@@ -424,6 +427,39 @@ class QuestScreen extends StatelessWidget {
                     ),
                   );
                 },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInCardModeButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.white54, width: 1),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: Colors.white, size: 16),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
               ),
             ),
           ],

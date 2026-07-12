@@ -16,8 +16,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _currentIndex = 1; // 기본은 가운데 '지도' 탭
-
   @override
   Widget build(BuildContext context) {
     final appState = context.watch<AppState>();
@@ -102,13 +100,11 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
 
     return Scaffold(
-      body: _pages[_currentIndex],
+      body: _pages[appState.currentTabIndex],
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
+        currentIndex: appState.currentTabIndex,
         onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
+          appState.setCurrentTabIndex(index);
         },
         selectedItemColor: const Color(0xFFD4AF37),
         items: [

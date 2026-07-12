@@ -6,6 +6,7 @@ import '../providers/app_state.dart';
 import '../widgets/pokestop_modal.dart';
 import '../data/spots_db.dart';
 import '../utils/translations.dart';
+import '../widgets/in_app_route_webview.dart';
 
 class KakaoMapView extends StatefulWidget {
   const KakaoMapView({super.key});
@@ -88,6 +89,10 @@ class _KakaoMapViewState extends State<KakaoMapView> {
       );
     }).toList();
 
+    final List<LatLng> kakaoPolylinePoints = appState.routeCoordinates.map((coords) {
+      return LatLng(coords[1], coords[0]);
+    }).toList();
+
     Widget mapWidget = KakaoMap(
       onMapCreated: ((controller) {
         mapController = controller;
@@ -95,6 +100,16 @@ class _KakaoMapViewState extends State<KakaoMapView> {
       markers: mapMarkers,
       customOverlays: mapOverlays,
       center: LatLng(35.8348, 129.2266),
+      polylines: kakaoPolylinePoints.isNotEmpty
+          ? [
+              Polyline(
+                polylineId: 'route_line',
+                points: kakaoPolylinePoints,
+                strokeColor: Colors.blue.shade600,
+                strokeWidth: 5,
+              ),
+            ]
+          : [],
       onMarkerTap: (markerId, latLng, zoomLevel) {
         final spot = loadedSpots.firstWhere(
           (s) => s['title'] == markerId,
@@ -120,51 +135,76 @@ class _KakaoMapViewState extends State<KakaoMapView> {
             top: 50,
             left: 20,
             right: 20,
-            child: GestureDetector(
-              onTap: () async {
-                final target = currentTargetSpot;
-                final rawTarget = target['title'] ?? '';
-                final cleanTarget = rawTarget
-                    .replaceAll(RegExp(r'\([^)]*\)'), '')
-                    .replaceAll(RegExp(r'\[[^\]]*\]'), '')
-                    .replaceAll(RegExp(r'^경주\s*,?\s*'), '')
-                    .replaceAll(RegExp(r'^Gyeongju\s*,?\s*', caseSensitive: false), '')
-                    .trim();
-                
-                final lat = target['mapY']?.toString() ?? '';
-                final lng = target['mapX']?.toString() ?? '';
-                
-                final urlString = 'https://map.kakao.com/link/to/$cleanTarget,$lat,$lng';
-                final uri = Uri.parse(urlString);
-                
-                try {
-                  await launchUrl(uri, mode: LaunchMode.externalApplication);
-                } catch (e) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          AppTranslations.get(currentLang, 'cannot_launch_directions'),
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.95),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.navigation, color: Color(0xFFD4AF37)),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Builder(
+                          builder: (context) {
+                            final target = currentTargetSpot;
+                            final rawTarget = target['title'] ?? '';
+                            final cleanTarget = rawTarget
+                                .replaceAll(RegExp(r'\([^)]*\)'), '')
+                                .replaceAll(RegExp(r'\[[^\]]*\]'), '')
+                                .replaceAll(RegExp(r'^경주\s*,?\s*'), '')
+                                .replaceAll(RegExp(r'^Gyeongju\s*,?\s*', caseSensitive: false), '')
+                                .trim();
+                            final targetDetail = SpotsDB.get(cleanTarget);
+                            final targetDisplayName = targetDetail != null 
+                                ? targetDetail.getName(currentLang) 
+                                : rawTarget;
+                            final targetLabel = AppTranslations.get(currentLang, 'planner_current_target');
+                            return Text(
+                              "$targetLabel: $targetDisplayName",
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                              maxLines: 1, overflow: TextOverflow.ellipsis,
+                            );
+                          }
                         ),
                       ),
-                    );
-                  }
-                }
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.9),
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)],
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.navigation, color: Color(0xFFD4AF37)),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Builder(
-                        builder: (context) {
+                      if (appState.isFetchingRoute)
+                        const SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFD4AF37)),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _buildModeButton(
+                        context: context,
+                        icon: Icons.directions_walk,
+                        label: AppTranslations.get(currentLang, 'current_language') == '日本語' ? '徒歩' : (AppTranslations.get(currentLang, 'current_language') == 'English' ? 'Walk' : '도보'),
+                        isActive: appState.navigationMode == 'walk' && appState.routeCoordinates.isNotEmpty,
+                        onTap: () => appState.setNavigationMode('walk'),
+                      ),
+                      _buildModeButton(
+                        context: context,
+                        icon: Icons.directions_car,
+                        label: AppTranslations.get(currentLang, 'current_language') == '日本語' ? '車' : (AppTranslations.get(currentLang, 'current_language') == 'English' ? 'Drive' : '차량'),
+                        isActive: appState.navigationMode == 'drive' && appState.routeCoordinates.isNotEmpty,
+                        onTap: () => appState.setNavigationMode('drive'),
+                      ),
+                      _buildModeButton(
+                        context: context,
+                        icon: Icons.directions_bus,
+                        label: AppTranslations.get(currentLang, 'current_language') == '日本語' ? '公共交通' : (AppTranslations.get(currentLang, 'current_language') == 'English' ? 'Transit' : '대중교통'),
+                        isActive: false,
+                        onTap: () {
                           final target = currentTargetSpot;
                           final rawTarget = target['title'] ?? '';
                           final cleanTarget = rawTarget
@@ -173,26 +213,65 @@ class _KakaoMapViewState extends State<KakaoMapView> {
                               .replaceAll(RegExp(r'^경주\s*,?\s*'), '')
                               .replaceAll(RegExp(r'^Gyeongju\s*,?\s*', caseSensitive: false), '')
                               .trim();
+                          final lat = target['mapY']?.toString() ?? '';
+                          final lng = target['mapX']?.toString() ?? '';
                           final targetDetail = SpotsDB.get(cleanTarget);
                           final targetDisplayName = targetDetail != null 
                               ? targetDetail.getName(currentLang) 
                               : rawTarget;
-                          final targetLabel = AppTranslations.get(currentLang, 'planner_current_target');
-                          return Text(
-                            "$targetLabel: $targetDisplayName",
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                            maxLines: 1, overflow: TextOverflow.ellipsis,
+                          final url = 'https://map.kakao.com/link/to/$cleanTarget,$lat,$lng';
+                          
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => InAppRouteWebView(
+                                url: url,
+                                title: '$targetDisplayName ${AppTranslations.get(currentLang, 'current_language') == '日本語' ? '道順' : (AppTranslations.get(currentLang, 'current_language') == 'English' ? 'Directions' : '길찾기')}',
+                              ),
+                            ),
                           );
-                        }
+                        },
                       ),
-                    ),
-                    const Icon(Icons.chevron_right, color: Colors.grey),
-                  ],
-                ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ),
       ],
+    );
+  }
+
+  Widget _buildModeButton({
+    required BuildContext context,
+    required IconData icon,
+    required String label,
+    required bool isActive,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isActive ? const Color(0xFFD4AF37) : Colors.grey.shade200,
+          borderRadius: BorderRadius.circular(15),
+          boxShadow: isActive ? [BoxShadow(color: const Color(0xFFD4AF37).withOpacity(0.4), blurRadius: 4, offset: const Offset(0, 2))] : [],
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: isActive ? Colors.white : Colors.grey.shade700, size: 18),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color: isActive ? Colors.white : Colors.grey.shade800,
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
