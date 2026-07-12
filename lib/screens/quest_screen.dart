@@ -29,7 +29,7 @@ class QuestScreen extends StatelessWidget {
                 const Icon(Icons.stars, color: Color(0xFFD4AF37), size: 30),
                 const SizedBox(width: 8),
                 Text(
-                  currentLang == 'ko' ? '경주 스탬프 북' : 'Gyeongju Stamp Book',
+                  AppTranslations.get(currentLang, 'stamp_book'),
                   style: const TextStyle(
                     fontFamily: 'Serif', 
                     fontWeight: FontWeight.bold, 
@@ -41,7 +41,7 @@ class QuestScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              '${currentLang == 'ko' ? '수집 현황' : 'Collected'}: ${appState.globalVisitedSpots.intersection(coreSpots.toSet()).length} / ${coreSpots.length}',
+              '${AppTranslations.get(currentLang, 'collected')}: ${appState.globalVisitedSpots.intersection(coreSpots.toSet()).length} / ${coreSpots.length}',
               style: const TextStyle(fontSize: 14, color: Color(0xFF7D5A50), fontWeight: FontWeight.w600),
             ),
             const Divider(color: Color(0xFFD7CCC8), thickness: 1.5),
@@ -113,7 +113,7 @@ class QuestScreen extends StatelessWidget {
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
-              currentLang == 'ko' ? '닫기' : 'Close',
+              AppTranslations.get(currentLang, 'close'),
               style: const TextStyle(color: Color(0xFF8D6E63), fontWeight: FontWeight.bold),
             ),
           ),
@@ -172,7 +172,7 @@ class QuestScreen extends StatelessWidget {
                         onPressed: () => _showStampBook(context, appState),
                         icon: const Icon(Icons.stars, color: Color(0xFFD4AF37), size: 20),
                         label: Text(
-                          appState.currentLanguage == 'ko' ? '스탬프 북' : 'Stamp Book',
+                          AppTranslations.get(appState.currentLanguage, 'stamp_book'),
                           style: const TextStyle(
                             color: Color(0xFF5D4037),
                             fontWeight: FontWeight.bold,
@@ -225,9 +225,7 @@ class QuestScreen extends StatelessWidget {
                       messenger.showSnackBar(
                         SnackBar(
                           content: Text(
-                            lang == 'ko'
-                                ? '길찾기를 연결할 수 없습니다.'
-                                : 'Could not launch map directions.',
+                            AppTranslations.get(lang, 'cannot_launch_directions'),
                           ),
                         ),
                       );
@@ -310,7 +308,7 @@ class QuestScreen extends StatelessWidget {
                                         const Icon(Icons.directions, color: Colors.white, size: 16),
                                         const SizedBox(width: 4),
                                         Text(
-                                          appState.currentLanguage == 'ko' ? '길찾기' : 'Directions',
+                                          AppTranslations.get(appState.currentLanguage, 'directions'),
                                           style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
                                         ),
                                       ],
@@ -322,7 +320,7 @@ class QuestScreen extends StatelessWidget {
                           )
                         ]
                       ] else ...[
-                        const Text('목적지를 찾는 중입니다...', style: TextStyle(color: Colors.white)),
+                        Text(AppTranslations.get(appState.currentLanguage, 'searching_target'), style: const TextStyle(color: Colors.white)),
                       ]
                     ],
                   ),

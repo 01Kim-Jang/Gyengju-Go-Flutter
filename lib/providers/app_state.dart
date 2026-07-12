@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'dart:math' as math;
 import '../models/quest.dart';
 import '../services/odii_service.dart';
+import '../data/spots_db.dart';
 
 class AppState extends ChangeNotifier {
   String _currentLanguage = 'ko';
@@ -154,14 +155,25 @@ class AppState extends ChangeNotifier {
       // Skip visited
       if (quest.visitedSpotTitles.contains(title)) continue;
 
-      // Check keywords
+      // Check keywords against title, Korean title, and English title
       bool matches = false;
-      final lowerTitle = title.toLowerCase();
+      final spotDetail = SpotsDB.get(title);
+      final List<String> searchTexts = [
+        title.toLowerCase(),
+        if (spotDetail != null) ...[
+          spotDetail.names['ko']?.toLowerCase() ?? '',
+          spotDetail.names['en']?.toLowerCase() ?? '',
+        ]
+      ];
+
       for (var kw in quest.keywords) {
-        if (lowerTitle.contains(kw.toLowerCase())) {
-          matches = true;
-          break;
+        for (var text in searchTexts) {
+          if (text.contains(kw.toLowerCase())) {
+            matches = true;
+            break;
+          }
         }
+        if (matches) break;
       }
 
       if (matches) {

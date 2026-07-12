@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../data/preloaded_spots.dart';
 
 class OdiiService {
   // 사용자님이 제공한 한국관광공사 Odii API 키
@@ -11,9 +12,25 @@ class OdiiService {
   static Future<List<Map<String, dynamic>>> fetchGyeongjuSpots(
     String langCode,
   ) async {
-    // Convert generic language code to Odii specific code if needed
-    String odiiLang = langCode;
-    if (langCode == 'zh') odiiLang = 'zh-hans';
+    // 1. Map to supported preloaded language codes
+    String odiiLang = 'en';
+    if (langCode == 'ko') {
+      odiiLang = 'ko';
+    } else if (langCode == 'ja') {
+      odiiLang = 'ja';
+    } else if (langCode == 'zh-chs' || langCode == 'zh') {
+      odiiLang = 'zh-chs';
+    } else {
+      odiiLang = 'en'; // fallback for vi, th, etc.
+    }
+
+    // 2. Return preloaded data instantly to increase loading speed
+    if (PreloadedSpots.data.containsKey(odiiLang)) {
+      return PreloadedSpots.data[odiiLang]!
+          .map((s) => Map<String, dynamic>.from(s))
+          .toList();
+    }
+
     final url = Uri.parse(
       '$_baseUrl/themeBasedList'
       '?serviceKey=$_serviceKey'

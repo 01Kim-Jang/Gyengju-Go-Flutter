@@ -83,7 +83,15 @@ class _PokestopModalState extends State<PokestopModal> with TickerProviderStateM
     if (spotDetail != null) {
       textToSpeak = "${spotDetail.getFact(currentLang)}. ${spotDetail.getTip(currentLang)}";
     } else {
-      textToSpeak = widget.spotData['overview'] ?? '$title에 오신 것을 환영합니다.';
+      String welcomeMsg = '$title에 오신 것을 환영합니다.';
+      if (currentLang == 'en' || currentLang == 'vi' || currentLang == 'th') {
+        welcomeMsg = 'Welcome to $title.';
+      } else if (currentLang == 'ja') {
+        welcomeMsg = '$titleへようこそ。';
+      } else if (currentLang == 'zh-chs') {
+        welcomeMsg = '欢迎来到$title。';
+      }
+      textToSpeak = widget.spotData['overview'] ?? welcomeMsg;
     }
     
     await flutterTts.speak(textToSpeak);
@@ -151,8 +159,12 @@ class _PokestopModalState extends State<PokestopModal> with TickerProviderStateM
         SnackBar(
           content: Text(
             appState.currentLanguage == 'ko'
-                ? '${matchingQuest.title} 퀘스트가 시작되었습니다!'
-                : 'Quest "${matchingQuest.title}" has started!',
+                ? '${AppTranslations.get(appState.currentLanguage, '${matchingQuest.id}_title')} 퀘스트가 시작되었습니다!'
+                : appState.currentLanguage == 'ja'
+                    ? 'クエスト「${AppTranslations.get(appState.currentLanguage, '${matchingQuest.id}_title')}」が開始されました！'
+                    : appState.currentLanguage == 'zh-chs'
+                        ? '任务“${AppTranslations.get(appState.currentLanguage, '${matchingQuest.id}_title')}”已开始！'
+                        : 'Quest "${AppTranslations.get(appState.currentLanguage, '${matchingQuest.id}_title')}" has started!',
           ),
           backgroundColor: const Color(0xFFD4AF37),
         ),
@@ -161,9 +173,7 @@ class _PokestopModalState extends State<PokestopModal> with TickerProviderStateM
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            appState.currentLanguage == 'ko'
-                ? '일치하는 테마 퀘스트가 없습니다. 퀘스트 탭에서 직접 선택해 보세요!'
-                : 'No matching theme quest. Please select one in the Quest tab!',
+            AppTranslations.get(appState.currentLanguage, 'no_matching_quest'),
           ),
           backgroundColor: Colors.orange,
         ),
@@ -270,8 +280,11 @@ class _PokestopModalState extends State<PokestopModal> with TickerProviderStateM
                       GestureDetector(
                         onPanUpdate: _onPanUpdate,
                         onPanEnd: _onPanEnd,
-                        child: Transform.rotate(
-                          angle: _rotation,
+                        child: Transform(
+                          transform: Matrix4.identity()
+                            ..setEntry(3, 2, 0.001) // 3D Perspective
+                            ..rotateY(_rotation),
+                          alignment: Alignment.center,
                           child: Container(
                             width: 280,
                             height: 280,
@@ -402,8 +415,8 @@ class _PokestopModalState extends State<PokestopModal> with TickerProviderStateM
                             const SizedBox(width: 6),
                             Text(
                               hasStamp
-                                  ? (currentLang == 'ko' ? '스탬프 획득 완료' : 'STAMP COLLECTED')
-                                  : (currentLang == 'ko' ? '스탬프 미획득' : 'STAMP LOCKED'),
+                                  ? AppTranslations.get(currentLang, 'stamp_collected')
+                                  : AppTranslations.get(currentLang, 'stamp_locked'),
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 12,

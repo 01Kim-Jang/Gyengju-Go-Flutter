@@ -20,7 +20,7 @@ class _LandingScreenState extends State<LandingScreen> with SingleTickerProvider
     super.initState();
     _progressController = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 3), // Base animation duration
+      duration: const Duration(seconds: 1), // Base animation duration
     );
 
     // Start progress animation

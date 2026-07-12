@@ -282,15 +282,28 @@ class SpotsDB {
         .replaceAll(RegExp(r'\[[^\]]*\]'), '')
         .replaceAll(RegExp(r'^경주\s*,?\s*'), '')
         .replaceAll(RegExp(r'^Gyeongju\s*,?\s*', caseSensitive: false), '')
-        .trim();
+        .trim()
+        .toLowerCase();
     
-    // exact match
-    if (db.containsKey(clean)) return db[clean];
-
-    // partial match
-    for (var key in db.keys) {
-      if (clean.contains(key) || key.contains(clean)) {
-        return db[key];
+    // 1. Check exact/partial match against Korean database keys
+    for (var entry in db.entries) {
+      final key = entry.key;
+      final detail = entry.value;
+      
+      if (key.toLowerCase() == clean || 
+          key.toLowerCase().contains(clean) || 
+          clean.contains(key.toLowerCase())) {
+        return detail;
+      }
+      
+      // 2. Check match against any of the localized names inside the SpotDetail
+      for (var name in detail.names.values) {
+        final cleanName = name.toLowerCase();
+        if (cleanName == clean || 
+            cleanName.contains(clean) || 
+            clean.contains(cleanName)) {
+          return detail;
+        }
       }
     }
     return null;

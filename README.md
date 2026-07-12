@@ -38,6 +38,11 @@
 - **서비스 언어 변경**: 한국어, 영어, 일본어, 중국어(간체), 베트남어, 태국어 간의 실시간 전체 UI 다국어 번역 교체.
 - **데이터 초기화**: 획득한 스탬프 기록 및 점수를 모두 초기화하고 여정을 다시 시작하는 기능 지원.
 
+### 6. ⚡ 로딩 최적화 & 3D 포켓스탑 동전 스핀 (Performance & High Fidelity)
+- **포켓스탑 로딩 속도 즉시 단축 (Preloaded Spots)**: 기존 공공데이터 API 전체 호출 방식의 네트워크 지연 및 파싱 병목을 해결하기 위해 경주 전용 다국어 데이터를 미리 정제하여 패키징([preloaded_spots.dart](file:///c:/Users/baram/.gemini/antigravity/scratch/gyeongju_go_flutter/lib/data/preloaded_spots.dart))하여 첫 앱 실행 및 언어 전환 로딩 속도를 즉각적으로 끌어올렸습니다.
+- **3D 동전 스핀 애니메이션 (3D Coin Spin)**: 포켓스탑 원판 터치 및 스와이프 시 3D 원근 투영 행렬(`Matrix4` 및 `rotateY`)을 적용하여 실제 포켓몬 고와 유사한 고품질의 3D 동전 스핀 효과를 완성했습니다.
+- **전역 다국어 품질 개선 및 버그 수정**: 카카오맵 버튼 번역 오타(`カカオマップ`) 및 신라 왕릉 퀘스트 오타(`新羅の王陵巡り`)를 바로잡았으며, 퀘스트 화면 내 하드코딩된 한국어 문구와 퀘스트 매칭(키워드 검색) 연산을 다국어 최적화했습니다.
+
 ---
 
 ## 🛠️ 기술 스택 (Tech Stack)
@@ -59,6 +64,7 @@ lib/
 ├── components/
 │   └── chatbot_sheet.dart    # AI 스마트 비서 (채팅창 & 내비게이션 연동)
 ├── data/
+│   ├── preloaded_spots.dart  # 성능 최적화를 위한 경주 spots 로컬 프리로드 DB
 │   └── spots_db.dart         # 경주 6대 명소 다국어 백과사전 & 미디어 DB
 ├── models/
 │   └── quest.dart            # 플래너 및 일반 퀘스트 데이터 모델
