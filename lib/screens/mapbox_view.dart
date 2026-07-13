@@ -138,6 +138,82 @@ class _MapboxViewState extends State<MapboxView> {
     }
   }
 
+  List<Point> _generateTreeCoordinates() {
+    final List<Point> points = [];
+    final random = math.Random(12345); // Seeded random to keep tree positions stable
+
+    void addCluster(double centerLng, double centerLat, double radius, int count) {
+      for (int i = 0; i < count; i++) {
+        final double r = random.nextDouble() * radius;
+        final double theta = random.nextDouble() * 2 * math.pi;
+        final double lng = centerLng + r * math.cos(theta);
+        final double lat = centerLat + r * math.sin(theta);
+        points.add(Point(coordinates: Position(lng, lat)));
+      }
+    }
+
+    // 1. Gyerim Forest (계림) - dense tree coverage
+    addCluster(129.2173376, 35.8322427, 0.0012, 45);
+
+    // 2. Cheomseongdae (첨성대) surroundings - green grass and paths
+    addCluster(129.2190631, 35.8346828, 0.0018, 35);
+
+    // 3. Daereungwon (대릉원) park interior - lawns and pathways
+    addCluster(129.213332, 35.8382204, 0.0016, 45);
+
+    // 4. Woljeonggyo (월정교) riverside green spaces and walking paths
+    addCluster(129.2154713, 35.8291971, 0.0011, 20);
+
+    // 5. Banwolseong (반월성) forest ramparts
+    addCluster(129.2228957, 35.8324055, 0.0015, 30);
+
+    return points;
+  }
+
+  Future<void> _setupTrees() async {
+    if (mapboxMap == null) return;
+
+    try {
+      final coordinates = _generateTreeCoordinates();
+      final treeGeoJson = {
+        "type": "FeatureCollection",
+        "features": coordinates.map((pt) => {
+          "type": "Feature",
+          "properties": {},
+          "geometry": {
+            "type": "Point",
+            "coordinates": [pt.coordinates.lng, pt.coordinates.lat]
+          }
+        }).toList()
+      };
+      
+      final geoJsonStr = jsonEncode(treeGeoJson);
+      final isSourceLoaded = await mapboxMap!.style.styleSourceExists('tree-source');
+
+      if (isSourceLoaded) {
+        await mapboxMap!.style.removeStyleLayer('tree-layer');
+        await mapboxMap!.style.removeStyleSource('tree-source');
+      }
+
+      await mapboxMap!.style.addSource(
+        GeoJsonSource(id: 'tree-source', data: geoJsonStr),
+      );
+
+      await mapboxMap!.style.addLayer(
+        SymbolLayer(
+          id: 'tree-layer',
+          sourceId: 'tree-source',
+          iconImage: 'park-15',
+          iconSize: 1.5,
+          iconAllowOverlap: true,
+          iconIgnorePlacement: true,
+        ),
+      );
+    } catch (e) {
+      print("Error rendering trees: $e");
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -271,6 +347,9 @@ class _MapboxViewState extends State<MapboxView> {
 
     // 데이터 불러오기 및 마커 렌더링
     _loadSpotsAndRender();
+
+    // Plant trees in Gyeongju green areas
+    _setupTrees();
 
     // Draw route if already exists in AppState
     if (context.read<AppState>().routeCoordinates.isNotEmpty) {
@@ -415,8 +494,15 @@ class _MapboxViewState extends State<MapboxView> {
     final isNight = appState.isNightMode;
     if (mapboxMap != null && _lastNightMode != isNight) {
       _lastNightMode = isNight;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        mapboxMap!.style.setStyleURI(isNight ? MapboxStyles.DARK : MapboxStyles.STANDARD);
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        await mapboxMap!.style.setStyleURI(isNight ? MapboxStyles.DARK : MapboxStyles.STANDARD);
+        // Wait for style layout transition, then re-populate custom layers
+        Future.delayed(const Duration(milliseconds: 1200), () {
+          if (mounted && mapboxMap != null) {
+            _setupTrees();
+            _drawRoutePolyline(appState.routeCoordinates);
+          }
+        });
       });
     }
 
