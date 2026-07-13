@@ -7,7 +7,8 @@ import '../providers/app_state.dart';
 import '../utils/translations.dart';
 
 class ChatBotSheet extends StatefulWidget {
-  const ChatBotSheet({super.key});
+  final String? initialMessage;
+  const ChatBotSheet({super.key, this.initialMessage});
 
   @override
   State<ChatBotSheet> createState() => _ChatBotSheetState();
@@ -17,6 +18,44 @@ class _ChatBotSheetState extends State<ChatBotSheet> {
   final TextEditingController _controller = TextEditingController();
   final List<Map<String, String>> _messages = [];
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialMessage != null) {
+      _sendInitialMessage(widget.initialMessage!);
+    }
+  }
+
+  void _sendInitialMessage(String text) async {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      setState(() {
+        _messages.add({'role': 'user', 'content': text});
+        _isLoading = true;
+      });
+
+      final appState = context.read<AppState>();
+      final targetLang = appState.currentLanguage;
+
+      double? lat = appState.userLat;
+      double? lng = appState.userLng;
+
+      final response = await OpenAIService.chatWithAI(
+        text,
+        targetLang,
+        lat: lat,
+        lng: lng,
+      );
+
+      if (mounted) {
+        setState(() {
+          _messages.add({'role': 'bot', 'content': response});
+          _isLoading = false;
+        });
+      }
+    });
+  }
 
   void _sendMessage() async {
     final text = _controller.text.trim();

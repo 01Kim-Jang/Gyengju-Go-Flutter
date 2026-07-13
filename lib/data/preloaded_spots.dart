@@ -579,7 +579,7 @@ class PreloadedSpots {
         'overview': '',
       },
       {
-        'title': 'Seoak Seowon – Dori Village – Namsan Foothill Road, Gyeongju',
+        'title': 'Gyochon Hanok Village – Woljeonggyo Bridge – Namsan Foothill Road, Gyeongju',
         'mapX': '129.2147976',
         'mapY': '35.8297224',
         'firstimage': 'https://sfj608538-sfj608538.ktcdn.co.kr/file/sightImage/service/3711.jpg',
@@ -819,7 +819,7 @@ class PreloadedSpots {
         'overview': '',
       },
       {
-        'title': '慶州 西岳書院 ― 道里村 ― 南山の山裾道路',
+        'title': '慶州校村韓屋村 – 月精橋 – 南山山麓道路',
         'mapX': '129.2147976',
         'mapY': '35.8297224',
         'firstimage': 'https://sfj608538-sfj608538.ktcdn.co.kr/file/sightImage/service/3711.jpg',
@@ -975,7 +975,7 @@ class PreloadedSpots {
         'overview': '',
       },
       {
-        'title': '庆州 西岳书院 – 道里村 – 南山山麓路',
+        'title': '庆州校村韩屋村 – 月精桥 – 南山山麓路',
         'mapX': '129.2147976',
         'mapY': '35.8297224',
         'firstimage': 'https://sfj608538-sfj608538.ktcdn.co.kr/file/sightImage/service/3711.jpg',

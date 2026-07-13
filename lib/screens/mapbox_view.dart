@@ -14,6 +14,7 @@ import '../data/spots_db.dart';
 import '../utils/translations.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../widgets/in_app_route_webview.dart';
+import '../components/chatbot_sheet.dart';
 
 class MapboxView extends StatefulWidget {
   const MapboxView({super.key});
@@ -350,7 +351,11 @@ class _MapboxViewState extends State<MapboxView> {
         _spotsMap[title] = spot;
         
         // Use local image if available, fallback to remote firstimage
-        final String? localPath = MarkerGenerator.getLocalImagePath(spot['title'] ?? '');
+        final String? localPath = MarkerGenerator.getLocalImagePath(
+          spot['title'] ?? '',
+          mapX: spot['mapX']?.toString(),
+          mapY: spot['mapY']?.toString(),
+        );
         String? imageUrl = localPath ?? spot['firstimage'];
 
         bool isTarget = (spot['title'] == targetTitle);
@@ -587,21 +592,21 @@ class _MapboxViewState extends State<MapboxView> {
                           _buildModeButton(
                             context: context,
                             icon: Icons.directions_walk,
-                            label: AppTranslations.get(appState.currentLanguage, 'current_language') == '日本語' ? '徒歩' : (AppTranslations.get(appState.currentLanguage, 'current_language') == 'English' ? 'Walk' : '도보'),
+                            label: AppTranslations.get(appState.currentLanguage, 'walk'),
                             isActive: appState.navigationMode == 'walk' && appState.routeCoordinates.isNotEmpty,
                             onTap: () => appState.setNavigationMode('walk'),
                           ),
                           _buildModeButton(
                             context: context,
                             icon: Icons.directions_car,
-                            label: AppTranslations.get(appState.currentLanguage, 'current_language') == '日本語' ? '車' : (AppTranslations.get(appState.currentLanguage, 'current_language') == 'English' ? 'Drive' : '차량'),
+                            label: AppTranslations.get(appState.currentLanguage, 'drive'),
                             isActive: appState.navigationMode == 'drive' && appState.routeCoordinates.isNotEmpty,
                             onTap: () => appState.setNavigationMode('drive'),
                           ),
                           _buildModeButton(
                             context: context,
                             icon: Icons.directions_bus,
-                            label: AppTranslations.get(appState.currentLanguage, 'current_language') == '日本語' ? '公共交通' : (AppTranslations.get(appState.currentLanguage, 'current_language') == 'English' ? 'Transit' : '대중교통'),
+                            label: AppTranslations.get(appState.currentLanguage, 'transit'),
                             isActive: false,
                             onTap: () {
                               final rawTarget = target['title'] ?? '';
@@ -611,21 +616,27 @@ class _MapboxViewState extends State<MapboxView> {
                                   .replaceAll(RegExp(r'^경주\s*,?\s*'), '')
                                   .replaceAll(RegExp(r'^Gyeongju\s*,?\s*', caseSensitive: false), '')
                                   .trim();
-                              final lat = target['mapY']?.toString() ?? '';
-                              final lng = target['mapX']?.toString() ?? '';
                               final targetDetail = SpotsDB.get(cleanTarget);
                               final targetDisplayName = targetDetail != null 
                                   ? targetDetail.getName(appState.currentLanguage) 
                                   : rawTarget;
-                              final url = 'https://map.kakao.com/link/to/$cleanTarget,$lat,$lng';
                               
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) => InAppRouteWebView(
-                                    url: url,
-                                    title: '$targetDisplayName ${AppTranslations.get(appState.currentLanguage, 'current_language') == '日本語' ? '道順' : (AppTranslations.get(appState.currentLanguage, 'current_language') == 'English' ? 'Directions' : '길찾기')}',
-                                  ),
-                                ),
+                              String prompt = '';
+                              if (appState.currentLanguage == 'ko') {
+                                prompt = '$targetDisplayName(으)로 대중교통(버스, 열차 등)을 이용하여 가는 방법과 최적 경로를 알려줘.';
+                              } else if (appState.currentLanguage == 'ja') {
+                                prompt = '$targetDisplayNameへ公共交通機関（バス、電車など）を利用して行く方法と最適なルートを教えてください。';
+                              } else if (appState.currentLanguage == 'zh-chs' || appState.currentLanguage == 'zh') {
+                                prompt = '请告诉我如何乘坐公共交通（公交车、火车等）去$targetDisplayName，并提供最佳路线。';
+                              } else {
+                                prompt = 'Please show me how to get to $targetDisplayName using public transit (bus, train, etc.) and give me the best route.';
+                              }
+
+                              showModalBottomSheet(
+                                context: context,
+                                isScrollControlled: true,
+                                backgroundColor: Colors.transparent,
+                                builder: (context) => ChatBotSheet(initialMessage: prompt),
                               );
                             },
                           ),
@@ -677,43 +688,16 @@ class _MapboxViewState extends State<MapboxView> {
     final double lat = double.tryParse(spot['mapY']?.toString() ?? '') ?? 35.8348;
     final double lng = double.tryParse(spot['mapX']?.toString() ?? '') ?? 129.2266;
 
-    _isCinematicRunning = true;
-    _cinematicBearing = 0.0;
-
-    // 1. Fly to the spot
+    // Fly to focus the spot without spinning/rotating (prevents dizziness)
     mapboxMap!.flyTo(
       CameraOptions(
         center: Point(coordinates: Position(lng, lat)),
         zoom: 17.5,
         pitch: 65.0,
-        bearing: _cinematicBearing,
+        bearing: 0.0,
       ),
       MapAnimationOptions(duration: 1500),
     );
-
-    // 2. Start slow camera orbit rotation after the initial flyTo transition
-    Future.delayed(const Duration(milliseconds: 1500), () {
-      if (!_isCinematicRunning || mapboxMap == null) return;
-
-      _cinematicTimer = Timer.periodic(const Duration(milliseconds: 30), (timer) {
-        if (!_isCinematicRunning || mapboxMap == null) {
-          timer.cancel();
-          return;
-        }
-
-        _cinematicBearing = (_cinematicBearing + 0.3) % 360.0;
-
-        mapboxMap!.easeTo(
-          CameraOptions(
-            center: Point(coordinates: Position(lng, lat)),
-            zoom: 17.5,
-            pitch: 65.0,
-            bearing: _cinematicBearing,
-          ),
-          MapAnimationOptions(duration: 30),
-        );
-      });
-    });
   }
 
   void _stopCinematicCamera() {

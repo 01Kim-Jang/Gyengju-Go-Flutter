@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+import '../data/preloaded_spots.dart';
 
 class MarkerGenerator {
   static Future<Uint8List> createPokestopMarker({
@@ -287,8 +288,46 @@ class MarkerGenerator {
     };
   }
 
-  static String? getLocalImagePath(String title) {
-    final clean = title
+  static String? getLocalImagePath(String title, {String? mapX, String? mapY}) {
+    String koTitle = title;
+    
+    // 1. Resolve Korean title using coordinates (since they are stable across translations)
+    if (mapX != null && mapY != null) {
+      double? endX = double.tryParse(mapX);
+      double? endY = double.tryParse(mapY);
+      if (endX != null && endY != null) {
+        for (var spot in PreloadedSpots.data['ko']!) {
+          double? spotX = double.tryParse(spot['mapX'] ?? '');
+          double? spotY = double.tryParse(spot['mapY'] ?? '');
+          if (spotX != null && spotY != null) {
+            double diff = (spotX - endX).abs() + (spotY - endY).abs();
+            if (diff < 0.0001) {
+              koTitle = spot['title'] ?? title;
+              break;
+            }
+          }
+        }
+      }
+    } else {
+      // 2. Fallback: Find index in active translated list and retrieve the same index in the 'ko' list
+      bool foundIndex = false;
+      for (var lang in ['en', 'ja', 'zh-chs']) {
+        final list = PreloadedSpots.data[lang];
+        if (list == null) continue;
+        for (int i = 0; i < list.length; i++) {
+          if (list[i]['title'] == title) {
+            if (i < PreloadedSpots.data['ko']!.length) {
+              koTitle = PreloadedSpots.data['ko']![i]['title'] ?? title;
+              foundIndex = true;
+              break;
+            }
+          }
+        }
+        if (foundIndex) break;
+      }
+    }
+
+    final clean = koTitle
         .replaceAll(RegExp(r'\([^)]*\)'), '')
         .replaceAll(RegExp(r'\[[^\]]*\]'), '')
         .replaceAll('경주, ', '')

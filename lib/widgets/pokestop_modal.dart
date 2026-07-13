@@ -241,7 +241,11 @@ class _PokestopModalState extends State<PokestopModal> with TickerProviderStateM
     final title = _cleanTitle(rawTitle);
     final spotDetail = SpotsDB.get(title);
     
-    final String? localPath = MarkerGenerator.getLocalImagePath(title);
+    final String? localPath = MarkerGenerator.getLocalImagePath(
+      rawTitle,
+      mapX: widget.spotData['mapX']?.toString(),
+      mapY: widget.spotData['mapY']?.toString(),
+    );
     final imageUrl = localPath ?? spotDetail?.imagePath ?? widget.spotData['firstimage'] ?? '';
     final overview = widget.spotData['overview'] ?? '';
     

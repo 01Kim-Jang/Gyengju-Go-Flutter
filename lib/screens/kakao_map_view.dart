@@ -7,6 +7,7 @@ import '../widgets/pokestop_modal.dart';
 import '../data/spots_db.dart';
 import '../utils/translations.dart';
 import '../widgets/in_app_route_webview.dart';
+import '../components/chatbot_sheet.dart';
 
 class KakaoMapView extends StatefulWidget {
   const KakaoMapView({super.key});
@@ -188,21 +189,21 @@ class _KakaoMapViewState extends State<KakaoMapView> {
                       _buildModeButton(
                         context: context,
                         icon: Icons.directions_walk,
-                        label: AppTranslations.get(currentLang, 'current_language') == '日本語' ? '徒歩' : (AppTranslations.get(currentLang, 'current_language') == 'English' ? 'Walk' : '도보'),
+                        label: AppTranslations.get(currentLang, 'walk'),
                         isActive: appState.navigationMode == 'walk' && appState.routeCoordinates.isNotEmpty,
                         onTap: () => appState.setNavigationMode('walk'),
                       ),
                       _buildModeButton(
                         context: context,
                         icon: Icons.directions_car,
-                        label: AppTranslations.get(currentLang, 'current_language') == '日本語' ? '車' : (AppTranslations.get(currentLang, 'current_language') == 'English' ? 'Drive' : '차량'),
+                        label: AppTranslations.get(currentLang, 'drive'),
                         isActive: appState.navigationMode == 'drive' && appState.routeCoordinates.isNotEmpty,
                         onTap: () => appState.setNavigationMode('drive'),
                       ),
                       _buildModeButton(
                         context: context,
                         icon: Icons.directions_bus,
-                        label: AppTranslations.get(currentLang, 'current_language') == '日本語' ? '公共交通' : (AppTranslations.get(currentLang, 'current_language') == 'English' ? 'Transit' : '대중교통'),
+                        label: AppTranslations.get(currentLang, 'transit'),
                         isActive: false,
                         onTap: () {
                           final target = currentTargetSpot;
@@ -213,21 +214,27 @@ class _KakaoMapViewState extends State<KakaoMapView> {
                               .replaceAll(RegExp(r'^경주\s*,?\s*'), '')
                               .replaceAll(RegExp(r'^Gyeongju\s*,?\s*', caseSensitive: false), '')
                               .trim();
-                          final lat = target['mapY']?.toString() ?? '';
-                          final lng = target['mapX']?.toString() ?? '';
                           final targetDetail = SpotsDB.get(cleanTarget);
                           final targetDisplayName = targetDetail != null 
                               ? targetDetail.getName(currentLang) 
                               : rawTarget;
-                          final url = 'https://map.kakao.com/link/to/$cleanTarget,$lat,$lng';
                           
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => InAppRouteWebView(
-                                url: url,
-                                title: '$targetDisplayName ${AppTranslations.get(currentLang, 'current_language') == '日本語' ? '道順' : (AppTranslations.get(currentLang, 'current_language') == 'English' ? 'Directions' : '길찾기')}',
-                              ),
-                            ),
+                          String prompt = '';
+                          if (currentLang == 'ko') {
+                            prompt = '$targetDisplayName(으)로 대중교통(버스, 열차 등)을 이용하여 가는 방법과 최적 경로를 알려줘.';
+                          } else if (currentLang == 'ja') {
+                            prompt = '$targetDisplayNameへ公共交通機関（バス、電車など）を利用して行く方法と最適なルートを教えてください。';
+                          } else if (currentLang == 'zh-chs' || currentLang == 'zh') {
+                            prompt = '请告诉我如何乘坐公共交通（公交车、火车等）去$targetDisplayName，并提供最佳路线。';
+                          } else {
+                            prompt = 'Please show me how to get to $targetDisplayName using public transit (bus, train, etc.) and give me the best route.';
+                          }
+
+                          showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            backgroundColor: Colors.transparent,
+                            builder: (context) => ChatBotSheet(initialMessage: prompt),
                           );
                         },
                       ),
