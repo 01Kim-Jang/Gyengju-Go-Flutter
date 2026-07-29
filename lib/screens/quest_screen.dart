@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:math' as math;
-import 'package:url_launcher/url_launcher.dart';
 import '../providers/app_state.dart';
 import '../utils/translations.dart';
 import '../data/spots_db.dart';
-import '../widgets/in_app_route_webview.dart';
 import '../components/chatbot_sheet.dart';
 
 class QuestScreen extends StatelessWidget {
@@ -396,7 +394,7 @@ class QuestScreen extends StatelessWidget {
                                 ),
                                 child: const Text(
                                   'MVP 추천 코스',
-                                  style: TextStyle(color: Colors.white, fontSize: 11, fontweight: FontWeight.bold),
+                                  style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
                                 ),
                               ),
                               const SizedBox(width: 8),
