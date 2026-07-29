@@ -38,6 +38,34 @@ class AppState extends ChangeNotifier {
   }
 
   final List<Quest> _quests = [
+    // --- 3 MVP Core Courses (PRD Specification) ---
+    Quest(
+      id: 'c_royal',
+      title: 'C-ROYAL: 신라 왕실 핵심 탐방',
+      description: '대릉원, 첨성대, 계림, 월성, 동궁과 월지를 거니는 도보 중심 왕실 탐방 코스',
+      targetCount: 4,
+      rewardXP: 300,
+      type: 'planner',
+      keywords: ['대릉원', '첨성대', '계림', '월성', '동궁과 월지', 'daereungwon', 'cheomseongdae', 'gyerim', 'wolseong', 'donggung'],
+    ),
+    Quest(
+      id: 'c_buddha',
+      title: 'C-BUDDHA: 명작 불교문화 탐방',
+      description: '불국사, 석굴암, 괘릉을 방문하는 천년 불교 예술 버스 탐방 코스',
+      targetCount: 2,
+      rewardXP: 300,
+      type: 'planner',
+      keywords: ['불국사', '석굴암', '괘릉', 'bulguksa', 'seokguram', 'gwaereung'],
+    ),
+    Quest(
+      id: 'c_munmu',
+      title: 'C-MUNMU: 동해 호국 용의 길',
+      description: '감은사지, 이견대, 문무대왕릉을 둘러보는 동해 드라이브 호국 탐방 코스',
+      targetCount: 3,
+      rewardXP: 300,
+      type: 'planner',
+      keywords: ['감은사지', '이견대', '문무대왕릉', 'gameunsa', 'igyeondae', 'munmu'],
+    ),
     Quest(
       id: 'spin_1',
       title: '첫 걸음',

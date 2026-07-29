@@ -352,42 +352,100 @@ class QuestScreen extends StatelessWidget {
                   // Hide active quest from the main list to avoid duplication
                   if (quest.isActive) return const SizedBox.shrink();
 
+                  final isMvpCourse = ['c_royal', 'c_buddha', 'c_munmu'].contains(quest.id);
                   final progressPercent = (quest.currentCount / quest.targetCount).clamp(0.0, 1.0);
                   
+                  String transportBadge = '🚶 도보 3~4시간';
+                  if (quest.id == 'c_buddha') transportBadge = '🚌 버스 3~5시간';
+                  if (quest.id == 'c_munmu') transportBadge = '🚗 드라이브 3~4시간';
+
                   return Container(
                     margin: const EdgeInsets.only(bottom: 20),
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.8),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: const Color(0xFF8D6E63), width: 1.5),
+                      color: isMvpCourse 
+                          ? const Color(0xFFFFFDF7) 
+                          : Colors.white.withValues(alpha: 0.8),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isMvpCourse ? const Color(0xFFD4AF37) : const Color(0xFF8D6E63), 
+                        width: isMvpCourse ? 2.2 : 1.5,
+                      ),
+                      boxShadow: isMvpCourse
+                          ? [
+                              BoxShadow(
+                                color: const Color(0xFFD4AF37).withValues(alpha: 0.25),
+                                blurRadius: 8,
+                                spreadRadius: 1,
+                                offset: const Offset(0, 3),
+                              )
+                            ]
+                          : null,
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        if (isMvpCourse) ...[
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF1F3864),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: const Text(
+                                  'MVP 추천 코스',
+                                  style: TextStyle(color: Colors.white, fontSize: 11, fontweight: FontWeight.bold),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFFF3E0),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: const Color(0xFFE65100), width: 0.8),
+                                ),
+                                child: Text(
+                                  transportBadge,
+                                  style: const TextStyle(color: Color(0xFFE65100), fontSize: 11, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                        ],
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              AppTranslations.get(appState.currentLanguage, '${quest.id}_title'),
-                              style: const TextStyle(
-                                  fontSize: 20,
+                            Expanded(
+                              child: Text(
+                                AppTranslations.get(appState.currentLanguage, '${quest.id}_title'),
+                                style: TextStyle(
+                                  fontSize: isMvpCourse ? 19 : 18,
                                   fontWeight: FontWeight.bold,
-                                  color: Color(0xFF3E2723)),
+                                  color: isMvpCourse ? const Color(0xFF1F3864) : const Color(0xFF3E2723),
+                                ),
+                              ),
                             ),
                             if (quest.isCompleted)
                               const Icon(Icons.check_circle, color: Color(0xFF2E7D32), size: 28)
                             else if (quest.type == 'planner')
-                              ElevatedButton(
+                              ElevatedButton.icon(
                                 onPressed: () {
                                   appState.setActiveQuest(quest.id);
+                                  appState.setCurrentTabIndex(1); // Auto switch to Map tab
                                 },
+                                icon: const Icon(Icons.play_arrow, size: 16),
+                                label: Text(AppTranslations.get(appState.currentLanguage, 'planner_start')),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFFD4AF37),
+                                  backgroundColor: isMvpCourse ? const Color(0xFF1F3864) : const Color(0xFFD4AF37),
                                   foregroundColor: Colors.white,
+                                  elevation: isMvpCourse ? 3 : 1,
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                 ),
-                                child: Text(AppTranslations.get(appState.currentLanguage, 'planner_start')),
                               )
                             else
                               Text(
@@ -403,7 +461,7 @@ class QuestScreen extends StatelessWidget {
                         const SizedBox(height: 8),
                         Text(
                           AppTranslations.get(appState.currentLanguage, '${quest.id}_desc'),
-                          style: const TextStyle(fontSize: 14, color: Color(0xFF5D4037)),
+                          style: const TextStyle(fontSize: 13.5, color: Color(0xFF5D4037)),
                         ),
                         const SizedBox(height: 12),
                         Row(
@@ -415,17 +473,19 @@ class QuestScreen extends StatelessWidget {
                                   value: progressPercent,
                                   minHeight: 10,
                                   backgroundColor: const Color(0xFFEFEBE9),
-                                  valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF4CAF50)),
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    isMvpCourse ? const Color(0xFF1F3864) : const Color(0xFF4CAF50),
+                                  ),
                                 ),
                               ),
                             ),
                             const SizedBox(width: 12),
                             Text(
                               '${quest.currentCount} / ${quest.targetCount}',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,
-                                color: Color(0xFF3E2723),
+                                color: isMvpCourse ? const Color(0xFF1F3864) : const Color(0xFF3E2723),
                               ),
                             ),
                           ],

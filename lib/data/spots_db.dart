@@ -164,6 +164,96 @@ class SpotsDB {
       imagePath: 'assets/images/spots/신라_역사_여행.jpg',
       stampImage: 'assets/images/spots/신라_역사_여행.jpg',
     ),
+    '문무대왕릉': SpotDetail(
+      names: {
+        'ko': '문무대왕릉',
+        'en': 'Tomb of King Munmu',
+        'ja': '文武大王陵',
+        'zh-chs': '文武大王陵',
+        'vi': 'Lăng mộ Vua Munmu',
+        'th': 'สุสานพระเจ้ามุนมู',
+      },
+      facts: {
+        'ko': '삼국통일을 완수한 신라 제30대 문무왕의 수중릉입니다. "내가 죽으면 동해의 용이 되어 나라를 지키겠다"는 유언에 따라 바다 바위 속에 장사 지낸 세계 유일의 수중 왕릉입니다.',
+        'en': 'The underwater tomb of King Munmu, the 30th monarch of Silla who completed the unification of the Three Kingdoms. Per his will to become a dragon of the East Sea to protect the nation, he was buried under this marine rock.',
+        'ja': '三国統一を成し遂げた新羅第30代・文武王の水中陵です。「自分が死んだら東海の竜となり国を守る」という遺言に従い、海の中の岩の下に葬られた、世界唯一の水中王陵です.',
+        'zh-chs': '这是完成了三国统一大业的新罗第30代国王文武王的水中陵墓。遵照他“死后化作东海神龙以报效国家”的遗言，将其安葬在海中礁石下，是世界上唯一的水中王陵。',
+      },
+      tips: {
+        'ko': '봉길대보 해수욕장 백사장에서 바라볼 수 있습니다. 갈매기 떼와 푸른 바다 바위가 어우러진 해돋이 풍경은 출사 장소로도 매우 유명합니다.',
+        'en': 'It can be viewed from the white sands of Bonggil Daebo Beach. The sunrise landscape harmony of seagulls and blue sea rocks is very famous for photography.',
+        'ja': '奉吉大宝海水浴場の白い砂浜から望むことができます。カモメの群れと青い海の岩が調和した日の出の風景は、写真撮影のスポットとしても非常に有名です。',
+        'zh-chs': '从奉吉大宝海水浴场的白沙滩上可以望见。海鸥群飞与蓝色海中礁石相映成趣的日出景观，是非常著名的摄影打卡地。',
+      },
+      imagePath: 'https://www.gyeongju.go.kr/upload/content/thumb/20200527/159056024317800.jpg',
+      stampImage: 'https://www.gyeongju.go.kr/upload/content/thumb/20200527/159056024317800.jpg',
+    ),
+    '괘릉': SpotDetail(
+      names: {
+        'ko': '괘릉 (원성왕릉)',
+        'en': 'Gwaereung (Tomb of King Wonseong)',
+        'ja': '掛陵 (元聖王陵)',
+        'zh-chs': '挂陵 (元圣王陵)',
+      },
+      facts: {
+        'ko': '신라 제38대 원성왕의 능으로 추정되는 왕릉입니다. 네 모퉁이의 무인석(서역인 모습의 십이지신상)과 정교한 돌사자상이 서역과의 활발한 교류를 증명하는 대표적 유적입니다.',
+        'en': 'Estimated to be the tomb of King Wonseong, the 38th monarch of Silla. The military officer statues depicting Western Asian features and exquisite stone lions prove active trade with Western regions.',
+        'ja': '新羅第38代・元聖王の陵と推定される王陵です。四隅の武人像（西域人の姿）と精巧な石獅子像が、西域との活発な交流を証明しています。',
+        'zh-chs': '推测为新罗第38代元圣王之陵。四角雕刻有西域人形象的文武官像与精美石狮，是与西域频繁交流的代表性遗迹。',
+      },
+      tips: {
+        'ko': '왕릉 입구에 늘어선 쾌활한 미소의 돌사자상과 서역인 이국적 무인석을 배경으로 멋진 사진을 남겨보세요.',
+        'en': 'Take photos with the smiling stone lions and exotic Western warrior statues lining the entrance of the royal tomb.',
+        'ja': '王陵の入り口に並ぶ微笑む石獅子像や西域人の武人像を背景に、素晴らしい写真を残してみてください。',
+        'zh-chs': '建议在王陵入口排列的带笑容石狮与西域武士像前留影。',
+      },
+      imagePath: 'https://www.gyeongju.go.kr/upload/content/thumb/20200527/159055973719000.jpg',
+      stampImage: 'https://www.gyeongju.go.kr/upload/content/thumb/20200527/159055973719000.jpg',
+    ),
+    '감은사지': SpotDetail(
+      names: {
+        'ko': '감은사지',
+        'en': 'Gameunsa Temple Site',
+        'ja': '感恩寺址',
+        'zh-chs': '感恩寺址',
+      },
+      facts: {
+        'ko': '신라 신문왕이 부왕인 문무왕의 은혜에 감사하며 완성한 사찰 터입니다. 동해 용이 된 문무왕이 드나들 수 있도록 금당 바닥 밑에 통로를 만든 것이 특징이며, 웅장한 삼층석탑 쌍탑이 우뚝 서 있습니다.',
+        'en': 'The temple site built by King Sinmun to thank his father, King Munmu. Features an underground passage beneath the main hall for King Munmu (who became a sea dragon) to enter, with two massive 3-story stone pagodas.',
+        'ja': '神文王が父の文武王の恩に感謝して完成させた寺院の跡地です。海竜となった文武王が行き来できるよう金堂の床下に通路が作られたのが特徴です。',
+        'zh-chs': '神文王为感念父王文武王之恩而修建的寺庙遗址。金堂地板下设有供化为海龙的文武王出入的通道，耸立着雄伟的双三层石塔。',
+      },
+      tips: {
+        'ko': '우뚝 솟은 동·서 삼층석탑 사이에 서서 탁 트인 신라 동해 해풍을 느끼며 사진을 찍기 좋은 장소입니다.',
+        'en': 'Stand between the soaring East and West pagodas to feel the fresh ocean breeze of Silla.',
+        'ja': 'そびえ立つ東西の三層石塔の間に立ち、爽やかな海風を感じながら写真を撮るのに最適な場所です。',
+        'zh-chs': '站在耸立的东、西三层石塔之间，感受来自新罗东海的海风，是绝佳的拍照取景地。',
+      },
+      imagePath: 'https://www.gyeongju.go.kr/upload/content/thumb/20200527/159055973719000.jpg',
+      stampImage: 'https://www.gyeongju.go.kr/upload/content/thumb/20200527/159055973719000.jpg',
+    ),
+    '이견대': SpotDetail(
+      names: {
+        'ko': '이견대',
+        'en': 'Igyeondae Pavilion',
+        'ja': '利見台',
+        'zh-chs': '利见台',
+      },
+      facts: {
+        'ko': '신라 신문왕이 동해의 용이 된 문무왕으로부터 만파식적(세상을 평화롭게 하는 신비한 피리)을 전달받았다고 전해지는 해안 누각입니다.',
+        'en': 'A coastal pavilion where King Sinmun received the Manpasikjeok (a legendary flute bringing peace to the world) from King Munmu who became a dragon of the East Sea.',
+        'ja': '神文王が東海の竜となった文武王から万波息笛（世を平和にする神秘の笛）を受け取ったと伝えられる海岸の楼閣です。',
+        'zh-chs': '传说是神文王从化为东海海龙的文武王处接过万波息笛（化解世间波澜的神笛）的海滨楼阁。',
+      },
+      tips: {
+        'ko': '이견대 누각에서 바다 건너 문무대왕릉(대왕암)이 가장 잘 조망되는 언덕입니다.',
+        'en': 'The hill from which you can get the clearest view of the Tomb of King Munmu across the sea.',
+        'ja': '利見台の楼閣から海を隔てて文武大王陵が最もよく見渡せる丘です。',
+        'zh-chs': '利见台楼阁是隔海眺望文武大王陵的最佳高地。',
+      },
+      imagePath: 'https://www.gyeongju.go.kr/upload/content/thumb/20200527/159055973719000.jpg',
+      stampImage: 'https://www.gyeongju.go.kr/upload/content/thumb/20200527/159055973719000.jpg',
+    ),
     '계림': SpotDetail(
       names: {
         'ko': '경주 계림',
