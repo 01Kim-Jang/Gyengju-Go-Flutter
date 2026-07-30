@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../models/quest.dart';
+import '../models/party.dart';
 import '../services/odii_service.dart';
 import '../data/spots_db.dart';
 
@@ -34,6 +35,115 @@ class AppState extends ChangeNotifier {
 
   void setCurrentTabIndex(int index) {
     _currentTabIndex = index;
+    notifyListeners();
+  }
+
+  // --- Party (Co-Op Travel) Management ---
+  PartyModel? _activeParty;
+  PartyModel? get activeParty => _activeParty;
+  List<PartyMember> get partyMembers => _activeParty?.members ?? [];
+
+  PartyModel createParty({required String courseId, required String courseTitle}) {
+    final code = PartyModel.generateInviteCode();
+    double uLat = _userLat ?? 35.8348;
+    double uLng = _userLng ?? 129.2266;
+
+    final hostMember = PartyMember(
+      uid: 'user_host_01',
+      nickname: '나 (방장)',
+      characterPath: _selectedCharacterPath,
+      isHost: true,
+      lat: uLat,
+      lng: uLng,
+      stampCount: _globalVisitedSpots.length,
+    );
+
+    final mockMember1 = PartyMember(
+      uid: 'user_m01',
+      nickname: '민우 [화랑]',
+      characterPath: 'assets/images/silla_hwarang_2head_cute.png',
+      lat: uLat + 0.0015,
+      lng: uLng + 0.0012,
+      stampCount: 2,
+    );
+
+    final mockMember2 = PartyMember(
+      uid: 'user_m02',
+      nickname: 'Kaito [왕]',
+      characterPath: 'assets/images/silla_king_2head_cute.png',
+      lat: uLat - 0.0018,
+      lng: uLng + 0.0020,
+      stampCount: 3,
+    );
+
+    final mockMember3 = PartyMember(
+      uid: 'user_m03',
+      nickname: 'Sophia [공주]',
+      characterPath: 'assets/images/silla_princess_2head_cute.png',
+      lat: uLat + 0.0022,
+      lng: uLng - 0.0014,
+      stampCount: 1,
+    );
+
+    _activeParty = PartyModel(
+      partyId: 'party_${DateTime.now().millisecondsSinceEpoch}',
+      name: '$courseTitle 탐험대',
+      inviteCode: code,
+      courseId: courseId,
+      courseTitle: courseTitle,
+      members: [hostMember, mockMember1, mockMember2, mockMember3],
+      completionRatio: 0.25,
+    );
+
+    setActiveQuest(courseId);
+    notifyListeners();
+    return _activeParty!;
+  }
+
+  bool joinParty(String code) {
+    String cleanCode = code.trim().toUpperCase();
+    if (cleanCode.isEmpty) return false;
+
+    double uLat = _userLat ?? 35.8348;
+    double uLng = _userLng ?? 129.2266;
+
+    final hostMember = PartyMember(
+      uid: 'host_leader',
+      nickname: '경주 가이드 (방장)',
+      characterPath: 'assets/images/silla_king_2head_cute.png',
+      isHost: true,
+      lat: uLat + 0.0010,
+      lng: uLng + 0.0010,
+      stampCount: 3,
+    );
+
+    final meMember = PartyMember(
+      uid: 'user_joined',
+      nickname: '나 (참전자)',
+      characterPath: _selectedCharacterPath,
+      isHost: false,
+      lat: uLat,
+      lng: uLng,
+      stampCount: _globalVisitedSpots.length,
+    );
+
+    _activeParty = PartyModel(
+      partyId: 'party_joined_${DateTime.now().millisecondsSinceEpoch}',
+      name: '신라 원정대 (코드: $cleanCode)',
+      inviteCode: cleanCode,
+      courseId: 'c_royal',
+      courseTitle: 'C-ROYAL: 신라 왕실 핵심 탐방',
+      members: [hostMember, meMember],
+      completionRatio: 0.40,
+    );
+
+    setActiveQuest('c_royal');
+    notifyListeners();
+    return true;
+  }
+
+  void leaveParty() {
+    _activeParty = null;
     notifyListeners();
   }
 
@@ -308,6 +418,17 @@ class AppState extends ChangeNotifier {
         }
         updated = true;
       }
+    }
+
+    // Sync party completion ratio and member stamp count if active party exists
+    if (_activeParty != null) {
+      final me = _activeParty!.members.firstWhere(
+        (m) => m.isHost || m.uid == 'user_joined',
+        orElse: () => _activeParty!.members.first,
+      );
+      me.stampCount++;
+      _activeParty!.completionRatio = (_activeParty!.completionRatio + 0.25).clamp(0.0, 1.0);
+      updated = true;
     }
 
     if (updated) notifyListeners();

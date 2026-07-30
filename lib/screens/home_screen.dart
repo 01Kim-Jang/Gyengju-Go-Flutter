@@ -6,6 +6,7 @@ import 'mapbox_view.dart';
 import '../components/chatbot_sheet.dart';
 import '../utils/translations.dart';
 import 'quest_screen.dart';
+import 'party_screen.dart';
 import 'settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -96,17 +97,22 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
+      const PartyScreen(),
       const SettingsScreen(),
     ];
 
+    final safeTabIndex = appState.currentTabIndex.clamp(0, _pages.length - 1);
+
     return Scaffold(
-      body: _pages[appState.currentTabIndex],
+      body: _pages[safeTabIndex],
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: appState.currentTabIndex,
+        currentIndex: safeTabIndex,
+        type: BottomNavigationBarType.fixed,
         onTap: (index) {
           appState.setCurrentTabIndex(index);
         },
         selectedItemColor: const Color(0xFFD4AF37),
+        unselectedItemColor: Colors.grey[600],
         items: [
           BottomNavigationBarItem(
             icon: const Icon(Icons.explore),
@@ -115,6 +121,10 @@ class _HomeScreenState extends State<HomeScreen> {
           BottomNavigationBarItem(
             icon: const Icon(Icons.map),
             label: AppTranslations.get(lang, 'map'),
+          ),
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.diversity_3),
+            label: AppTranslations.get(lang, 'party'),
           ),
           BottomNavigationBarItem(
             icon: const Icon(Icons.settings),
