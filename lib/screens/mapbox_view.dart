@@ -728,6 +728,61 @@ class _MapboxViewState extends State<MapboxView> {
                           ),
                         ],
                       ),
+
+                      // Active Party Co-Op Indicator Floating Badge
+                      if (appState.activeParty != null) ...[
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1F3864),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFD4AF37), width: 1.2),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.groups, color: Color(0xFFD4AF37), size: 16),
+                              const SizedBox(width: 6),
+                              Flexible(
+                                child: Text(
+                                  '${appState.activeParty!.name} [${appState.activeParty!.inviteCode}] | ${appState.activeParty!.members.length}명 함께 탐험 중',
+                                  style: const TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.bold),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              );
+            } else if (appState.activeParty != null) {
+              // Show Party Badge alone if no quest active
+              return Positioned(
+                top: 50,
+                left: 20,
+                right: 20,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1F3864),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: const Color(0xFFD4AF37), width: 1.5),
+                    boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 8)],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.groups, color: Color(0xFFD4AF37), size: 20),
+                      const SizedBox(width: 8),
+                      Text(
+                        '👥 ${appState.activeParty!.name} (${appState.activeParty!.inviteCode}) | ${appState.activeParty!.members.length}명 탐험 중',
+                        style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                      ),
                     ],
                   ),
                 ),
