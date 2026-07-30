@@ -243,6 +243,21 @@ class AppState extends ChangeNotifier {
     quest.currentTargetSpot = bestSpot;
   }
 
+  // 50m Geofencing helpers
+  double getDistanceToSpot(Map<String, dynamic> spot) {
+    if (_userLat == null || _userLng == null) return 0.0;
+    double spotLat = double.tryParse(spot['mapY'].toString()) ?? 0.0;
+    double spotLng = double.tryParse(spot['mapX'].toString()) ?? 0.0;
+    if (spotLat == 0.0 || spotLng == 0.0) return 0.0;
+    return _calculateDistance(_userLat!, _userLng!, spotLat, spotLng) * 1000.0; // returns in meters
+  }
+
+  bool isSpotWithin50m(Map<String, dynamic> spot) {
+    if (_userLat == null || _userLng == null) return true; // Default fallback to allow in mock/sim mode
+    double distInMeters = getDistanceToSpot(spot);
+    return distInMeters <= 50.0;
+  }
+
   double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
     var p = 0.017453292519943295;
     var c = math.cos;

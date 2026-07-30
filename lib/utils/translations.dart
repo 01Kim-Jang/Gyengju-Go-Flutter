@@ -101,6 +101,11 @@ class AppTranslations {
       'stamp_locked': '스탬프 미획득',
       'quest_started': '퀘스트가 시작되었습니다!',
       'no_matching_quest': '일치하는 테마 퀘스트가 없습니다. 퀘스트 탭에서 직접 선택해 보세요!',
+      'within_50m_success': '📍 유적지 50m 이내 도착! 스핀하여 스탬프를 획득하세요!',
+      'out_of_range_50m': '🔒 유적지 50m 이내로 접근해야 스핀 및 스탬프 획득이 가능합니다.',
+      'current_distance': '현재 유적지와의 거리',
+      'preview_docent': '🎧 오디오 도슨트 미리듣기',
+      'spin_locked_toast': '🔒 50m 이내로 접근해 주세요. (현재 거리: {dist}m)',
     },
     'en': {
       'quest': 'Quest',
@@ -203,6 +208,11 @@ class AppTranslations {
       'stamp_locked': 'STAMP LOCKED',
       'quest_started': 'Quest has started!',
       'no_matching_quest': 'No matching theme quest. Please select one in the Quest tab!',
+      'within_50m_success': '📍 Arrived within 50m! Spin to collect your stamp!',
+      'out_of_range_50m': '🔒 Move within 50m of the site to spin and collect stamps.',
+      'current_distance': 'Current distance',
+      'preview_docent': '🎧 Preview Audio Docent',
+      'spin_locked_toast': '🔒 Please approach within 50m. (Distance: {dist}m)',
     },
     'ja': {
       'quest': 'クエスト',

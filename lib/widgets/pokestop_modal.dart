@@ -212,9 +212,26 @@ class _PokestopModalState extends State<PokestopModal> with TickerProviderStateM
   }
 
   void _onPanEnd(DragEndDetails details) {
+    final appState = context.read<AppState>();
+    final isWithin50m = appState.isSpotWithin50m(widget.spotData);
+    final distanceMeters = appState.getDistanceToSpot(widget.spotData);
+
     if (!_isSpun && !_spinController.isAnimating) {
-      if (details.velocity.pixelsPerSecond.dx.abs() > 400) {
-        _spinController.forward(from: 0.0);
+      if (details.velocity.pixelsPerSecond.dx.abs() > 300) {
+        if (isWithin50m) {
+          _spinController.forward(from: 0.0);
+        } else {
+          final currentLang = appState.currentLanguage;
+          final toastMsg = AppTranslations.get(currentLang, 'spin_locked_toast')
+              .replaceAll('{dist}', distanceMeters.toStringAsFixed(0));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(toastMsg),
+              backgroundColor: Colors.orange[800],
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
       }
     }
   }
@@ -254,6 +271,9 @@ class _PokestopModalState extends State<PokestopModal> with TickerProviderStateM
     final displayName = spotDetail != null ? spotDetail.getName(currentLang) : title;
     final hasStamp = appState.globalVisitedSpots.contains(title);
 
+    final isWithin50m = appState.isSpotWithin50m(widget.spotData);
+    final distanceMeters = appState.getDistanceToSpot(widget.spotData);
+
     return Container(
       height: MediaQuery.of(context).size.height * 0.85,
       decoration: const BoxDecoration(
@@ -263,7 +283,7 @@ class _PokestopModalState extends State<PokestopModal> with TickerProviderStateM
       child: Stack(
         children: [
           if (!_isSpun)
-            // 1. 스핀하기 전: 포켓몬 고 스타일의 대형 회전 디스크 UI
+            // 1. 스핀하기 전: 포켓몬 고 스타일의 대형 회전 디스크 UI + 50m 현장 지오펜싱 상태
             Column(
               children: [
                 const SizedBox(height: 16),
@@ -302,9 +322,66 @@ class _PokestopModalState extends State<PokestopModal> with TickerProviderStateM
                           textAlign: TextAlign.center,
                         ),
                       ),
-                      const SizedBox(height: 40),
-                      // 회전하는 포켓스탑 디스크
+                      const SizedBox(height: 12),
+
+                      // 50m Geofencing Distance Status Banner
+                      Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 24),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: isWithin50m 
+                              ? const Color(0xFFE8F5E9) 
+                              : const Color(0xFFFFF3E0),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: isWithin50m ? const Color(0xFF2E7D32) : const Color(0xFFE65100),
+                            width: 1.2,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              isWithin50m ? Icons.location_on : Icons.lock_clock,
+                              color: isWithin50m ? const Color(0xFF2E7D32) : const Color(0xFFE65100),
+                              size: 18,
+                            ),
+                            const SizedBox(width: 6),
+                            Flexible(
+                              child: Text(
+                                isWithin50m
+                                    ? AppTranslations.get(currentLang, 'within_50m_success')
+                                    : '${AppTranslations.get(currentLang, 'out_of_range_50m')} (${distanceMeters.toStringAsFixed(0)}m)',
+                                style: TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.bold,
+                                  color: isWithin50m ? const Color(0xFF2E7D32) : const Color(0xFFE65100),
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 24),
+                      // 회전하는 포켓스탑 디스크 (50m 이내: Gold Glow, 50m 이외: Dim Grey)
                       GestureDetector(
+                        onTap: () {
+                          if (isWithin50m) {
+                            _spinController.forward(from: 0.0);
+                          } else {
+                            final toastMsg = AppTranslations.get(currentLang, 'spin_locked_toast')
+                                .replaceAll('{dist}', distanceMeters.toStringAsFixed(0));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(toastMsg),
+                                backgroundColor: Colors.orange[800],
+                                duration: const Duration(seconds: 2),
+                              ),
+                            );
+                          }
+                        },
                         onPanUpdate: _onPanUpdate,
                         onPanEnd: _onPanEnd,
                         child: Transform(
@@ -313,65 +390,93 @@ class _PokestopModalState extends State<PokestopModal> with TickerProviderStateM
                             ..rotateY(_rotation),
                           alignment: Alignment.center,
                           child: Container(
-                            width: 280,
-                            height: 280,
+                            width: 260,
+                            height: 260,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: const Color(0xFF4A90E2),
-                                width: 8,
+                                color: isWithin50m ? const Color(0xFFD4AF37) : Colors.grey,
+                                width: isWithin50m ? 8 : 6,
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(0xFF4A90E2).withValues(alpha: 0.3),
-                                  blurRadius: 20,
-                                  spreadRadius: 4,
+                                  color: isWithin50m 
+                                      ? const Color(0xFFD4AF37).withValues(alpha: 0.4)
+                                      : Colors.black12,
+                                  blurRadius: isWithin50m ? 24 : 10,
+                                  spreadRadius: isWithin50m ? 5 : 1,
                                 ),
                               ],
                             ),
                             child: Padding(
                               padding: const EdgeInsets.all(4.0),
                               child: ClipOval(
-                                child: imageUrl.startsWith('assets/') || imageUrl.startsWith('https://')
-                                    ? (imageUrl.startsWith('assets/')
-                                        ? Image.asset(imageUrl, fit: BoxFit.cover)
-                                        : Image.network(
-                                            imageUrl,
-                                            fit: BoxFit.cover,
-                                            errorBuilder: (context, error, stackTrace) => Container(
-                                              color: Colors.grey[300],
-                                              child: const Icon(Icons.museum, size: 85, color: Colors.grey),
-                                            ),
-                                          ))
-                                    : Container(
-                                        color: Colors.grey[300],
-                                        child: const Icon(Icons.museum, size: 85, color: Colors.grey),
-                                      ),
+                                child: ColorFiltered(
+                                  colorFilter: isWithin50m
+                                      ? const ColorFilter.mode(Colors.transparent, BlendMode.dst)
+                                      : const ColorFilter.mode(Colors.grey, BlendMode.saturation),
+                                  child: imageUrl.startsWith('assets/') || imageUrl.startsWith('https://')
+                                      ? (imageUrl.startsWith('assets/')
+                                          ? Image.asset(imageUrl, fit: BoxFit.cover)
+                                          : Image.network(
+                                              imageUrl,
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (context, error, stackTrace) => Container(
+                                                color: Colors.grey[300],
+                                                child: const Icon(Icons.museum, size: 85, color: Colors.grey),
+                                              ),
+                                            ))
+                                      : Container(
+                                          color: Colors.grey[300],
+                                          child: const Icon(Icons.museum, size: 85, color: Colors.grey),
+                                        ),
+                                ),
                               ),
                             ),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 50),
-                      // 하단 가이드 문구
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.swipe_left_alt, color: Color(0xFF4A90E2), size: 28),
-                          const SizedBox(width: 10),
-                          Flexible(
-                            child: Text(
-                              AppTranslations.get(currentLang, 'spin_hint'),
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF4A90E2),
+                      const SizedBox(height: 30),
+
+                      // 하단 가이드 문구 및 미리듣기 버튼
+                      if (isWithin50m) ...[
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.swipe_left_alt, color: Color(0xFFD4AF37), size: 28),
+                            const SizedBox(width: 10),
+                            Flexible(
+                              child: Text(
+                                AppTranslations.get(currentLang, 'spin_hint'),
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFFD4AF37),
+                                ),
                               ),
                             ),
+                          ],
+                        ),
+                      ] else ...[
+                        OutlinedButton.icon(
+                          onPressed: () {
+                            setState(() { _isSpun = true; });
+                            _playDocent();
+                            _fetchNearbyPlaces();
+                          },
+                          icon: const Icon(Icons.headphones, color: Color(0xFF1F3864)),
+                          label: Text(
+                            AppTranslations.get(currentLang, 'preview_docent'),
+                            style: const TextStyle(color: Color(0xFF1F3864), fontWeight: FontWeight.bold),
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 30),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Color(0xFF1F3864), width: 1.5),
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 20),
                     ],
                   ),
                 ),
