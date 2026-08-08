@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -6,6 +7,8 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../models/quest.dart';
 import '../models/party.dart';
 import '../services/odii_service.dart';
+import '../services/user_service.dart';
+import '../services/party_service.dart';
 import '../data/spots_db.dart';
 
 class AppState extends ChangeNotifier {
@@ -38,113 +41,117 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  // --- Party (Co-Op Travel) Management ---
+  // --- User Profile (Firebase) ---
+  String _myNickname = '여행자';
+  String get myNickname => _myNickname;
+  String? _myFriendCode;
+  String? get myFriendCode => _myFriendCode;
+
+  Future<void> loadMyProfile() async {
+    await UserService.ensureSignedIn();
+    final uid = UserService.uid;
+    if (uid == null) return;
+    final profile = await UserService.getProfile(uid);
+    if (profile != null) {
+      _myFriendCode = profile['friendCode']?.toString();
+      _myNickname = profile['nickname']?.toString() ?? _myNickname;
+      notifyListeners();
+    }
+  }
+
+  Future<void> updateNickname(String nickname) async {
+    if (nickname.trim().isEmpty) return;
+    _myNickname = nickname.trim();
+    notifyListeners();
+    await UserService.updateProfile(nickname: _myNickname);
+  }
+
+  // --- Party (Co-Op Travel) Management — Firestore 실시간 동기화 ---
   PartyModel? _activeParty;
   PartyModel? get activeParty => _activeParty;
   List<PartyMember> get partyMembers => _activeParty?.members ?? [];
+  bool _isPartyBusy = false;
+  bool get isPartyBusy => _isPartyBusy;
+  StreamSubscription<PartyModel?>? _partySub;
+  double? _lastPartySyncedLat;
+  double? _lastPartySyncedLng;
 
-  PartyModel createParty({required String courseId, required String courseTitle}) {
-    final code = PartyModel.generateInviteCode();
-    double uLat = _userLat ?? 35.8348;
-    double uLng = _userLng ?? 129.2266;
+  Future<PartyModel?> createParty({required String courseId, required String courseTitle}) async {
+    await UserService.ensureSignedIn();
+    if (UserService.uid == null) return null;
 
-    final hostMember = PartyMember(
-      uid: 'user_host_01',
-      nickname: '나 (방장)',
-      characterPath: _selectedCharacterPath,
-      isHost: true,
-      lat: uLat,
-      lng: uLng,
-      stampCount: _globalVisitedSpots.length,
-    );
-
-    final mockMember1 = PartyMember(
-      uid: 'user_m01',
-      nickname: '민우 [화랑]',
-      characterPath: 'assets/images/silla_hwarang_2head_cute.png',
-      lat: uLat + 0.0015,
-      lng: uLng + 0.0012,
-      stampCount: 2,
-    );
-
-    final mockMember2 = PartyMember(
-      uid: 'user_m02',
-      nickname: 'Kaito [왕]',
-      characterPath: 'assets/images/silla_king_2head_cute.png',
-      lat: uLat - 0.0018,
-      lng: uLng + 0.0020,
-      stampCount: 3,
-    );
-
-    final mockMember3 = PartyMember(
-      uid: 'user_m03',
-      nickname: 'Sophia [공주]',
-      characterPath: 'assets/images/silla_princess_2head_cute.png',
-      lat: uLat + 0.0022,
-      lng: uLng - 0.0014,
-      stampCount: 1,
-    );
-
-    _activeParty = PartyModel(
-      partyId: 'party_${DateTime.now().millisecondsSinceEpoch}',
-      name: '$courseTitle 탐험대',
-      inviteCode: code,
+    _isPartyBusy = true;
+    notifyListeners();
+    final party = await PartyService.createParty(
       courseId: courseId,
       courseTitle: courseTitle,
-      members: [hostMember, mockMember1, mockMember2, mockMember3],
-      completionRatio: 0.25,
-    );
-
-    setActiveQuest(courseId);
-    notifyListeners();
-    return _activeParty!;
-  }
-
-  bool joinParty(String code) {
-    String cleanCode = code.trim().toUpperCase();
-    if (cleanCode.isEmpty) return false;
-
-    double uLat = _userLat ?? 35.8348;
-    double uLng = _userLng ?? 129.2266;
-
-    final hostMember = PartyMember(
-      uid: 'host_leader',
-      nickname: '경주 가이드 (방장)',
-      characterPath: 'assets/images/silla_king_2head_cute.png',
-      isHost: true,
-      lat: uLat + 0.0010,
-      lng: uLng + 0.0010,
-      stampCount: 3,
-    );
-
-    final meMember = PartyMember(
-      uid: 'user_joined',
-      nickname: '나 (참전자)',
+      nickname: _myNickname,
       characterPath: _selectedCharacterPath,
-      isHost: false,
-      lat: uLat,
-      lng: uLng,
+      lat: _userLat ?? 35.8348,
+      lng: _userLng ?? 129.2266,
       stampCount: _globalVisitedSpots.length,
     );
+    _isPartyBusy = false;
 
-    _activeParty = PartyModel(
-      partyId: 'party_joined_${DateTime.now().millisecondsSinceEpoch}',
-      name: '신라 원정대 (코드: $cleanCode)',
-      inviteCode: cleanCode,
-      courseId: 'c_royal',
-      courseTitle: 'C-ROYAL: 신라 왕실 핵심 탐방',
-      members: [hostMember, meMember],
-      completionRatio: 0.40,
-    );
-
-    setActiveQuest('c_royal');
-    notifyListeners();
-    return true;
+    if (party != null) {
+      _bindActiveParty(party);
+      setActiveQuest(courseId);
+    } else {
+      notifyListeners();
+    }
+    return party;
   }
 
-  void leaveParty() {
+  Future<JoinPartyResult> joinParty(String code) async {
+    await UserService.ensureSignedIn();
+    if (UserService.uid == null) return JoinPartyResult.notSignedIn;
+
+    _isPartyBusy = true;
+    notifyListeners();
+    final outcome = await PartyService.joinPartyByCode(
+      code,
+      nickname: _myNickname,
+      characterPath: _selectedCharacterPath,
+      lat: _userLat ?? 35.8348,
+      lng: _userLng ?? 129.2266,
+      stampCount: _globalVisitedSpots.length,
+    );
+    _isPartyBusy = false;
+
+    if (outcome.party != null) {
+      _bindActiveParty(outcome.party!);
+      setActiveQuest(outcome.party!.courseId);
+    } else {
+      notifyListeners();
+    }
+    return outcome.result;
+  }
+
+  void _bindActiveParty(PartyModel party) {
+    _activeParty = party;
+    _partySub?.cancel();
+    _partySub = PartyService.watchParty(party.partyId).listen((updated) {
+      _activeParty = updated;
+      notifyListeners();
+    });
+    notifyListeners();
+  }
+
+  Future<void> leaveParty() async {
+    final party = _activeParty;
+    _partySub?.cancel();
+    _partySub = null;
     _activeParty = null;
     notifyListeners();
+    if (party != null) {
+      await PartyService.leaveParty(party.partyId);
+    }
+  }
+
+  @override
+  void dispose() {
+    _partySub?.cancel();
+    super.dispose();
   }
 
   final List<Quest> _quests = [
@@ -280,7 +287,18 @@ class AppState extends ChangeNotifier {
   void updateUserLocation(double lat, double lng) {
     _userLat = lat;
     _userLng = lng;
-    
+
+    // Sync position to active party (throttled to movements > ~10m to limit writes)
+    if (_activeParty != null) {
+      final movedFar = _lastPartySyncedLat == null ||
+          _calculateDistance(_lastPartySyncedLat!, _lastPartySyncedLng!, lat, lng) * 1000 > 10;
+      if (movedFar) {
+        _lastPartySyncedLat = lat;
+        _lastPartySyncedLng = lng;
+        PartyService.updateMemberPosition(_activeParty!.partyId, lat, lng);
+      }
+    }
+
     // Update active quest target if needed
     final activeQuest = _quests.where((q) => q.isActive).firstOrNull;
     if (activeQuest != null) {
@@ -420,15 +438,21 @@ class AppState extends ChangeNotifier {
       }
     }
 
-    // Sync party completion ratio and member stamp count if active party exists
+    // Sync stamp progress to Firestore (user profile + active party, if any)
+    UserService.updateStampCount(_globalVisitedSpots.length);
     if (_activeParty != null) {
-      final me = _activeParty!.members.firstWhere(
-        (m) => m.isHost || m.uid == 'user_joined',
-        orElse: () => _activeParty!.members.first,
+      final courseQuest = _quests.firstWhere(
+        (q) => q.id == _activeParty!.courseId,
+        orElse: () => _quests.first,
       );
-      me.stampCount++;
-      _activeParty!.completionRatio = (_activeParty!.completionRatio + 0.25).clamp(0.0, 1.0);
-      updated = true;
+      final ratio = courseQuest.targetCount > 0
+          ? (_globalVisitedSpots.length / courseQuest.targetCount).clamp(0.0, 1.0)
+          : 0.0;
+      PartyService.updateMemberProgress(
+        _activeParty!.partyId,
+        stampCount: _globalVisitedSpots.length,
+        completionRatio: ratio,
+      );
     }
 
     if (updated) notifyListeners();
@@ -467,6 +491,7 @@ class AppState extends ChangeNotifier {
       q.visitedSpotTitles.clear();
       q.currentTargetSpot = null;
     }
+    UserService.updateStampCount(0);
     notifyListeners();
   }
 
@@ -551,5 +576,6 @@ class AppState extends ChangeNotifier {
   void setCharacter(String path) {
     _selectedCharacterPath = path;
     notifyListeners();
+    UserService.updateProfile(characterPath: path);
   }
 }

@@ -32,6 +32,17 @@ class PartyMember {
         'status': status,
       };
 
+  PartyMember copyWith({bool? isHost}) => PartyMember(
+        uid: uid,
+        nickname: nickname,
+        characterPath: characterPath,
+        isHost: isHost ?? this.isHost,
+        lat: lat,
+        lng: lng,
+        stampCount: stampCount,
+        status: status,
+      );
+
   factory PartyMember.fromJson(Map<String, dynamic> json) => PartyMember(
         uid: json['uid'] ?? '',
         nickname: json['nickname'] ?? 'Traveler',

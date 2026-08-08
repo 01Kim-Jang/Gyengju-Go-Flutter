@@ -3,7 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 import '../models/party.dart';
+import '../services/party_service.dart';
 import '../utils/translations.dart';
+import '../widgets/qr_code_display_sheet.dart';
+import 'qr_scan_screen.dart';
 
 class PartyScreen extends StatefulWidget {
   const PartyScreen({super.key});
@@ -101,9 +104,18 @@ class _PartyScreenState extends State<PartyScreen> {
                   child: Text(AppTranslations.get(currentLang, 'close'), style: const TextStyle(color: Colors.grey)),
                 ),
                 ElevatedButton(
-                  onPressed: () {
-                    appState.createParty(courseId: selectedCourseId, courseTitle: selectedCourseTitle);
+                  onPressed: () async {
                     Navigator.pop(context);
+                    final party = await appState.createParty(
+                      courseId: selectedCourseId,
+                      courseTitle: selectedCourseTitle,
+                    );
+                    if (!mounted) return;
+                    if (party == null) {
+                      ScaffoldMessenger.of(this.context).showSnackBar(
+                        const SnackBar(content: Text('파티 생성에 실패했습니다. 네트워크 상태를 확인해주세요.')),
+                      );
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1F3864),
@@ -118,6 +130,44 @@ class _PartyScreenState extends State<PartyScreen> {
         );
       },
     );
+  }
+
+  Future<void> _submitJoinCode(String rawCode, String currentLang, AppState appState) async {
+    final code = rawCode.replaceFirst('gyeongjugo:party:', '');
+    final result = await appState.joinParty(code);
+    if (!mounted) return;
+
+    switch (result) {
+      case JoinPartyResult.success:
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('🎉 성공적으로 파티에 참전했습니다!'),
+            backgroundColor: Color(0xFF2E7D32),
+          ),
+        );
+        break;
+      case JoinPartyResult.alreadyJoined:
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppTranslations.get(currentLang, 'party_already_joined'))),
+        );
+        break;
+      case JoinPartyResult.notFound:
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppTranslations.get(currentLang, 'party_not_found'))),
+        );
+        break;
+      case JoinPartyResult.full:
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppTranslations.get(currentLang, 'party_full'))),
+        );
+        break;
+      case JoinPartyResult.notSignedIn:
+      case JoinPartyResult.error:
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('오류가 발생했습니다. 네트워크 상태를 확인해주세요.')),
+        );
+        break;
+    }
   }
 
   void _showJoinPartyDialog(BuildContext context, AppState appState) {
@@ -180,21 +230,30 @@ class _PartyScreenState extends State<PartyScreen> {
             ],
           ),
           actions: [
+            TextButton.icon(
+              icon: const Icon(Icons.qr_code_scanner, size: 18),
+              label: Text(AppTranslations.get(currentLang, 'scan_qr')),
+              onPressed: () async {
+                Navigator.pop(context);
+                final scanned = await Navigator.push<String>(
+                  this.context,
+                  MaterialPageRoute(
+                    builder: (_) => QrScanScreen(title: AppTranslations.get(currentLang, 'scan_qr')),
+                  ),
+                );
+                if (scanned != null) await _submitJoinCode(scanned, currentLang, appState);
+              },
+            ),
             TextButton(
               onPressed: () => Navigator.pop(context),
               child: Text(AppTranslations.get(currentLang, 'close'), style: const TextStyle(color: Colors.grey)),
             ),
             ElevatedButton(
-              onPressed: () {
-                final success = appState.joinParty(_codeController.text);
+              onPressed: () async {
+                final code = _codeController.text;
                 Navigator.pop(context);
-                if (success) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('🎉 성공적으로 파티에 참전했습니다!'),
-                      backgroundColor: Color(0xFF2E7D32),
-                    ),
-                  );
+                if (code.trim().isNotEmpty) {
+                  await _submitJoinCode(code, currentLang, appState);
                 }
               },
               style: ElevatedButton.styleFrom(
@@ -207,6 +266,19 @@ class _PartyScreenState extends State<PartyScreen> {
           ],
         );
       },
+    );
+  }
+
+  void _showPartyInviteQr(PartyModel party, String currentLang) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => QrCodeDisplaySheet(
+        title: AppTranslations.get(currentLang, 'party_invite_qr'),
+        payload: 'gyeongjugo:party:${party.inviteCode}',
+        rawCode: party.inviteCode,
+      ),
     );
   }
 
@@ -389,24 +461,34 @@ class _PartyScreenState extends State<PartyScreen> {
                           ),
                         ],
                       ),
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          Clipboard.setData(ClipboardData(text: party.inviteCode));
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(AppTranslations.get(currentLang, 'code_copied')),
-                              duration: const Duration(seconds: 2),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            onPressed: () => _showPartyInviteQr(party, currentLang),
+                            icon: const Icon(Icons.qr_code, color: Colors.white),
+                            tooltip: AppTranslations.get(currentLang, 'party_invite_qr'),
+                          ),
+                          ElevatedButton.icon(
+                            onPressed: () {
+                              Clipboard.setData(ClipboardData(text: party.inviteCode));
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(AppTranslations.get(currentLang, 'code_copied')),
+                                  duration: const Duration(seconds: 2),
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.copy, size: 14),
+                            label: Text(AppTranslations.get(currentLang, 'copy_code')),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFD4AF37),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             ),
-                          );
-                        },
-                        icon: const Icon(Icons.copy, size: 14),
-                        label: Text(AppTranslations.get(currentLang, 'copy_code')),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFD4AF37),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
