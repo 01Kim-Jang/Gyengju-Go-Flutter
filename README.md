@@ -23,7 +23,12 @@
 - **테마 퀘스트 연동**: 명소에 맞춰 어울리는 테마별 여정(예: 절 ➔ 천년의 사찰 순례) 퀘스트를 즉시 실행할 수 있는 단축 단추를 지원합니다.
 - **골드 스탬프 북**: 지도상 명소를 터치 및 스핀(Spin)하면 경험치(+50 XP)를 획득하고, 획득한 골드 스탬프북 대시보드를 통해 6대 랜드마크 방문 상태를 아름답게 시각화합니다.
 
-### 4. 🧭 테마별 여행 플래너 퀘스트 시스템
+### 4-1. 👥 친구 & 소셜 파티 (Firebase 실시간 동기화)
+- **익명 인증 & 친구 코드**: 앱 최초 실행 시 Firebase 익명 인증으로 자동 로그인되며, 기기별 고유 6자리 친구 코드가 발급됩니다.
+- **친구 추가**: 친구 코드를 직접 입력하거나, 상대방의 QR 코드를 스캔해 즉시 친구로 등록할 수 있습니다. 친구 목록에서 각 친구의 캐릭터·닉네임·수집한 스탬프 수를 확인할 수 있습니다.
+- **실시간 파티(함께하기)**: 파티 생성 시 실제로 유일한 8자리 초대 코드가 Firestore에 발급되며, 코드 입력 또는 QR 스캔으로 참가하면 모든 파티원의 목록·위치·진행률이 실시간으로 동기화됩니다. 방장이 나가면 다음 파티원에게 자동으로 방장이 위임됩니다.
+
+### 4-2. 🧭 테마별 여행 플래너 퀘스트 시스템
 - 신라 왕릉 탐방, 천년의 사찰 순례, 역사 유적지 산책, 예술과 문화, 자연과 휴식, 황리단길 핫플 탐험 등 6대 테마의 퀘스트 리스트를 지원합니다.
 - 퀘스트 시작 시 사용자의 실시간 좌표에서 가장 가까운 목적지를 계산해주고 도보/교통 거리를 시각화합니다.
 
@@ -57,6 +62,8 @@
 - **AI Service**: OpenAI API (GPT-4o-mini 연동 및 다국어 식당 번역)
 - **Tourism Data**: 한국관광공사 Odii OpenAPI (경주 명소 다국어 데이터)
 - **Public Transit**: 국토교통부 TAGO OpenAPI (좌표기반 근접정류소 조회 + 정류소별 실시간 버스 도착정보)
+- **Backend**: Firebase Auth (익명 인증), Cloud Firestore (친구/파티 실시간 동기화)
+- **QR**: qr_flutter (생성), mobile_scanner (스캔)
 - **TTS**: Flutter TTS
 - **GPS & Location**: Geolocator (실시간 좌표 및 거리 측정)
 - **Routing & Launcher**: url_launcher (카카오맵 외부 내비게이션 연결)
@@ -73,26 +80,33 @@ lib/
 ├── data/
 │   ├── preloaded_spots.dart  # 성능 최적화를 위한 경주 spots 로컬 프리로드 DB
 │   └── spots_db.dart         # 경주 명소 다국어 백과사전 & 미디어 DB
+├── firebase_options.dart     # `flutterfire configure`로 자동 생성되는 Firebase 프로젝트 설정
 ├── models/
+│   ├── friend_profile.dart   # 친구 프로필 데이터 모델
 │   ├── party.dart            # 소셜 파티(함께하기) 데이터 모델
 │   └── quest.dart            # 플래너 및 일반 퀘스트 데이터 모델
 ├── providers/
 │   └── app_state.dart        # 전역 상태 (오디오, 테마 모드, 캐릭터, 스탬프, 파티 등) 관리
 ├── screens/
 │   ├── character_select_screen.dart # 최초 캐릭터 선택 화면
+│   ├── friends_screen.dart   # 친구 목록 · 추가(코드/QR) 화면
 │   ├── home_screen.dart      # 탭 기반 메인 네비게이션 화면
 │   ├── kakao_map_view.dart   # 카카오맵 뷰 (다국어 CustomOverlay 연동)
 │   ├── landing_screen.dart   # 인트로 스플래시 화면
 │   ├── language_select_screen.dart # 최초 다국어 선택 화면
 │   ├── mapbox_view.dart      # Mapbox 3D 역사 테마 지도 뷰
 │   ├── party_screen.dart     # 소셜 파티(함께하기) 생성/참가 화면
+│   ├── qr_scan_screen.dart   # 친구/파티 공용 QR 스캐너
 │   ├── quest_screen.dart     # 여정 기록, 스탬프 북 및 테마 퀘스트 화면
 │   └── settings_screen.dart  # 환경설정 화면 (한지 테마, 자산 관리, 초기화)
 ├── services/
+│   ├── friend_service.dart   # 친구 추가/목록 실시간 스트림 (Firestore)
 │   ├── kakao_local_service.dart # 카카오 로컬 API (주변 맛집 검색) 연동
 │   ├── odii_service.dart     # 한국관광공사 Odii API 통신 연동
 │   ├── openai_service.dart   # OpenAI API 통신 (식당 번역, AI 대화)
-│   └── tago_service.dart     # 국토교통부 TAGO API (근접정류소 · 실시간 버스 도착정보)
+│   ├── party_service.dart    # 파티 생성/참가/실시간 동기화 (Firestore)
+│   ├── tago_service.dart     # 국토교통부 TAGO API (근접정류소 · 실시간 버스 도착정보)
+│   └── user_service.dart     # 익명 인증 & 사용자 프로필/친구코드 (Firebase)
 ├── utils/
 │   ├── marker_generator.dart # 다국어 오버레이 및 마커 드로잉 유틸
 │   ├── mock_geolocator.dart  # 테스트용 Mock GPS 스트림
@@ -100,7 +114,8 @@ lib/
 └── widgets/
     ├── bus_arrival_sheet.dart    # TAGO 실시간 버스 도착정보 바텀시트
     ├── in_app_route_webview.dart # 인앱 길찾기 웹뷰
-    └── pokestop_modal.dart       # 포켓스탑 팝업 카드 (스핀, 스탬프, 도슨트 진입점)
+    ├── pokestop_modal.dart       # 포켓스탑 팝업 카드 (스핀, 스탬프, 도슨트 진입점)
+    └── qr_code_display_sheet.dart # 친구코드/파티초대코드 QR 표시 바텀시트
 ```
 
 ---
@@ -117,7 +132,29 @@ ODII_SERVICE_KEY=YOUR_ODII_SERVICE_KEY
 TAGO_SERVICE_KEY=YOUR_TAGO_SERVICE_KEY
 ```
 
-### 2. 패키지 다운로드 & 실행
+### 2. Firebase 설정 (친구 & 파티 기능에 필요)
+친구/파티 기능은 Firebase Auth(익명 인증) + Cloud Firestore를 사용합니다.
+
+1. [Firebase 콘솔](https://console.firebase.google.com)에서 프로젝트를 생성합니다.
+2. **Firestore Database**를 만듭니다 (위치: `asia-northeast3` 권장, 테스트 모드로 시작 가능).
+3. **Authentication → 로그인 방법**에서 "익명"을 활성화합니다.
+4. 아래 CLI로 이 프로젝트를 Firebase와 연동합니다.
+   ```bash
+   npm install -g firebase-tools
+   firebase login
+   dart pub global activate flutterfire_cli
+   flutterfire configure   # 플랫폼은 android, web 선택
+   ```
+   완료되면 `lib/firebase_options.dart`가 실제 프로젝트 값으로 자동 생성/교체됩니다.
+5. Firestore 보안 규칙을 배포합니다.
+   ```bash
+   firebase deploy --only firestore:rules
+   ```
+   (또는 Firebase 콘솔 → Firestore → 규칙 탭에 `firestore.rules` 내용을 그대로 붙여넣어도 됩니다.)
+
+> `flutterfire configure`를 아직 실행하지 않았다면 친구/파티 탭 진입 시 오류가 표시될 수 있지만, 그 외 지도·퀘스트·도슨트 등 나머지 기능은 정상 동작합니다.
+
+### 3. 패키지 다운로드 & 실행
 ```bash
 # 의존성 패키지 설치
 flutter pub get
