@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:kakao_map_plugin/kakao_map_plugin.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
 
+import 'firebase_options.dart';
 import 'screens/landing_screen.dart';
 import 'providers/app_state.dart';
+import 'services/user_service.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,6 +35,10 @@ Future<void> _initializeResources() async {
       baseUrl: 'https://localhost',
     );
     print("Kakao Auth initialized");
+
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    await UserService.ensureSignedIn();
+    print("Firebase initialized & signed in (uid: ${UserService.uid})");
   } catch (e, stacktrace) {
     print("Initialization Error: $e");
     print(stacktrace);
