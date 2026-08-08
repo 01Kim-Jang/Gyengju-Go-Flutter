@@ -342,28 +342,6 @@ class SpotsDB {
       imagePath: 'https://www.gyeongju.go.kr/upload/content/thumb/20200527/159056001272600.jpg',
       stampImage: 'https://www.gyeongju.go.kr/upload/content/thumb/20200527/159056001272600.jpg',
     ),
-    '문무대왕릉': SpotDetail(
-      names: {
-        'ko': '문무대왕릉',
-        'en': 'Tomb of King Munmu',
-        'ja': '文武大王陵',
-        'zh-chs': '文武大王陵',
-      },
-      facts: {
-        'ko': '삼국통일을 완수한 신라 제30대 문무왕의 수중릉입니다. "내가 죽으면 동해의 용이 되어 나라를 지키겠다"는 유언에 따라 바다 바위 속에 장사 지낸 세계 유일의 수중 왕릉입니다.',
-        'en': 'The underwater tomb of King Munmu, the 30th monarch of Silla who completed the unification of the Three Kingdoms. Per his will to become a dragon of the East Sea to protect the nation, he was buried under this marine rock.',
-        'ja': '三国統一を成し遂げた新羅第30代・文武왕의 水中陵です。「自分が死んだら東海の竜となり国を守る」という遺言に従い、海の中の岩の下に葬られた、世界唯一의 水중왕릉입니다.',
-        'zh-chs': '这是完成了三国统一大业的新罗第30代国王文武王的水中陵墓。遵照他“死后化作东海神龙以报效国家”的遗言，将其安葬在海中礁石下，是世界上唯一的水中王陵。',
-      },
-      tips: {
-        'ko': '봉길대보 해수욕장 백사장에서 바라볼 수 있습니다. 갈매기 떼와 푸른 바다 바위가 어우러진 해돋이 풍경은 출사 장소로도 매우 유명합니다.',
-        'en': 'It can be viewed from the white sands of Bonggil Daebo Beach. The sunrise landscape harmony of seagulls and blue sea rocks is very famous for photography.',
-        'ja': '奉吉大宝海水浴場の白い砂浜から望むことができます。カモメの群れと青い海の岩が調和した日の出の風景は、写真撮影のスポットとしても非常に有名です。',
-        'zh-chs': '从奉吉大宝海水浴场的白沙滩上可以望见。海鸥群飞与蓝色海中礁石相映成趣的日出景观，是非常著名的摄影打卡地。',
-      },
-      imagePath: 'https://www.gyeongju.go.kr/upload/content/thumb/20200527/159056024317800.jpg',
-      stampImage: 'https://www.gyeongju.go.kr/upload/content/thumb/20200527/159056024317800.jpg',
-    ),
   };
 
   static SpotDetail? get(String rawTitle) {
