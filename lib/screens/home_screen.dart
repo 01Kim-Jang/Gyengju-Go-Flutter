@@ -7,6 +7,7 @@ import '../components/chatbot_sheet.dart';
 import '../utils/translations.dart';
 import 'quest_screen.dart';
 import 'party_screen.dart';
+import 'friends_screen.dart';
 import 'settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -98,6 +99,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       const PartyScreen(),
+      const FriendsScreen(),
       const SettingsScreen(),
     ];
 
@@ -125,6 +127,10 @@ class _HomeScreenState extends State<HomeScreen> {
           BottomNavigationBarItem(
             icon: const Icon(Icons.diversity_3),
             label: AppTranslations.get(lang, 'party'),
+          ),
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.people_alt),
+            label: AppTranslations.get(lang, 'friends'),
           ),
           BottomNavigationBarItem(
             icon: const Icon(Icons.settings),
