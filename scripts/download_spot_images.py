@@ -4,7 +4,9 @@ import urllib.request
 import re
 
 # Odii API details
-API_KEY = "0eccca5dbe3449337090f9338bd258f0d50126e3dc873fc785ecf7b09c01ced0"
+API_KEY = os.environ.get("ODII_SERVICE_KEY", "")
+if not API_KEY:
+    raise SystemExit("ODII_SERVICE_KEY 환경변수를 설정하세요 (.env 참고).")
 ODII_URL = f"https://apis.data.go.kr/B551011/Odii/themeBasedList?serviceKey={API_KEY}&numOfRows=5000&pageNo=1&MobileOS=AND&MobileApp=GyeongjuGo&_type=json&langCode=ko"
 
 OUTPUT_DIR = "assets/images/spots"

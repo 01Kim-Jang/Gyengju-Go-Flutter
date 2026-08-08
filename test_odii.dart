@@ -1,5 +1,8 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
+
+final String _serviceKey = Platform.environment['ODII_SERVICE_KEY'] ?? '';
 
 Future<void> testLang(String appLangCode) async {
   String odiiLang = 'en';
@@ -15,7 +18,7 @@ Future<void> testLang(String appLangCode) async {
     odiiLang = 'en';
   }
 
-  final r = await http.get(Uri.parse('https://apis.data.go.kr/B551011/Odii/themeBasedList?serviceKey=0eccca5dbe3449337090f9338bd258f0d50126e3dc873fc785ecf7b09c01ced0&numOfRows=5000&pageNo=1&MobileOS=AND&MobileApp=App&_type=json&langCode=$odiiLang'));
+  final r = await http.get(Uri.parse('https://apis.data.go.kr/B551011/Odii/themeBasedList?serviceKey=$_serviceKey&numOfRows=5000&pageNo=1&MobileOS=AND&MobileApp=App&_type=json&langCode=$odiiLang'));
   try {
     final parsed = jsonDecode(r.body);
     final items = parsed['response']['body']['items']['item'] as List;
@@ -59,6 +62,10 @@ Future<void> testLang(String appLangCode) async {
 }
 
 void main() async {
+  if (_serviceKey.isEmpty) {
+    stderr.writeln('ODII_SERVICE_KEY 환경변수를 설정하세요 (.env 참고).');
+    exit(1);
+  }
   await testLang('ko');
   await testLang('en');
   await testLang('ja');

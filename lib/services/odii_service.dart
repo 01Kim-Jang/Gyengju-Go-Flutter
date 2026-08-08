@@ -1,11 +1,14 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../data/preloaded_spots.dart';
 
 class OdiiService {
-  // 사용자님이 제공한 한국관광공사 Odii API 키
-  static const String _serviceKey =
-      '0eccca5dbe3449337090f9338bd258f0d50126e3dc873fc785ecf7b09c01ced0';
+  static String get _serviceKey {
+    if (!dotenv.isInitialized) return '';
+    return dotenv.env['ODII_SERVICE_KEY'] ?? '';
+  }
+
   static const String _baseUrl = 'https://apis.data.go.kr/B551011/Odii';
 
   // 1. 테마 기반 스팟 정보 조회 (경주)
@@ -119,12 +122,4 @@ class OdiiService {
     ];
   }
 
-  // 2. 오디오 도슨트 스크립트 조회 (Odii API 상세조회 대체)
-  static Future<Map<String, dynamic>?> fetchAudioDocent(String title) async {
-    return {
-      'title': title,
-      'script':
-          '이곳 $title은(는) 신라의 천년 역사가 숨쉬는 대표적인 명소입니다. 옛 조상들의 지혜와 숨결을 느껴보세요.',
-    };
-  }
 }

@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 
-final String serviceKey = '0eccca5dbe3449337090f9338bd258f0d50126e3dc873fc785ecf7b09c01ced0';
+final String serviceKey = Platform.environment['ODII_SERVICE_KEY'] ?? '';
 final String baseUrl = 'https://apis.data.go.kr/B551011/Odii';
 
 Future<List<Map<String, dynamic>>> fetchSpots(String odiiLang) async {
@@ -85,6 +85,10 @@ Future<List<Map<String, dynamic>>> fetchSpots(String odiiLang) async {
 }
 
 void main() async {
+  if (serviceKey.isEmpty) {
+    stderr.writeln('ODII_SERVICE_KEY 환경변수를 설정하세요 (.env 참고).');
+    exit(1);
+  }
   print('Fetching spots for ko...');
   final koSpots = await fetchSpots('ko');
   print('Fetching spots for en...');
