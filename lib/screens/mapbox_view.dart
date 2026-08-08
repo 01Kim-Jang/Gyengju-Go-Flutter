@@ -14,7 +14,7 @@ import '../data/spots_db.dart';
 import '../utils/translations.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../widgets/in_app_route_webview.dart';
-import '../components/chatbot_sheet.dart';
+import '../widgets/bus_arrival_sheet.dart';
 
 class MapboxView extends StatefulWidget {
   const MapboxView({super.key});
@@ -718,11 +718,20 @@ class _MapboxViewState extends State<MapboxView> {
                                 prompt = 'Please show me how to get to $targetDisplayName using public transit (bus, train, etc.) and give me the best route.';
                               }
 
+                              final targetLat = double.tryParse(target['mapY'].toString()) ?? 35.8348;
+                              final targetLng = double.tryParse(target['mapX'].toString()) ?? 129.2266;
+
                               showModalBottomSheet(
                                 context: context,
                                 isScrollControlled: true,
                                 backgroundColor: Colors.transparent,
-                                builder: (context) => ChatBotSheet(initialMessage: prompt),
+                                builder: (context) => BusArrivalSheet(
+                                  spotName: targetDisplayName,
+                                  lat: targetLat,
+                                  lng: targetLng,
+                                  currentLang: appState.currentLanguage,
+                                  aiPrompt: prompt,
+                                ),
                               );
                             },
                           ),

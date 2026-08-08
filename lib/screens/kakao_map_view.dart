@@ -7,7 +7,7 @@ import '../widgets/pokestop_modal.dart';
 import '../data/spots_db.dart';
 import '../utils/translations.dart';
 import '../widgets/in_app_route_webview.dart';
-import '../components/chatbot_sheet.dart';
+import '../widgets/bus_arrival_sheet.dart';
 
 class KakaoMapView extends StatefulWidget {
   const KakaoMapView({super.key});
@@ -230,11 +230,20 @@ class _KakaoMapViewState extends State<KakaoMapView> {
                             prompt = 'Please show me how to get to $targetDisplayName using public transit (bus, train, etc.) and give me the best route.';
                           }
 
+                          final targetLat = double.tryParse(target['mapY'].toString()) ?? 35.8348;
+                          final targetLng = double.tryParse(target['mapX'].toString()) ?? 129.2266;
+
                           showModalBottomSheet(
                             context: context,
                             isScrollControlled: true,
                             backgroundColor: Colors.transparent,
-                            builder: (context) => ChatBotSheet(initialMessage: prompt),
+                            builder: (context) => BusArrivalSheet(
+                              spotName: targetDisplayName,
+                              lat: targetLat,
+                              lng: targetLng,
+                              currentLang: currentLang,
+                              aiPrompt: prompt,
+                            ),
                           );
                         },
                       ),
