@@ -15,6 +15,7 @@
 - **GPT-4o-mini 기반 AI 여행 비서**: 사용자의 현재 GPS 위치 정보를 컨텍스트로 받아 주변 맛집, 카페, 교통편, 역사적 정보에 최적화된 맞춤형 추천을 제공합니다.
 - **다국어 길찾기 링크**: AI 비서가 장소를 추천하면 메시지 하단에 **길찾기 카드**가 자동 파싱되어 노출됩니다.
 - **3개 이동수단 지원**: **자동차(Drive), 도보(Walk), 대중교통(Transit)** 버튼을 탭하면 사용자의 실시간 GPS 위치와 목적지의 위경도 좌표가 매핑된 카카오맵 외부 웹 길찾기 서비스로 다국어가 반영되어 바로 연결됩니다 (`url_launcher` 연동).
+- **TAGO 실시간 버스 도착정보**: 대중교통 버튼을 탭하면 국토교통부(TAGO) OpenAPI로 목적지 주변 가장 가까운 버스정류소와 노선별 실시간 도착 예정 시간(분 단위)·잔여 정류장 수를 바로 보여줍니다. 정류소에 도착 예정 버스가 없으면 가까운 순으로 다음 정류소를 자동 재탐색하며, 필요 시 AI 비서에게 경로를 추가로 물어볼 수 있는 버튼도 함께 제공합니다.
 
 ### 3. 🎟️ 포켓스탑 팝업 카드 & 전역 스탬프 북 시스템
 - **하프 카드(Half-Sheet) UI**: 마커 터치 시 부드럽게 팝업되는 카드에 다국어 명소명, 고화질 랜드마크 미디어, 스탬프 잠금 상태를 직관적으로 표현합니다.
@@ -54,6 +55,8 @@
 - **State Management**: Provider (전역 AppState 언어 및 게임 데이터 싱크)
 - **Maps API**: Mapbox Maps Flutter (3D), Kakao Map SDK (2D & CustomOverlay)
 - **AI Service**: OpenAI API (GPT-4o-mini 연동 및 다국어 식당 번역)
+- **Tourism Data**: 한국관광공사 Odii OpenAPI (경주 명소 다국어 데이터)
+- **Public Transit**: 국토교통부 TAGO OpenAPI (좌표기반 근접정류소 조회 + 정류소별 실시간 버스 도착정보)
 - **TTS**: Flutter TTS
 - **GPS & Location**: Geolocator (실시간 좌표 및 거리 측정)
 - **Routing & Launcher**: url_launcher (카카오맵 외부 내비게이션 연결)
@@ -65,30 +68,39 @@
 ```text
 lib/
 ├── components/
-│   └── chatbot_sheet.dart    # AI 스마트 비서 (채팅창 & 내비게이션 연동)
+│   ├── chatbot_sheet.dart    # AI 스마트 비서 (채팅창 & 내비게이션 연동)
+│   └── docent_sheet.dart     # 오디오 도슨트 요약/재생 시트
 ├── data/
 │   ├── preloaded_spots.dart  # 성능 최적화를 위한 경주 spots 로컬 프리로드 DB
-│   └── spots_db.dart         # 경주 6대 명소 다국어 백과사전 & 미디어 DB
+│   └── spots_db.dart         # 경주 명소 다국어 백과사전 & 미디어 DB
 ├── models/
+│   ├── party.dart            # 소셜 파티(함께하기) 데이터 모델
 │   └── quest.dart            # 플래너 및 일반 퀘스트 데이터 모델
 ├── providers/
-│   └── app_state.dart        # 전역 상태 (오디오, 테마 모드, 캐릭터, 스탬프 등) 관리
+│   └── app_state.dart        # 전역 상태 (오디오, 테마 모드, 캐릭터, 스탬프, 파티 등) 관리
 ├── screens/
+│   ├── character_select_screen.dart # 최초 캐릭터 선택 화면
 │   ├── home_screen.dart      # 탭 기반 메인 네비게이션 화면
 │   ├── kakao_map_view.dart   # 카카오맵 뷰 (다국어 CustomOverlay 연동)
 │   ├── landing_screen.dart   # 인트로 스플래시 화면
 │   ├── language_select_screen.dart # 최초 다국어 선택 화면
-│   ├── character_select_screen.dart # 최초 캐릭터 선택 화면
 │   ├── mapbox_view.dart      # Mapbox 3D 역사 테마 지도 뷰
-│   ├── quest_screen.dart     # 여정 기록, 스탬프 북 및 6대 테마 퀘스트 화면
+│   ├── party_screen.dart     # 소셜 파티(함께하기) 생성/참가 화면
+│   ├── quest_screen.dart     # 여정 기록, 스탬프 북 및 테마 퀘스트 화면
 │   └── settings_screen.dart  # 환경설정 화면 (한지 테마, 자산 관리, 초기화)
 ├── services/
+│   ├── kakao_local_service.dart # 카카오 로컬 API (주변 맛집 검색) 연동
 │   ├── odii_service.dart     # 한국관광공사 Odii API 통신 연동
-│   └── openai_service.dart   # OpenAI API 통신 (식당 번역, AI 대화)
-└── utils/
-    ├── marker_generator.dart # 다국어 오버레이 및 마커 드로잉 유틸
-    ├── mock_geolocator.dart  # 테스트용 Mock GPS 스트림
-    └── translations.dart     # 6개 국어 리소스 다국어 매트릭스
+│   ├── openai_service.dart   # OpenAI API 통신 (식당 번역, AI 대화)
+│   └── tago_service.dart     # 국토교통부 TAGO API (근접정류소 · 실시간 버스 도착정보)
+├── utils/
+│   ├── marker_generator.dart # 다국어 오버레이 및 마커 드로잉 유틸
+│   ├── mock_geolocator.dart  # 테스트용 Mock GPS 스트림
+│   └── translations.dart     # 6개 국어 리소스 다국어 매트릭스
+└── widgets/
+    ├── bus_arrival_sheet.dart    # TAGO 실시간 버스 도착정보 바텀시트
+    ├── in_app_route_webview.dart # 인앱 길찾기 웹뷰
+    └── pokestop_modal.dart       # 포켓스탑 팝업 카드 (스핀, 스탬프, 도슨트 진입점)
 ```
 
 ---
@@ -100,6 +112,9 @@ lib/
 ```env
 OPENAI_API_KEY=YOUR_OPENAI_API_KEY
 MAPBOX_ACCESS_TOKEN=YOUR_MAPBOX_ACCESS_TOKEN
+KAKAO_REST_API_KEY=YOUR_KAKAO_REST_API_KEY
+ODII_SERVICE_KEY=YOUR_ODII_SERVICE_KEY
+TAGO_SERVICE_KEY=YOUR_TAGO_SERVICE_KEY
 ```
 
 ### 2. 패키지 다운로드 & 실행
