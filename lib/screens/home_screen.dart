@@ -7,7 +7,6 @@ import '../components/chatbot_sheet.dart';
 import '../utils/translations.dart';
 import 'quest_screen.dart';
 import 'party_screen.dart';
-import 'friends_screen.dart';
 import 'settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -23,8 +22,9 @@ class _HomeScreenState extends State<HomeScreen> {
     final appState = context.watch<AppState>();
     final lang = appState.currentLanguage;
 
-    // 네비게이션용 탭 내용
-    final List<Widget> _pages = [
+    // 네비게이션용 탭 내용 (지도가 하단바 중앙의 원형 버튼으로 항상 고정되도록,
+    // Quest(0) / Map(1) / Social(2) / Settings(3) 순서를 유지한다.
+    final List<Widget> pages = [
       const QuestScreen(),
       // 지도 화면 탭
       Stack(
@@ -99,44 +99,74 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       const PartyScreen(),
-      const FriendsScreen(),
       const SettingsScreen(),
     ];
 
-    final safeTabIndex = appState.currentTabIndex.clamp(0, _pages.length - 1);
+    final safeTabIndex = appState.currentTabIndex.clamp(0, pages.length - 1);
+    final isMapActive = safeTabIndex == 1;
 
     return Scaffold(
-      body: _pages[safeTabIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: safeTabIndex,
-        type: BottomNavigationBarType.fixed,
-        onTap: (index) {
-          appState.setCurrentTabIndex(index);
-        },
-        selectedItemColor: const Color(0xFFD4AF37),
-        unselectedItemColor: Colors.grey[600],
-        items: [
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.explore),
-            label: AppTranslations.get(lang, 'quest'),
+      body: pages[safeTabIndex],
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      floatingActionButton: FloatingActionButton(
+        heroTag: "mapTabButton",
+        onPressed: () => appState.setCurrentTabIndex(1),
+        backgroundColor: isMapActive ? const Color(0xFFD4AF37) : Colors.white,
+        elevation: 4,
+        shape: CircleBorder(
+          side: BorderSide(
+            color: const Color(0xFFD4AF37),
+            width: isMapActive ? 0 : 2,
           ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.map),
-            label: AppTranslations.get(lang, 'map'),
+        ),
+        child: Icon(
+          Icons.map,
+          color: isMapActive ? Colors.white : const Color(0xFFD4AF37),
+          size: 26,
+        ),
+      ),
+      bottomNavigationBar: BottomAppBar(
+        shape: const CircularNotchedRectangle(),
+        notchMargin: 8,
+        color: Colors.white,
+        child: SizedBox(
+          height: 62,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  _buildNavItem(appState, 0, Icons.explore, AppTranslations.get(lang, 'quest')),
+                  _buildNavItem(appState, 2, Icons.diversity_3, AppTranslations.get(lang, 'social')),
+                ],
+              ),
+              _buildNavItem(appState, 3, Icons.settings, AppTranslations.get(lang, 'settings')),
+            ],
           ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.diversity_3),
-            label: AppTranslations.get(lang, 'party'),
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.people_alt),
-            label: AppTranslations.get(lang, 'friends'),
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.settings),
-            label: AppTranslations.get(lang, 'settings'),
-          ),
-        ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavItem(AppState appState, int index, IconData icon, String label) {
+    final isSelected = appState.currentTabIndex == index;
+    final color = isSelected ? const Color(0xFFD4AF37) : Colors.grey[600];
+    return InkWell(
+      onTap: () => appState.setCurrentTabIndex(index),
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: color, size: 24),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: TextStyle(fontSize: 11, color: color, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -8,7 +8,9 @@ import '../widgets/qr_code_display_sheet.dart';
 import 'qr_scan_screen.dart';
 
 class FriendsScreen extends StatefulWidget {
-  const FriendsScreen({super.key});
+  final bool autoOpenAdd;
+
+  const FriendsScreen({super.key, this.autoOpenAdd = false});
 
   @override
   State<FriendsScreen> createState() => _FriendsScreenState();
@@ -19,7 +21,11 @@ class _FriendsScreenState extends State<FriendsScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<AppState>().loadMyProfile();
+      final appState = context.read<AppState>();
+      appState.loadMyProfile();
+      if (widget.autoOpenAdd && mounted) {
+        _showAddFriendDialog(appState.currentLanguage);
+      }
     });
   }
 
@@ -216,7 +222,14 @@ class _FriendsScreenState extends State<FriendsScreen> {
     final appState = context.watch<AppState>();
     final lang = appState.currentLanguage;
 
-    return Container(
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(AppTranslations.get(lang, 'friends')),
+        backgroundColor: const Color(0xFFFDFBF7),
+        foregroundColor: const Color(0xFF3E2723),
+        elevation: 1,
+      ),
+      body: Container(
       decoration: const BoxDecoration(
         image: DecorationImage(
           image: AssetImage('assets/images/hanji_bg.png'),
@@ -228,27 +241,9 @@ class _FriendsScreenState extends State<FriendsScreen> {
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 10.0),
+              padding: const EdgeInsets.fromLTRB(20.0, 16.0, 20.0, 10.0),
               child: Column(
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.people_alt, color: Color(0xFFD4AF37), size: 32),
-                      const SizedBox(width: 10),
-                      Text(
-                        AppTranslations.get(lang, 'friends'),
-                        style: const TextStyle(
-                          fontSize: 30,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'Serif',
-                          color: Color(0xFF3E2723),
-                          shadows: [Shadow(color: Colors.white70, blurRadius: 2, offset: Offset(1, 1))],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
@@ -379,6 +374,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
             ),
           ],
         ),
+      ),
       ),
     );
   }

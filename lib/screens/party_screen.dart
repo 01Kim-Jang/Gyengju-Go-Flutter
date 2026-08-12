@@ -7,6 +7,7 @@ import '../services/party_service.dart';
 import '../utils/translations.dart';
 import '../widgets/qr_code_display_sheet.dart';
 import 'qr_scan_screen.dart';
+import 'friends_screen.dart';
 
 class PartyScreen extends StatefulWidget {
   const PartyScreen({super.key});
@@ -27,7 +28,7 @@ class _PartyScreenState extends State<PartyScreen> {
   void _showCreatePartyDialog(BuildContext context, AppState appState) {
     final currentLang = appState.currentLanguage;
     String selectedCourseId = 'c_royal';
-    String selectedCourseTitle = 'C-ROYAL: 신라 왕실 핵심 탐방';
+    String selectedCourseTitle = AppTranslations.get(currentLang, 'c_royal_title');
 
     showDialog(
       context: context,
@@ -59,39 +60,46 @@ class _PartyScreenState extends State<PartyScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    '탐험할 코스를 선택하여 8자리 초대 코드를 생성합니다.',
-                    style: TextStyle(fontSize: 13, color: Color(0xFF5D4037)),
+                  Text(
+                    AppTranslations.get(currentLang, 'select_course_desc'),
+                    style: const TextStyle(fontSize: 13, color: Color(0xFF5D4037)),
                   ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
                     value: selectedCourseId,
                     decoration: InputDecoration(
-                      labelText: '탐방 코스 선택',
+                      labelText: AppTranslations.get(currentLang, 'select_course_label'),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     ),
-                    items: const [
+                    items: [
                       DropdownMenuItem(
                         value: 'c_royal',
-                        child: Text('C-ROYAL: 신라 왕실 핵심 탐방 (도보)', style: TextStyle(fontSize: 13)),
+                        child: Text(
+                          '${AppTranslations.get(currentLang, 'c_royal_title')} (${AppTranslations.get(currentLang, 'walk')})',
+                          style: const TextStyle(fontSize: 13),
+                        ),
                       ),
                       DropdownMenuItem(
                         value: 'c_buddha',
-                        child: Text('C-BUDDHA: 명작 불교문화 탐방 (버스)', style: TextStyle(fontSize: 13)),
+                        child: Text(
+                          '${AppTranslations.get(currentLang, 'c_buddha_title')} (${AppTranslations.get(currentLang, 'transit')})',
+                          style: const TextStyle(fontSize: 13),
+                        ),
                       ),
                       DropdownMenuItem(
                         value: 'c_munmu',
-                        child: Text('C-MUNMU: 동해 호국 용의 길 (차량)', style: TextStyle(fontSize: 13)),
+                        child: Text(
+                          '${AppTranslations.get(currentLang, 'c_munmu_title')} (${AppTranslations.get(currentLang, 'drive')})',
+                          style: const TextStyle(fontSize: 13),
+                        ),
                       ),
                     ],
                     onChanged: (val) {
                       if (val != null) {
                         setDialogState(() {
                           selectedCourseId = val;
-                          if (val == 'c_royal') selectedCourseTitle = 'C-ROYAL: 신라 왕실 핵심 탐방';
-                          if (val == 'c_buddha') selectedCourseTitle = 'C-BUDDHA: 명작 불교문화 탐방';
-                          if (val == 'c_munmu') selectedCourseTitle = 'C-MUNMU: 동해 호국 용의 길';
+                          selectedCourseTitle = AppTranslations.get(currentLang, '${val}_title');
                         });
                       }
                     },
@@ -113,7 +121,7 @@ class _PartyScreenState extends State<PartyScreen> {
                     if (!mounted) return;
                     if (party == null) {
                       ScaffoldMessenger.of(this.context).showSnackBar(
-                        const SnackBar(content: Text('파티 생성에 실패했습니다. 네트워크 상태를 확인해주세요.')),
+                        SnackBar(content: Text(AppTranslations.get(currentLang, 'party_create_failed'))),
                       );
                     }
                   },
@@ -122,7 +130,7 @@ class _PartyScreenState extends State<PartyScreen> {
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
-                  child: const Text('생성하기'),
+                  child: Text(AppTranslations.get(currentLang, 'confirm_create')),
                 ),
               ],
             );
@@ -140,9 +148,9 @@ class _PartyScreenState extends State<PartyScreen> {
     switch (result) {
       case JoinPartyResult.success:
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('🎉 성공적으로 파티에 참전했습니다!'),
-            backgroundColor: Color(0xFF2E7D32),
+          SnackBar(
+            content: Text(AppTranslations.get(currentLang, 'party_join_success')),
+            backgroundColor: const Color(0xFF2E7D32),
           ),
         );
         break;
@@ -164,7 +172,7 @@ class _PartyScreenState extends State<PartyScreen> {
       case JoinPartyResult.notSignedIn:
       case JoinPartyResult.error:
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('오류가 발생했습니다. 네트워크 상태를 확인해주세요.')),
+          SnackBar(content: Text(AppTranslations.get(currentLang, 'network_error'))),
         );
         break;
     }
@@ -201,9 +209,9 @@ class _PartyScreenState extends State<PartyScreen> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                '전달받은 8자리 초대 코드를 입력해 주세요.',
-                style: TextStyle(fontSize: 13, color: Color(0xFF5D4037)),
+              Text(
+                AppTranslations.get(currentLang, 'enter_invite_code_desc'),
+                style: const TextStyle(fontSize: 13, color: Color(0xFF5D4037)),
               ),
               const SizedBox(height: 16),
               TextField(
@@ -261,12 +269,23 @@ class _PartyScreenState extends State<PartyScreen> {
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               ),
-              child: const Text('참전하기'),
+              child: Text(AppTranslations.get(currentLang, 'confirm_join')),
             ),
           ],
         );
       },
     );
+  }
+
+  String _statusLabel(String status, String lang) {
+    switch (status) {
+      case 'ready':
+        return AppTranslations.get(lang, 'status_ready');
+      case 'completed':
+        return AppTranslations.get(lang, 'status_completed');
+      default:
+        return AppTranslations.get(lang, 'status_active');
+    }
   }
 
   void _showPartyInviteQr(PartyModel party, String currentLang) {
@@ -305,21 +324,43 @@ class _PartyScreenState extends State<PartyScreen> {
               child: Column(
                 children: [
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.diversity_3, color: Color(0xFFD4AF37), size: 32),
-                      const SizedBox(width: 10),
-                      Text(
-                        AppTranslations.get(currentLang, 'party'),
-                        style: const TextStyle(
-                          fontSize: 30,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'Serif',
-                          color: Color(0xFF3E2723),
-                          shadows: [
-                            Shadow(color: Colors.white70, blurRadius: 2, offset: Offset(1, 1))
+                      IconButton(
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const FriendsScreen()),
+                        ),
+                        icon: const Icon(Icons.people_alt, color: Color(0xFF5D4037)),
+                        tooltip: AppTranslations.get(currentLang, 'view_friend_list'),
+                      ),
+                      Expanded(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.diversity_3, color: Color(0xFFD4AF37), size: 32),
+                            const SizedBox(width: 10),
+                            Text(
+                              AppTranslations.get(currentLang, 'social'),
+                              style: const TextStyle(
+                                fontSize: 30,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'Serif',
+                                color: Color(0xFF3E2723),
+                                shadows: [
+                                  Shadow(color: Colors.white70, blurRadius: 2, offset: Offset(1, 1))
+                                ],
+                              ),
+                            ),
                           ],
                         ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const FriendsScreen(autoOpenAdd: true)),
+                        ),
+                        icon: const Icon(Icons.person_add, color: Color(0xFF1F3864)),
+                        tooltip: AppTranslations.get(currentLang, 'add_friend'),
                       ),
                     ],
                   ),
@@ -407,7 +448,7 @@ class _PartyScreenState extends State<PartyScreen> {
                   children: [
                     Expanded(
                       child: Text(
-                        party.name,
+                        '${AppTranslations.get(currentLang, '${party.courseId}_title')} ${AppTranslations.get(currentLang, 'party_group_suffix')}',
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 18,
@@ -424,7 +465,7 @@ class _PartyScreenState extends State<PartyScreen> {
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
-                        '${party.members.length}/${party.maxMembers}명',
+                        '${party.members.length}/${party.maxMembers}${AppTranslations.get(currentLang, 'members_suffix')}',
                         style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
                       ),
                     ),
@@ -507,7 +548,7 @@ class _PartyScreenState extends State<PartyScreen> {
                           style: const TextStyle(color: Colors.white70, fontSize: 12),
                         ),
                         Text(
-                          '${(progressPercent * 100).toInt()}% 달성',
+                          '${(progressPercent * 100).toInt()}% ${AppTranslations.get(currentLang, 'percent_achieved')}',
                           style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 13, fontWeight: FontWeight.bold),
                         ),
                       ],
@@ -604,9 +645,9 @@ class _PartyScreenState extends State<PartyScreen> {
                                     color: const Color(0xFFD4AF37),
                                     borderRadius: BorderRadius.circular(6),
                                   ),
-                                  child: const Text(
-                                    '👑 방장',
-                                    style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                  child: Text(
+                                    AppTranslations.get(currentLang, 'host_label'),
+                                    style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
                                   ),
                                 ),
                               ],
@@ -614,7 +655,8 @@ class _PartyScreenState extends State<PartyScreen> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            '수집한 스탬프: ${member.stampCount}개 | 상태: ${member.status}',
+                            '${member.stampCount}${AppTranslations.get(currentLang, 'stamps_collected')} · '
+                            '${_statusLabel(member.status, currentLang)}',
                             style: const TextStyle(fontSize: 12, color: Color(0xFF666666)),
                           ),
                         ],
@@ -637,7 +679,7 @@ class _PartyScreenState extends State<PartyScreen> {
                     appState.setCurrentTabIndex(1); // Switch to Map tab
                   },
                   icon: const Icon(Icons.map, size: 18),
-                  label: const Text('🗺️ 지도에서 파티원 보기'),
+                  label: Text(AppTranslations.get(currentLang, 'view_party_on_map')),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1F3864),
                     foregroundColor: Colors.white,
@@ -650,7 +692,7 @@ class _PartyScreenState extends State<PartyScreen> {
               OutlinedButton.icon(
                 onPressed: () => appState.leaveParty(),
                 icon: const Icon(Icons.exit_to_app, color: Colors.redAccent, size: 18),
-                label: const Text('나가기', style: TextStyle(color: Colors.redAccent)),
+                label: Text(AppTranslations.get(currentLang, 'leave_party'), style: const TextStyle(color: Colors.redAccent)),
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: Colors.redAccent, width: 1.2),
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -666,6 +708,7 @@ class _PartyScreenState extends State<PartyScreen> {
   }
 
   Widget _buildNoPartyWelcomeCard(BuildContext context, AppState appState) {
+    final currentLang = appState.currentLanguage;
     return Center(
       child: Container(
         margin: const EdgeInsets.all(24),
@@ -687,9 +730,9 @@ class _PartyScreenState extends State<PartyScreen> {
           children: [
             const Icon(Icons.diversity_1, color: Color(0xFFD4AF37), size: 64),
             const SizedBox(height: 16),
-            const Text(
-              '신라 동반 여행 파티 (Co-Op Party)',
-              style: TextStyle(
+            Text(
+              AppTranslations.get(currentLang, 'party_welcome_title'),
+              style: const TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
                 fontFamily: 'Serif',
@@ -698,16 +741,16 @@ class _PartyScreenState extends State<PartyScreen> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
-            const Text(
-              '친구, 가족, 동행과 함께 파티를 구성하여\n경주 유적지를 실시간으로 함께 탐험해 보세요!\n\n파티원들의 위치와 스탬프 수집 상태가\n지도 상에 실시간으로 함께 표출됩니다.',
-              style: TextStyle(fontSize: 14, color: Color(0xFF5D4037), height: 1.5),
+            Text(
+              AppTranslations.get(currentLang, 'party_welcome_desc'),
+              style: const TextStyle(fontSize: 14, color: Color(0xFF5D4037), height: 1.5),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
               onPressed: () => _showCreatePartyDialog(context, appState),
               icon: const Icon(Icons.group_add),
-              label: const Text('지금 파티 생성하기'),
+              label: Text(AppTranslations.get(currentLang, 'create_party_now')),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF1F3864),
                 foregroundColor: Colors.white,
