@@ -12,6 +12,8 @@ class Quest {
   bool isActive;
   Map<String, dynamic>? currentTargetSpot;
   List<String> visitedSpotTitles;
+  // 현재 위치 기준으로 계산된 최적 방문 순서 (제목 목록). setActiveQuest 시점에 1회 계산됨.
+  List<String> plannedOrder;
 
   Quest({
     required this.id,
@@ -25,7 +27,9 @@ class Quest {
     this.isActive = false,
     this.currentTargetSpot,
     List<String>? visitedSpotTitles,
-  }) : visitedSpotTitles = visitedSpotTitles ?? [];
+    List<String>? plannedOrder,
+  })  : visitedSpotTitles = visitedSpotTitles ?? [],
+        plannedOrder = plannedOrder ?? [];
 
   bool get isCompleted => currentCount >= targetCount;
 

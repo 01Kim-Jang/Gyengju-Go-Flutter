@@ -299,11 +299,11 @@ class AppState extends ChangeNotifier {
       }
     }
 
-    // Update active quest target if needed
+    // Update active quest target if needed (GPS가 늦게 잡혀서 계획이 아직 없는 경우에만 재계산)
     final activeQuest = _quests.where((q) => q.isActive).firstOrNull;
     if (activeQuest != null) {
-      if (activeQuest.currentTargetSpot == null) {
-        _findNextTarget(activeQuest);
+      if (activeQuest.plannedOrder.isEmpty && activeQuest.currentTargetSpot == null) {
+        _planQuestRoute(activeQuest);
       }
       triggerRouteFetch();
     }
@@ -314,28 +314,22 @@ class AppState extends ChangeNotifier {
     for (var q in _quests) {
       q.isActive = false;
     }
-    
+
     final quest = _quests.firstWhere((q) => q.id == questId);
     quest.isActive = true;
-    _findNextTarget(quest);
-    
+    _planQuestRoute(quest);
+
     triggerRouteFetch();
     notifyListeners();
   }
 
-  void _findNextTarget(Quest quest) {
-    if (_userLat == null || _userLng == null || _spotsData.isEmpty) return;
-
-    double minDistance = double.infinity;
-    Map<String, dynamic>? bestSpot;
-
+  // 퀘스트 키워드에 매칭되면서 아직 방문하지 않은 명소 목록
+  List<Map<String, dynamic>> _matchingUnvisitedSpots(Quest quest) {
+    final results = <Map<String, dynamic>>[];
     for (var spot in _spotsData) {
       final title = spot['title'].toString();
-      
-      // Skip visited
       if (quest.visitedSpotTitles.contains(title)) continue;
 
-      // Check keywords against title, Korean title, and English title
       bool matches = false;
       final spotDetail = SpotsDB.get(title);
       final List<String> searchTexts = [
@@ -356,19 +350,102 @@ class AppState extends ChangeNotifier {
         if (matches) break;
       }
 
-      if (matches) {
-        double spotLat = double.tryParse(spot['mapY'].toString()) ?? 0;
-        double spotLng = double.tryParse(spot['mapX'].toString()) ?? 0;
-        
-        double dist = _calculateDistance(_userLat!, _userLng!, spotLat, spotLng);
-        if (dist < minDistance) {
-          minDistance = dist;
-          bestSpot = spot;
-        }
+      if (matches) results.add(spot);
+    }
+    return results;
+  }
+
+  // 현재 위치에서 출발해 남은 목적지들을 총 이동거리가 최소가 되는 순서로 정렬한다.
+  // 지점 수가 적으므로(최대 targetCount, 실사용상 ≤5) 완전탐색으로 최적해를 구하고,
+  // 혹시 더 많아지는 경우를 대비해 최근접 이웃 탐욕법으로 폴백한다.
+  List<Map<String, dynamic>> _computeOptimalOrder(
+    List<Map<String, dynamic>> spots,
+    double startLat,
+    double startLng,
+  ) {
+    if (spots.length <= 1) return spots;
+
+    if (spots.length > 7) {
+      final remaining = List<Map<String, dynamic>>.from(spots);
+      final ordered = <Map<String, dynamic>>[];
+      double curLat = startLat, curLng = startLng;
+      while (remaining.isNotEmpty) {
+        remaining.sort((a, b) {
+          final da = _calculateDistance(curLat, curLng,
+              double.tryParse(a['mapY'].toString()) ?? 0, double.tryParse(a['mapX'].toString()) ?? 0);
+          final db = _calculateDistance(curLat, curLng,
+              double.tryParse(b['mapY'].toString()) ?? 0, double.tryParse(b['mapX'].toString()) ?? 0);
+          return da.compareTo(db);
+        });
+        final next = remaining.removeAt(0);
+        ordered.add(next);
+        curLat = double.tryParse(next['mapY'].toString()) ?? curLat;
+        curLng = double.tryParse(next['mapX'].toString()) ?? curLng;
+      }
+      return ordered;
+    }
+
+    final permutations = <List<Map<String, dynamic>>>[];
+    void permute(List<Map<String, dynamic>> pool, List<Map<String, dynamic>> acc) {
+      if (pool.isEmpty) {
+        permutations.add(List.from(acc));
+        return;
+      }
+      for (var i = 0; i < pool.length; i++) {
+        final next = List<Map<String, dynamic>>.from(pool)..removeAt(i);
+        permute(next, [...acc, pool[i]]);
       }
     }
 
-    quest.currentTargetSpot = bestSpot;
+    permute(spots, []);
+
+    double bestDistance = double.infinity;
+    List<Map<String, dynamic>> bestOrder = spots;
+    for (final perm in permutations) {
+      double total = 0;
+      double curLat = startLat, curLng = startLng;
+      for (final spot in perm) {
+        final lat = double.tryParse(spot['mapY'].toString()) ?? curLat;
+        final lng = double.tryParse(spot['mapX'].toString()) ?? curLng;
+        total += _calculateDistance(curLat, curLng, lat, lng);
+        curLat = lat;
+        curLng = lng;
+      }
+      if (total < bestDistance) {
+        bestDistance = total;
+        bestOrder = perm;
+      }
+    }
+    return bestOrder;
+  }
+
+  // 퀘스트의 방문 순서(plannedOrder)를 현재 위치 기준으로 새로 계산하고 다음 목적지를 설정한다.
+  void _planQuestRoute(Quest quest) {
+    final remainingSlots = quest.targetCount - quest.currentCount;
+    if (remainingSlots <= 0 || _spotsData.isEmpty) {
+      quest.plannedOrder = [];
+      quest.currentTargetSpot = null;
+      return;
+    }
+
+    var matching = _matchingUnvisitedSpots(quest);
+    final startLat = _userLat ?? 35.8348;
+    final startLng = _userLng ?? 129.2266;
+
+    if (matching.length > remainingSlots) {
+      matching.sort((a, b) {
+        final da = _calculateDistance(startLat, startLng,
+            double.tryParse(a['mapY'].toString()) ?? 0, double.tryParse(a['mapX'].toString()) ?? 0);
+        final db = _calculateDistance(startLat, startLng,
+            double.tryParse(b['mapY'].toString()) ?? 0, double.tryParse(b['mapX'].toString()) ?? 0);
+        return da.compareTo(db);
+      });
+      matching = matching.take(remainingSlots).toList();
+    }
+
+    final ordered = _computeOptimalOrder(matching, startLat, startLng);
+    quest.plannedOrder = ordered.map((s) => s['title'].toString()).toList();
+    quest.currentTargetSpot = ordered.isNotEmpty ? ordered.first : null;
   }
 
   // 50m Geofencing helpers
@@ -419,19 +496,31 @@ class AppState extends ChangeNotifier {
       updated = true;
     }
     
-    // Check if the visited spot was the target of an active planner quest
+    // Check if the visited spot is part of the active quest's planned route.
+    // (계획된 순서와 다르게 먼저 방문하더라도 체크리스트에 반영되도록 순서 무관하게 인정)
     final activeQuest = _quests.where((q) => q.isActive).firstOrNull;
     if (activeQuest != null) {
-      if (activeQuest.currentTargetSpot != null && activeQuest.currentTargetSpot!['title'] == spotTitle) {
+      final isPlannedSpot = activeQuest.plannedOrder.contains(spotTitle) ||
+          (activeQuest.currentTargetSpot != null && activeQuest.currentTargetSpot!['title'] == spotTitle);
+      if (isPlannedSpot && !activeQuest.visitedSpotTitles.contains(spotTitle)) {
         activeQuest.addVisitedSpot(spotTitle);
-        
+
         if (activeQuest.isCompleted) {
           addScore(activeQuest.rewardXP);
           activeQuest.isActive = false;
           clearRoute();
         } else {
-          // Find next target
-          _findNextTarget(activeQuest);
+          final nextTitle = activeQuest.plannedOrder.firstWhere(
+            (t) => !activeQuest.visitedSpotTitles.contains(t),
+            orElse: () => '',
+          );
+          if (nextTitle.isNotEmpty) {
+            activeQuest.currentTargetSpot =
+                _spotsData.where((s) => s['title'].toString() == nextTitle).firstOrNull;
+          } else {
+            // 계획된 지점을 모두 방문했지만 아직 목표치가 안 찼다면(키워드 기반 퀘스트) 재계획
+            _planQuestRoute(activeQuest);
+          }
           triggerRouteFetch();
         }
         updated = true;

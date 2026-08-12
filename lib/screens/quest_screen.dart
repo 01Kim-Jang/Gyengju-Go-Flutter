@@ -5,6 +5,7 @@ import '../providers/app_state.dart';
 import '../utils/translations.dart';
 import '../data/spots_db.dart';
 import '../components/chatbot_sheet.dart';
+import '../widgets/quest_route_sheet.dart';
 
 class QuestScreen extends StatelessWidget {
   const QuestScreen({super.key});
@@ -214,63 +215,89 @@ class QuestScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.navigation, color: Colors.white),
-                        const SizedBox(width: 8),
-                        Text(
-                          AppTranslations.get(appState.currentLanguage, '${activeQuest.id}_title'),
-                          style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                    InkWell(
+                      onTap: () => showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (_) => QuestRouteSheet(
+                          quest: activeQuest,
+                          currentLang: appState.currentLanguage,
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    if (activeQuest.currentTargetSpot != null) ...[
-                      Row(
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(Icons.place, color: Colors.white70, size: 20),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Builder(
-                              builder: (context) {
-                                final rawTarget = activeQuest.currentTargetSpot!['title'] ?? '';
-                                final cleanTarget = rawTarget
-                                    .replaceAll(RegExp(r'\([^)]*\)'), '')
-                                    .replaceAll(RegExp(r'\[[^\]]*\]'), '')
-                                    .replaceAll(RegExp(r'^경주\s*,?\s*'), '')
-                                    .replaceAll(RegExp(r'^Gyeongju\s*,?\s*', caseSensitive: false), '')
-                                    .trim();
-                                final targetDetail = SpotsDB.get(cleanTarget);
-                                final targetDisplayName = targetDetail != null 
-                                    ? targetDetail.getName(appState.currentLanguage) 
-                                    : rawTarget;
-                                return Text(
-                                  '${AppTranslations.get(appState.currentLanguage, 'planner_current_target')}: $targetDisplayName',
-                                  style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-                                  maxLines: 2,
-                                );
-                              }
-                            ),
+                          Row(
+                            children: [
+                              const Icon(Icons.navigation, color: Colors.white),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  AppTranslations.get(appState.currentLanguage, '${activeQuest.id}_title'),
+                                  style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              Tooltip(
+                                message: AppTranslations.get(appState.currentLanguage, 'view_full_route'),
+                                child: const Icon(Icons.chevron_right, color: Colors.white70),
+                              ),
+                            ],
                           ),
+                          const SizedBox(height: 12),
+                          if (activeQuest.currentTargetSpot != null) ...[
+                            Row(
+                              children: [
+                                const Icon(Icons.place, color: Colors.white70, size: 20),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Builder(
+                                    builder: (context) {
+                                      final rawTarget = activeQuest.currentTargetSpot!['title'] ?? '';
+                                      final cleanTarget = rawTarget
+                                          .replaceAll(RegExp(r'\([^)]*\)'), '')
+                                          .replaceAll(RegExp(r'\[[^\]]*\]'), '')
+                                          .replaceAll(RegExp(r'^경주\s*,?\s*'), '')
+                                          .replaceAll(RegExp(r'^Gyeongju\s*,?\s*', caseSensitive: false), '')
+                                          .trim();
+                                      final targetDetail = SpotsDB.get(cleanTarget);
+                                      final targetDisplayName = targetDetail != null
+                                          ? targetDetail.getName(appState.currentLanguage)
+                                          : rawTarget;
+                                      return Text(
+                                        '${AppTranslations.get(appState.currentLanguage, 'planner_current_target')}: $targetDisplayName',
+                                        style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                                        maxLines: 2,
+                                      );
+                                    }
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (appState.userLat != null && appState.userLng != null) ...[
+                              const SizedBox(height: 6),
+                              Builder(
+                                builder: (context) {
+                                  double tLat = double.tryParse(activeQuest.currentTargetSpot!['mapY'].toString()) ?? 0;
+                                  double tLng = double.tryParse(activeQuest.currentTargetSpot!['mapX'].toString()) ?? 0;
+                                  double dist = _calculateDistance(appState.userLat!, appState.userLng!, tLat, tLng);
+                                  return Padding(
+                                    padding: const EdgeInsets.only(left: 28.0),
+                                    child: Text(
+                                      '${AppTranslations.get(appState.currentLanguage, 'planner_distance')}: ${dist.toStringAsFixed(1)} km',
+                                      style: const TextStyle(color: Colors.white70, fontSize: 14),
+                                    ),
+                                  );
+                                }
+                              ),
+                            ],
+                          ] else ...[
+                            Text(AppTranslations.get(appState.currentLanguage, 'searching_target'), style: const TextStyle(color: Colors.white)),
+                          ],
                         ],
                       ),
-                      if (appState.userLat != null && appState.userLng != null) ...[
-                        const SizedBox(height: 6),
-                        Builder(
-                          builder: (context) {
-                            double tLat = double.tryParse(activeQuest.currentTargetSpot!['mapY'].toString()) ?? 0;
-                            double tLng = double.tryParse(activeQuest.currentTargetSpot!['mapX'].toString()) ?? 0;
-                            double dist = _calculateDistance(appState.userLat!, appState.userLng!, tLat, tLng);
-                            return Padding(
-                              padding: const EdgeInsets.only(left: 28.0),
-                              child: Text(
-                                '${AppTranslations.get(appState.currentLanguage, 'planner_distance')}: ${dist.toStringAsFixed(1)} km',
-                                style: const TextStyle(color: Colors.white70, fontSize: 14),
-                              ),
-                            );
-                          }
-                        ),
-                      ],
+                    ),
+                    if (activeQuest.currentTargetSpot != null) ...[
                       const SizedBox(height: 14),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -328,9 +355,7 @@ class QuestScreen extends StatelessWidget {
                           ),
                         ],
                       ),
-                    ] else ...[
-                      Text(AppTranslations.get(appState.currentLanguage, 'searching_target'), style: const TextStyle(color: Colors.white)),
-                    ]
+                    ],
                   ],
                 ),
               ),
