@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import '../services/openai_service.dart';
 import '../providers/app_state.dart';
+import '../utils/translations.dart';
 
 class DocentSheet extends StatefulWidget {
   final Map<String, dynamic> spotData;
@@ -62,7 +63,7 @@ class _DocentSheetState extends State<DocentSheet> {
   Future<void> _loadTranslatedText() async {
     final appState = context.read<AppState>();
     final lang = appState.currentLanguage;
-    final originalTitle = widget.spotData['title'] ?? '알 수 없는 장소';
+    final originalTitle = widget.spotData['title'] ?? AppTranslations.get(lang, 'unknown_place');
 
     // Odii 데이터에 overview가 없을 수 있으므로 AI로 생성
     String originalText = widget.spotData['overview'] ?? '';
@@ -108,6 +109,7 @@ class _DocentSheetState extends State<DocentSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final currentLang = context.watch<AppState>().currentLanguage;
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: const BoxDecoration(
@@ -134,7 +136,7 @@ class _DocentSheetState extends State<DocentSheet> {
             children: [
               Expanded(
                 child: Text(
-                  translatedTitle ?? widget.spotData['title'] ?? '알 수 없는 장소',
+                  translatedTitle ?? widget.spotData['title'] ?? AppTranslations.get(currentLang, 'unknown_place'),
                   style: const TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
@@ -152,9 +154,9 @@ class _DocentSheetState extends State<DocentSheet> {
             ],
           ),
           const SizedBox(height: 16),
-          const Text(
-            '오디오 도슨트 요약',
-            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey),
+          Text(
+            AppTranslations.get(currentLang, 'docent_summary'),
+            style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey),
           ),
           const SizedBox(height: 8),
           isLoading

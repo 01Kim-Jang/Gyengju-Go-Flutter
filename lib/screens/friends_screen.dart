@@ -142,6 +142,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
         title: AppTranslations.get(lang, 'my_friend_code'),
         payload: 'gyeongjugo:friend:$code',
         rawCode: code,
+        currentLang: lang,
       ),
     );
   }

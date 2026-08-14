@@ -181,7 +181,7 @@ class _CharacterSelectScreenState extends State<CharacterSelectScreen> {
                   ),
                 ),
                 child: Text(
-                  lang == 'ko' ? '시작하기' : (lang == 'en' ? 'Start' : 'OK'),
+                  AppTranslations.get(lang, 'planner_start'),
                   style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ),

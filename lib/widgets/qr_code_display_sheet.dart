@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import '../utils/translations.dart';
 
 // gyeongjugo:friend:{CODE} 또는 gyeongjugo:party:{CODE} 형태의 payload를
 // QR로 보여주고, 사람이 직접 읽고 입력할 수 있도록 원본 코드 텍스트도 함께 표시.
@@ -8,12 +9,14 @@ class QrCodeDisplaySheet extends StatelessWidget {
   final String title;
   final String payload;
   final String rawCode;
+  final String currentLang;
 
   const QrCodeDisplaySheet({
     super.key,
     required this.title,
     required this.payload,
     required this.rawCode,
+    required this.currentLang,
   });
 
   @override
@@ -61,7 +64,7 @@ class QrCodeDisplaySheet extends StatelessWidget {
             onTap: () {
               Clipboard.setData(ClipboardData(text: rawCode));
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('코드가 복사되었습니다.'), duration: Duration(seconds: 2)),
+                SnackBar(content: Text(AppTranslations.get(currentLang, 'code_copied')), duration: const Duration(seconds: 2)),
               );
             },
             child: Container(

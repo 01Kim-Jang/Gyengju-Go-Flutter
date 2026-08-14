@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 import '../services/odii_service.dart';
+import '../utils/translations.dart';
 import 'character_select_screen.dart';
 
 class LanguageSelectScreen extends StatefulWidget {
@@ -37,7 +38,7 @@ class _LanguageSelectScreenState extends State<LanguageSelectScreen> {
           context.read<AppState>().setSpotsData(spots);
         }
       } catch (e) {
-        print("Error fetching language spots: $e");
+        debugPrint("Error fetching language spots: $e");
       }
     }
 
@@ -51,6 +52,7 @@ class _LanguageSelectScreenState extends State<LanguageSelectScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final currentLang = context.watch<AppState>().currentLanguage;
     return Scaffold(
       body: Container(
         width: double.infinity,
@@ -125,7 +127,7 @@ class _LanguageSelectScreenState extends State<LanguageSelectScreen> {
               if (_isLoading) ...[
                 const CircularProgressIndicator(color: Color(0xFFD4AF37)),
                 const SizedBox(height: 16),
-                const Text('언어 데이터를 적용하는 중입니다...', style: TextStyle(color: Colors.grey)),
+                Text(AppTranslations.get(currentLang, 'applying_language'), style: const TextStyle(color: Colors.grey)),
                 const SizedBox(height: 32),
               ]
             ],

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 import '../services/odii_service.dart';
+import '../utils/translations.dart';
 import 'language_select_screen.dart';
 
 class LandingScreen extends StatefulWidget {
@@ -38,7 +39,7 @@ class _LandingScreenState extends State<LandingScreen> with SingleTickerProvider
         context.read<AppState>().setSpotsData(spots);
       }
     } catch (e) {
-      print("Error prefetching spots: $e");
+      debugPrint("Error prefetching spots: $e");
     } finally {
       if (mounted) {
         setState(() {
@@ -84,6 +85,7 @@ class _LandingScreenState extends State<LandingScreen> with SingleTickerProvider
 
   @override
   Widget build(BuildContext context) {
+    final currentLang = context.watch<AppState>().currentLanguage;
     return Scaffold(
       body: Container(
         width: double.infinity,
@@ -100,9 +102,9 @@ class _LandingScreenState extends State<LandingScreen> with SingleTickerProvider
               padding: const EdgeInsets.only(bottom: 50.0, left: 40, right: 40),
               child: Column(
                 children: [
-                  const Text(
-                    '경주 여행을 준비하는 중입니다...',
-                    style: TextStyle(
+                  Text(
+                    AppTranslations.get(currentLang, 'preparing_trip'),
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 14,
                       fontWeight: FontWeight.bold,

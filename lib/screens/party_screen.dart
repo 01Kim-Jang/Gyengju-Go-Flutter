@@ -297,6 +297,7 @@ class _PartyScreenState extends State<PartyScreen> {
         title: AppTranslations.get(currentLang, 'party_invite_qr'),
         payload: 'gyeongjugo:party:${party.inviteCode}',
         rawCode: party.inviteCode,
+        currentLang: currentLang,
       ),
     );
   }

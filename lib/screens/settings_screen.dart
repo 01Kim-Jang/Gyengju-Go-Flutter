@@ -24,10 +24,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   ];
 
   final List<Map<String, dynamic>> _dotCharacters = [
-    {'path': 'assets/images/char_style1_male.png', 'name': '도트 무사 (남)'},
-    {'path': 'assets/images/char_style1_female.png', 'name': '도트 아씨 (여)'},
-    {'path': 'assets/images/char_style2_male.png', 'name': '도트 도령 (남)'},
-    {'path': 'assets/images/char_style2_female.png', 'name': '도트 낭자 (여)'},
+    {'path': 'assets/images/char_style1_male.png', 'nameKey': 'char_dot_warrior'},
+    {'path': 'assets/images/char_style1_female.png', 'nameKey': 'char_dot_lady'},
+    {'path': 'assets/images/char_style2_male.png', 'nameKey': 'char_dot_young_master'},
+    {'path': 'assets/images/char_style2_female.png', 'nameKey': 'char_dot_maiden'},
   ];
 
   // Whether we are viewing 8-head or 2-head grid
@@ -82,7 +82,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
-              currentLang == 'ko' ? '취소' : 'Cancel',
+              AppTranslations.get(currentLang, 'cancel'),
               style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
             ),
           ),
@@ -99,7 +99,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
             child: Text(
-              currentLang == 'ko' ? '초기화' : 'Reset',
+              AppTranslations.get(currentLang, 'confirm_reset'),
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
@@ -267,9 +267,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         final char = _isEightHeadMode ? _illustrations[index] : _dotCharacters[index];
                         final path = char['path'] as String;
                         final isSelected = appState.selectedCharacterPath == path;
-                        final name = _isEightHeadMode
-                            ? AppTranslations.get(currentLang, char['nameKey']!)
-                            : char['name'] as String;
+                        final name = AppTranslations.get(currentLang, char['nameKey']!);
 
                         return GestureDetector(
                           onTap: () => appState.setCharacter(path),
