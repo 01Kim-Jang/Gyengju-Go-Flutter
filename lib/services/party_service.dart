@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import '../models/party.dart';
 import 'user_service.dart';
 
@@ -144,7 +145,7 @@ class PartyService {
 
       return JoinPartyOutcome(result, updated);
     } catch (e) {
-      print('PartyService.joinPartyByCode Error: $e');
+      debugPrint('PartyService.joinPartyByCode Error: $e');
       return JoinPartyOutcome(JoinPartyResult.error, null);
     }
   }
@@ -172,7 +173,7 @@ class PartyService {
         tx.update(docRef, _membersPayload(remaining));
       });
     } catch (e) {
-      print('PartyService.leaveParty Error: $e');
+      debugPrint('PartyService.leaveParty Error: $e');
     }
   }
 
@@ -206,7 +207,7 @@ class PartyService {
         });
       });
     } catch (e) {
-      print('PartyService.updateMemberProgress Error: $e');
+      debugPrint('PartyService.updateMemberProgress Error: $e');
     }
   }
 
@@ -227,7 +228,7 @@ class PartyService {
         tx.update(docRef, _membersPayload(current.members));
       });
     } catch (e) {
-      print('PartyService.updateMemberPosition Error: $e');
+      debugPrint('PartyService.updateMemberPosition Error: $e');
     }
   }
 }

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
@@ -52,10 +53,10 @@ class OpenAIService {
         final data = jsonDecode(responseBody);
         return data['choices'][0]['message']['content'];
       } else {
-        print('OpenAI API Error: ${response.statusCode} - ${response.body}');
+        debugPrint('OpenAI API Error: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
-      print('OpenAI Exception: $e');
+      debugPrint('OpenAI Exception: $e');
     }
 
     return text;
@@ -125,11 +126,11 @@ class OpenAIService {
         final data = jsonDecode(responseBody);
         return data['choices'][0]['message']['content'];
       } else {
-        print('OpenAI API Error: ${response.statusCode} - ${response.body}');
+        debugPrint('OpenAI API Error: ${response.statusCode} - ${response.body}');
         return "오류가 발생했습니다. 나중에 다시 시도해주세요.";
       }
     } catch (e) {
-      print('OpenAI Exception: $e');
+      debugPrint('OpenAI Exception: $e');
       return "네트워크 오류가 발생했습니다.";
     }
   }
@@ -167,7 +168,7 @@ class OpenAIService {
         return data['choices'][0]['message']['content'].toString().trim();
       }
     } catch (e) {
-      print('OpenAI Docent Error: $e');
+      debugPrint('OpenAI Docent Error: $e');
     }
 
     return '현재 이 장소에 대한 도슨트 정보를 불러올 수 없습니다.';
@@ -238,7 +239,7 @@ class OpenAIService {
         return result;
       }
     } catch (e) {
-      print('OpenAI Translate Restaurants Error: $e');
+      debugPrint('OpenAI Translate Restaurants Error: $e');
     }
 
     return restaurants;

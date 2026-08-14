@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:geolocator/geolocator.dart';
@@ -102,7 +103,7 @@ class TagoService {
       stops.sort((a, b) => a.distanceM.compareTo(b.distanceM));
       return stops;
     } catch (e) {
-      print('TAGO API Error (Nearby Stops): $e');
+      debugPrint('TAGO API Error (Nearby Stops): $e');
       return [];
     }
   }
@@ -147,7 +148,7 @@ class TagoService {
       arrivals.sort((a, b) => a.arrivalSeconds.compareTo(b.arrivalSeconds));
       return arrivals;
     } catch (e) {
-      print('TAGO API Error (Arrivals): $e');
+      debugPrint('TAGO API Error (Arrivals): $e');
       return [];
     }
   }

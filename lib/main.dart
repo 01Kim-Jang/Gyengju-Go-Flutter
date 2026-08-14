@@ -11,7 +11,7 @@ import 'services/user_service.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  print("Flutter Binding Initialized");
+  debugPrint("Flutter Binding Initialized");
 
   // 앱 화면을 먼저 렌더링하도록 runApp을 즉시 실행
   runApp(
@@ -28,20 +28,20 @@ void main() {
 Future<void> _initializeResources() async {
   try {
     await dotenv.load(fileName: ".env");
-    print("Dotenv loaded");
+    debugPrint("Dotenv loaded");
 
     AuthRepository.initialize(
       appKey: '8ae79b4318ce3ff35ce6e3f09698b3b0',
       baseUrl: 'https://localhost',
     );
-    print("Kakao Auth initialized");
+    debugPrint("Kakao Auth initialized");
 
     await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
     await UserService.ensureSignedIn();
-    print("Firebase initialized & signed in (uid: ${UserService.uid})");
+    debugPrint("Firebase initialized & signed in (uid: ${UserService.uid})");
   } catch (e, stacktrace) {
-    print("Initialization Error: $e");
-    print(stacktrace);
+    debugPrint("Initialization Error: $e");
+    debugPrint(stacktrace.toString());
   }
 }
 

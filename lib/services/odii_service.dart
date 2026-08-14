@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../data/preloaded_spots.dart';
@@ -111,7 +112,7 @@ class OdiiService {
         }
       }
     } catch (e) {
-      print('Odii API Error (Spots): $e');
+      debugPrint('Odii API Error (Spots): $e');
     }
 
     // API 장애 또는 결과가 없을 때를 대비한 기본 경주 명소 데이터

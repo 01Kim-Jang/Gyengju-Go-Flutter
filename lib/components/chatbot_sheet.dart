@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../utils/mock_geolocator.dart';
 import '../services/openai_service.dart';
 import '../providers/app_state.dart';
 import '../utils/translations.dart';

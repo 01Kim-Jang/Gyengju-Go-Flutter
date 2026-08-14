@@ -555,7 +555,7 @@ class AppState extends ChangeNotifier {
         _spotsData = loadedSpots;
       }
     } catch (e) {
-      print("Error fetching spots in new language: $e");
+      debugPrint("Error fetching spots in new language: $e");
     }
     notifyListeners();
   }
@@ -624,7 +624,7 @@ class AppState extends ChangeNotifier {
     try {
       final token = dotenv.env['MAPBOX_ACCESS_TOKEN'] ?? '';
       if (token.isEmpty) {
-        print('Mapbox access token is empty. Cannot fetch route.');
+        debugPrint('Mapbox access token is empty. Cannot fetch route.');
         _routeCoordinates.clear();
         return;
       }
@@ -650,11 +650,11 @@ class AppState extends ChangeNotifier {
           _routeCoordinates.clear();
         }
       } else {
-        print('Mapbox Directions API Error: ${response.statusCode}');
+        debugPrint('Mapbox Directions API Error: ${response.statusCode}');
         _routeCoordinates.clear();
       }
     } catch (e) {
-      print('Error fetching route points: $e');
+      debugPrint('Error fetching route points: $e');
       _routeCoordinates.clear();
     } finally {
       _isFetchingRoute = false;

@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 
 // Firebase 익명 인증 + Firestore users/{uid} 프로필(닉네임, 캐릭터, 친구코드) 관리.
 //
@@ -46,7 +47,7 @@ class UserService {
         });
       }
     } catch (e) {
-      print('UserService.ensureSignedIn Error: $e');
+      debugPrint('UserService.ensureSignedIn Error: $e');
     }
   }
 
@@ -73,7 +74,7 @@ class UserService {
       final doc = await _users.doc(targetUid).get();
       return doc.data();
     } catch (e) {
-      print('UserService.getProfile Error: $e');
+      debugPrint('UserService.getProfile Error: $e');
       return null;
     }
   }
@@ -88,7 +89,7 @@ class UserService {
     try {
       await _users.doc(myUid).set(data, SetOptions(merge: true));
     } catch (e) {
-      print('UserService.updateProfile Error: $e');
+      debugPrint('UserService.updateProfile Error: $e');
     }
   }
 
@@ -98,7 +99,7 @@ class UserService {
     try {
       await _users.doc(myUid).set({'stampCount': stampCount}, SetOptions(merge: true));
     } catch (e) {
-      print('UserService.updateStampCount Error: $e');
+      debugPrint('UserService.updateStampCount Error: $e');
     }
   }
 }

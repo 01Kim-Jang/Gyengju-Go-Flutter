@@ -1,5 +1,4 @@
 import 'dart:ui' as ui;
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:flutter/services.dart';
@@ -110,7 +109,7 @@ class MarkerGenerator {
         canvas.drawImageRect(image, srcRect, destRect, Paint());
         canvas.restore();
       } catch (e) {
-        print("Failed to load image for marker ($imageUrl): $e");
+        debugPrint("Failed to load image for marker ($imageUrl): $e");
         // Fallback to empty center if image fails
         paint.color = Colors.white;
         canvas.drawCircle(
@@ -247,7 +246,7 @@ class MarkerGenerator {
           canvas.restore();
         }
       } catch (e) {
-        print("Failed to load image for marker: $e");
+        debugPrint("Failed to load image for marker: $e");
         // Fallback to empty center if image fails
         paint.color = Colors.white;
         canvas.drawCircle(

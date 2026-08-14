@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import '../models/friend_profile.dart';
 import 'user_service.dart';
 
@@ -38,7 +39,7 @@ class FriendService {
       });
       return AddFriendResult.success;
     } catch (e) {
-      print('FriendService.addFriendByCode Error: $e');
+      debugPrint('FriendService.addFriendByCode Error: $e');
       return AddFriendResult.error;
     }
   }
