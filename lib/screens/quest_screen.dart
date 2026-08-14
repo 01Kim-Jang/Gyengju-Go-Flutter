@@ -4,8 +4,8 @@ import 'dart:math' as math;
 import '../providers/app_state.dart';
 import '../utils/translations.dart';
 import '../data/spots_db.dart';
-import '../components/chatbot_sheet.dart';
 import '../widgets/quest_route_sheet.dart';
+import '../utils/transit_helper.dart';
 
 class QuestScreen extends StatelessWidget {
   const QuestScreen({super.key});
@@ -95,7 +95,7 @@ class QuestScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    spotName,
+                    SpotsDB.get(spotName)?.getName(currentLang) ?? spotName,
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: isCollected ? FontWeight.bold : FontWeight.normal,
@@ -330,26 +330,18 @@ class QuestScreen extends StatelessWidget {
                                   .replaceAll(RegExp(r'^Gyeongju\s*,?\s*', caseSensitive: false), '')
                                   .trim();
                               final targetDetail = SpotsDB.get(cleanTarget);
-                              final targetDisplayName = targetDetail != null 
-                                  ? targetDetail.getName(appState.currentLanguage) 
+                              final targetDisplayName = targetDetail != null
+                                  ? targetDetail.getName(appState.currentLanguage)
                                   : rawTarget;
-                              
-                              String prompt = '';
-                              if (appState.currentLanguage == 'ko') {
-                                prompt = '$targetDisplayName(으)로 대중교통(버스, 열차 등)을 이용하여 가는 방법과 최적 경로를 알려줘.';
-                              } else if (appState.currentLanguage == 'ja') {
-                                prompt = '$targetDisplayNameへ公共交通機関（バス、電車など）を利用して行く方法と最適なルートを教えてください。';
-                              } else if (appState.currentLanguage == 'zh-chs' || appState.currentLanguage == 'zh') {
-                                prompt = '请告诉我如何乘坐公共交通（公交车、火车等）去$targetDisplayName，并提供最佳路线。';
-                              } else {
-                                prompt = 'Please show me how to get to $targetDisplayName using public transit (bus, train, etc.) and give me the best route.';
-                              }
+                              final targetLat = double.tryParse(activeQuest.currentTargetSpot!['mapY'].toString()) ?? 35.8348;
+                              final targetLng = double.tryParse(activeQuest.currentTargetSpot!['mapX'].toString()) ?? 129.2266;
 
-                              showModalBottomSheet(
-                                context: context,
-                                isScrollControlled: true,
-                                backgroundColor: Colors.transparent,
-                                builder: (context) => ChatBotSheet(initialMessage: prompt),
+                              openTransitInfoSheet(
+                                context,
+                                targetDisplayName: targetDisplayName,
+                                lat: targetLat,
+                                lng: targetLng,
+                                currentLang: appState.currentLanguage,
                               );
                             },
                           ),
@@ -378,9 +370,9 @@ class QuestScreen extends StatelessWidget {
                   final isMvpCourse = ['c_royal', 'c_buddha', 'c_munmu'].contains(quest.id);
                   final progressPercent = (quest.currentCount / quest.targetCount).clamp(0.0, 1.0);
                   
-                  String transportBadge = '🚶 도보 3~4시간';
-                  if (quest.id == 'c_buddha') transportBadge = '🚌 버스 3~5시간';
-                  if (quest.id == 'c_munmu') transportBadge = '🚗 드라이브 3~4시간';
+                  String transportBadge = AppTranslations.get(appState.currentLanguage, 'transport_badge_walk');
+                  if (quest.id == 'c_buddha') transportBadge = AppTranslations.get(appState.currentLanguage, 'transport_badge_bus');
+                  if (quest.id == 'c_munmu') transportBadge = AppTranslations.get(appState.currentLanguage, 'transport_badge_drive');
 
                   return Container(
                     margin: const EdgeInsets.only(bottom: 20),
@@ -417,9 +409,9 @@ class QuestScreen extends StatelessWidget {
                                   color: const Color(0xFF1F3864),
                                   borderRadius: BorderRadius.circular(6),
                                 ),
-                                child: const Text(
-                                  'MVP 추천 코스',
-                                  style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                                child: Text(
+                                  AppTranslations.get(appState.currentLanguage, 'mvp_course_badge'),
+                                  style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
                                 ),
                               ),
                               const SizedBox(width: 8),

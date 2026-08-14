@@ -12,9 +12,7 @@ import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 import '../data/spots_db.dart';
 import '../utils/translations.dart';
-import 'package:url_launcher/url_launcher.dart';
-import '../widgets/in_app_route_webview.dart';
-import '../widgets/bus_arrival_sheet.dart';
+import '../utils/transit_helper.dart';
 
 class MapboxView extends StatefulWidget {
   const MapboxView({super.key});
@@ -134,7 +132,7 @@ class _MapboxViewState extends State<MapboxView> {
         ),
       );
     } catch (e) {
-      print('Error drawing route on Mapbox: $e');
+      debugPrint('Error drawing route on Mapbox: $e');
     }
   }
 
@@ -210,7 +208,7 @@ class _MapboxViewState extends State<MapboxView> {
         ),
       );
     } catch (e) {
-      print("Error rendering trees: $e");
+      debugPrint("Error rendering trees: $e");
     }
   }
 
@@ -311,7 +309,7 @@ class _MapboxViewState extends State<MapboxView> {
         true,
       );
     } catch (e) {
-      print("Style update error: $e");
+      debugPrint("Style update error: $e");
     }
 
     // Terrain is managed via Mapbox Studio style instead of programmatic adding
@@ -400,7 +398,7 @@ class _MapboxViewState extends State<MapboxView> {
         );
       }
     } catch (e) {
-      print("Hanok Model load error: $e");
+      debugPrint("Hanok Model load error: $e");
     }
   }
 
@@ -703,35 +701,18 @@ class _MapboxViewState extends State<MapboxView> {
                                   .replaceAll(RegExp(r'^Gyeongju\s*,?\s*', caseSensitive: false), '')
                                   .trim();
                               final targetDetail = SpotsDB.get(cleanTarget);
-                              final targetDisplayName = targetDetail != null 
-                                  ? targetDetail.getName(appState.currentLanguage) 
+                              final targetDisplayName = targetDetail != null
+                                  ? targetDetail.getName(appState.currentLanguage)
                                   : rawTarget;
-                              
-                              String prompt = '';
-                              if (appState.currentLanguage == 'ko') {
-                                prompt = '$targetDisplayName(으)로 대중교통(버스, 열차 등)을 이용하여 가는 방법과 최적 경로를 알려줘.';
-                              } else if (appState.currentLanguage == 'ja') {
-                                prompt = '$targetDisplayNameへ公共交通機関（バス、電車など）を利用して行く方法と最適なルートを教えてください。';
-                              } else if (appState.currentLanguage == 'zh-chs' || appState.currentLanguage == 'zh') {
-                                prompt = '请告诉我如何乘坐公共交通（公交车、火车等）去$targetDisplayName，并提供最佳路线。';
-                              } else {
-                                prompt = 'Please show me how to get to $targetDisplayName using public transit (bus, train, etc.) and give me the best route.';
-                              }
-
                               final targetLat = double.tryParse(target['mapY'].toString()) ?? 35.8348;
                               final targetLng = double.tryParse(target['mapX'].toString()) ?? 129.2266;
 
-                              showModalBottomSheet(
-                                context: context,
-                                isScrollControlled: true,
-                                backgroundColor: Colors.transparent,
-                                builder: (context) => BusArrivalSheet(
-                                  spotName: targetDisplayName,
-                                  lat: targetLat,
-                                  lng: targetLng,
-                                  currentLang: appState.currentLanguage,
-                                  aiPrompt: prompt,
-                                ),
+                              openTransitInfoSheet(
+                                context,
+                                targetDisplayName: targetDisplayName,
+                                lat: targetLat,
+                                lng: targetLng,
+                                currentLang: appState.currentLanguage,
                               );
                             },
                           ),
@@ -755,7 +736,10 @@ class _MapboxViewState extends State<MapboxView> {
                               const SizedBox(width: 6),
                               Flexible(
                                 child: Text(
-                                  '${appState.activeParty!.name} [${appState.activeParty!.inviteCode}] | ${appState.activeParty!.members.length}명 함께 탐험 중',
+                                  AppTranslations.get(appState.currentLanguage, 'party_badge_in_quest')
+                                      .replaceAll('{name}', '${AppTranslations.get(appState.currentLanguage, '${appState.activeParty!.courseId}_title')} ${AppTranslations.get(appState.currentLanguage, 'party_group_suffix')}')
+                                      .replaceAll('{code}', appState.activeParty!.inviteCode)
+                                      .replaceAll('{count}', appState.activeParty!.members.length.toString()),
                                   style: const TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.bold),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -789,7 +773,10 @@ class _MapboxViewState extends State<MapboxView> {
                       const Icon(Icons.groups, color: Color(0xFFD4AF37), size: 20),
                       const SizedBox(width: 8),
                       Text(
-                        '👥 ${appState.activeParty!.name} (${appState.activeParty!.inviteCode}) | ${appState.activeParty!.members.length}명 탐험 중',
+                        AppTranslations.get(appState.currentLanguage, 'party_badge_standalone')
+                            .replaceAll('{name}', '${AppTranslations.get(appState.currentLanguage, '${appState.activeParty!.courseId}_title')} ${AppTranslations.get(appState.currentLanguage, 'party_group_suffix')}')
+                            .replaceAll('{code}', appState.activeParty!.inviteCode)
+                            .replaceAll('{count}', appState.activeParty!.members.length.toString()),
                         style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
                       ),
                     ],
@@ -828,8 +815,6 @@ class _MapboxViewState extends State<MapboxView> {
   }
 
   Timer? _cinematicTimer;
-  double _cinematicBearing = 0.0;
-  bool _isCinematicRunning = false;
 
   void _startCinematicCamera(Map<String, dynamic> spot) {
     if (mapboxMap == null) return;
@@ -851,7 +836,6 @@ class _MapboxViewState extends State<MapboxView> {
   }
 
   void _stopCinematicCamera() {
-    _isCinematicRunning = false;
     _cinematicTimer?.cancel();
     _cinematicTimer = null;
   }

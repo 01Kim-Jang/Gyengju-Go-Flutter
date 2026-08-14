@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:kakao_map_plugin/kakao_map_plugin.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../providers/app_state.dart';
 import '../widgets/pokestop_modal.dart';
 import '../data/spots_db.dart';
 import '../utils/translations.dart';
-import '../widgets/in_app_route_webview.dart';
-import '../widgets/bus_arrival_sheet.dart';
+import '../utils/transit_helper.dart';
 
 class KakaoMapView extends StatefulWidget {
   const KakaoMapView({super.key});
@@ -215,35 +213,18 @@ class _KakaoMapViewState extends State<KakaoMapView> {
                               .replaceAll(RegExp(r'^Gyeongju\s*,?\s*', caseSensitive: false), '')
                               .trim();
                           final targetDetail = SpotsDB.get(cleanTarget);
-                          final targetDisplayName = targetDetail != null 
-                              ? targetDetail.getName(currentLang) 
+                          final targetDisplayName = targetDetail != null
+                              ? targetDetail.getName(currentLang)
                               : rawTarget;
-                          
-                          String prompt = '';
-                          if (currentLang == 'ko') {
-                            prompt = '$targetDisplayName(으)로 대중교통(버스, 열차 등)을 이용하여 가는 방법과 최적 경로를 알려줘.';
-                          } else if (currentLang == 'ja') {
-                            prompt = '$targetDisplayNameへ公共交通機関（バス、電車など）を利用して行く方法と最適なルートを教えてください。';
-                          } else if (currentLang == 'zh-chs' || currentLang == 'zh') {
-                            prompt = '请告诉我如何乘坐公共交通（公交车、火车等）去$targetDisplayName，并提供最佳路线。';
-                          } else {
-                            prompt = 'Please show me how to get to $targetDisplayName using public transit (bus, train, etc.) and give me the best route.';
-                          }
-
                           final targetLat = double.tryParse(target['mapY'].toString()) ?? 35.8348;
                           final targetLng = double.tryParse(target['mapX'].toString()) ?? 129.2266;
 
-                          showModalBottomSheet(
-                            context: context,
-                            isScrollControlled: true,
-                            backgroundColor: Colors.transparent,
-                            builder: (context) => BusArrivalSheet(
-                              spotName: targetDisplayName,
-                              lat: targetLat,
-                              lng: targetLng,
-                              currentLang: currentLang,
-                              aiPrompt: prompt,
-                            ),
+                          openTransitInfoSheet(
+                            context,
+                            targetDisplayName: targetDisplayName,
+                            lat: targetLat,
+                            lng: targetLng,
+                            currentLang: currentLang,
                           );
                         },
                       ),
@@ -266,7 +247,10 @@ class _KakaoMapViewState extends State<KakaoMapView> {
                           const SizedBox(width: 6),
                           Flexible(
                             child: Text(
-                              '${appState.activeParty!.name} [${appState.activeParty!.inviteCode}] | ${appState.activeParty!.members.length}명 함께 탐험 중',
+                              AppTranslations.get(currentLang, 'party_badge_in_quest')
+                                  .replaceAll('{name}', '${AppTranslations.get(currentLang, '${appState.activeParty!.courseId}_title')} ${AppTranslations.get(currentLang, 'party_group_suffix')}')
+                                  .replaceAll('{code}', appState.activeParty!.inviteCode)
+                                  .replaceAll('{count}', appState.activeParty!.members.length.toString()),
                               style: const TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.bold),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -299,7 +283,10 @@ class _KakaoMapViewState extends State<KakaoMapView> {
                   const Icon(Icons.groups, color: Color(0xFFD4AF37), size: 20),
                   const SizedBox(width: 8),
                   Text(
-                    '👥 ${appState.activeParty!.name} (${appState.activeParty!.inviteCode}) | ${appState.activeParty!.members.length}명 탐험 중',
+                    AppTranslations.get(currentLang, 'party_badge_standalone')
+                        .replaceAll('{name}', '${AppTranslations.get(currentLang, '${appState.activeParty!.courseId}_title')} ${AppTranslations.get(currentLang, 'party_group_suffix')}')
+                        .replaceAll('{code}', appState.activeParty!.inviteCode)
+                        .replaceAll('{count}', appState.activeParty!.members.length.toString()),
                     style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
                   ),
                 ],
