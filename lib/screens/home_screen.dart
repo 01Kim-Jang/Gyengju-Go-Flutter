@@ -37,11 +37,11 @@ class _HomeScreenState extends State<HomeScreen> {
             children: const [KakaoMapView(), MapboxView()],
           ),
 
-          // AI 비서 버튼 (SafeArea 적용). 지도 엔진 전환은 설정 화면으로 이동해
-          // 퀘스트 내비게이션 배너를 가리지 않도록 함.
+          // AI 비서 버튼 (SafeArea 적용). 카카오맵/게임모드 어느 쪽이든 항상
+          // 좌하단에 고정되도록 함.
           SafeArea(
             child: Align(
-              alignment: Alignment.bottomRight,
+              alignment: Alignment.bottomLeft,
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: FloatingActionButton.extended(
@@ -106,7 +106,13 @@ class _HomeScreenState extends State<HomeScreen> {
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: FloatingActionButton(
         heroTag: "mapTabButton",
-        onPressed: () => appState.setCurrentTabIndex(1),
+        onPressed: () {
+          if (isMapActive) {
+            _showMapModePicker(context, appState, lang);
+          } else {
+            appState.setCurrentTabIndex(1);
+          }
+        },
         backgroundColor: isMapActive ? const Color(0xFFD4AF37) : Colors.white,
         elevation: 4,
         shape: CircleBorder(
@@ -141,6 +147,103 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
+      ),
+    );
+  }
+
+  void _showMapModePicker(BuildContext context, AppState appState, String lang) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
+                ),
+              ),
+              Text(
+                AppTranslations.get(lang, 'map_engine_setting'),
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1F3864)),
+              ),
+              const SizedBox(height: 16),
+              _mapModeOption(
+                context: context,
+                appState: appState,
+                icon: Icons.layers,
+                label: AppTranslations.get(lang, 'kakao_map_view'),
+                selected: !appState.isMapboxMode,
+                onTap: () {
+                  if (appState.isMapboxMode) appState.toggleMapMode();
+                  Navigator.pop(context);
+                },
+              ),
+              const SizedBox(height: 10),
+              _mapModeOption(
+                context: context,
+                appState: appState,
+                icon: Icons.map,
+                label: AppTranslations.get(lang, 'mapbox_view'),
+                selected: appState.isMapboxMode,
+                onTap: () {
+                  if (!appState.isMapboxMode) appState.toggleMapMode();
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _mapModeOption({
+    required BuildContext context,
+    required AppState appState,
+    required IconData icon,
+    required String label,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: selected ? const Color(0xFFD4AF37).withValues(alpha: 0.15) : const Color(0xFFF7F7F7),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: selected ? const Color(0xFFD4AF37) : Colors.transparent, width: 1.5),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: selected ? const Color(0xFFD4AF37) : const Color(0xFF8D6E63)),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                  color: const Color(0xFF3E2723),
+                ),
+              ),
+            ),
+            if (selected) const Icon(Icons.check_circle, color: Color(0xFFD4AF37), size: 20),
+          ],
+        ),
       ),
     );
   }
