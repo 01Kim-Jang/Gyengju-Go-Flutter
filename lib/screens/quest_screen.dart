@@ -10,6 +10,14 @@ import '../utils/transit_helper.dart';
 class QuestScreen extends StatelessWidget {
   const QuestScreen({super.key});
 
+  // 문화 예절 팁이 등록된 테마 퀘스트 (해당 quest.id + '_tip' 번역 키 사용)
+  static const Set<String> _etiquetteTipQuestIds = {
+    'planner_temple',
+    'planner_tomb',
+    'planner_historic',
+    'planner_art',
+  };
+
   void _showStampBook(BuildContext context, AppState appState) {
     final coreSpots = ['첨성대', '동궁과 월지', '불국사', '석굴암', '대릉원', '황리단길'];
     final currentLang = appState.currentLanguage;
@@ -478,6 +486,30 @@ class QuestScreen extends StatelessWidget {
                           AppTranslations.get(appState.currentLanguage, '${quest.id}_desc'),
                           style: const TextStyle(fontSize: 13.5, color: Color(0xFF5D4037)),
                         ),
+                        if (_etiquetteTipQuestIds.contains(quest.id)) ...[
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFF8E1),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: const Color(0xFFD4AF37).withValues(alpha: 0.4)),
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('💡', style: TextStyle(fontSize: 13)),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    AppTranslations.get(appState.currentLanguage, '${quest.id}_tip'),
+                                    style: const TextStyle(fontSize: 12, color: Color(0xFF7D5A50), height: 1.4),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: 12),
                         Row(
                           children: [
