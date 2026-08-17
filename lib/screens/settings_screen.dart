@@ -180,6 +180,46 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               const SizedBox(height: 16),
 
+              // 1-0. Map Engine Mode (Kakao 2D / Mapbox 3D game mode)
+              _buildSectionCard(
+                title: AppTranslations.get(currentLang, 'map_engine_setting'),
+                icon: Icons.map,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: ChoiceChip(
+                        label: Text(AppTranslations.get(currentLang, 'kakao_map_view')),
+                        selected: !appState.isMapboxMode,
+                        onSelected: (selected) {
+                          if (selected && appState.isMapboxMode) appState.toggleMapMode();
+                        },
+                        selectedColor: const Color(0xFFD4AF37),
+                        labelStyle: TextStyle(
+                          color: !appState.isMapboxMode ? Colors.white : const Color(0xFF8D6E63),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: ChoiceChip(
+                        label: Text(AppTranslations.get(currentLang, 'mapbox_view')),
+                        selected: appState.isMapboxMode,
+                        onSelected: (selected) {
+                          if (selected && !appState.isMapboxMode) appState.toggleMapMode();
+                        },
+                        selectedColor: const Color(0xFFD4AF37),
+                        labelStyle: TextStyle(
+                          color: appState.isMapboxMode ? Colors.white : const Color(0xFF8D6E63),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
               // 1-1. Safety Info
               _buildSectionCard(
                 title: AppTranslations.get(currentLang, 'safety_info'),

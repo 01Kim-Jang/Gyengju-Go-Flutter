@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 import 'kakao_map_view.dart';
@@ -17,6 +18,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  DateTime? _lastBackPressTime;
+
   @override
   Widget build(BuildContext context) {
     final appState = context.watch<AppState>();
@@ -34,65 +37,37 @@ class _HomeScreenState extends State<HomeScreen> {
             children: const [KakaoMapView(), MapboxView()],
           ),
 
-          // 모드 전환 토글 버튼 및 AI 비서 버튼 (SafeArea 적용)
+          // AI 비서 버튼 (SafeArea 적용). 지도 엔진 전환은 설정 화면으로 이동해
+          // 퀘스트 내비게이션 배너를 가리지 않도록 함.
           SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  FloatingActionButton.extended(
-                    heroTag: "mapToggle",
-                    onPressed: () {
-                      context.read<AppState>().toggleMapMode();
-                    },
-                    backgroundColor: appState.isMapboxMode
-                        ? const Color(0xFFD4AF37) // 사극풍 골드/브라운
-                        : Colors.white,
-                    icon: Icon(
-                      appState.isMapboxMode ? Icons.map : Icons.layers,
-                      color: appState.isMapboxMode
-                          ? Colors.white
-                          : Colors.black,
-                    ),
-                    label: Text(
-                      appState.isMapboxMode
-                          ? AppTranslations.get(lang, 'kakao_map_view')
-                          : AppTranslations.get(lang, 'mapbox_view'),
-                      style: TextStyle(
-                        color: appState.isMapboxMode
-                            ? Colors.white
-                            : Colors.black,
-                        fontWeight: FontWeight.bold,
-                      ),
+            child: Align(
+              alignment: Alignment.bottomRight,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: FloatingActionButton.extended(
+                  heroTag: "aiChatbot",
+                  onPressed: () {
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (context) => const ChatBotSheet(),
+                    );
+                  },
+                  backgroundColor: Colors.white,
+                  icon: const Icon(
+                    Icons.support_agent,
+                    color: Color(0xFFD4AF37),
+                    size: 32,
+                  ),
+                  label: Text(
+                    AppTranslations.get(lang, 'ai_assistant'),
+                    style: const TextStyle(
+                      color: Colors.black,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  FloatingActionButton.extended(
-                    heroTag: "aiChatbot",
-                    onPressed: () {
-                      showModalBottomSheet(
-                        context: context,
-                        isScrollControlled: true,
-                        backgroundColor: Colors.transparent,
-                        builder: (context) => const ChatBotSheet(),
-                      );
-                    },
-                    backgroundColor: Colors.white,
-                    icon: const Icon(
-                      Icons.support_agent,
-                      color: Color(0xFFD4AF37),
-                      size: 32,
-                    ),
-                    label: Text(
-                      AppTranslations.get(lang, 'ai_assistant'),
-                      style: const TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
           ),
@@ -105,7 +80,28 @@ class _HomeScreenState extends State<HomeScreen> {
     final safeTabIndex = appState.currentTabIndex.clamp(0, pages.length - 1);
     final isMapActive = safeTabIndex == 1;
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (appState.currentTabIndex != 0) {
+          appState.setCurrentTabIndex(0);
+          return;
+        }
+        final now = DateTime.now();
+        if (_lastBackPressTime == null || now.difference(_lastBackPressTime!) > const Duration(seconds: 2)) {
+          _lastBackPressTime = now;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(AppTranslations.get(lang, 'press_back_again_to_exit')),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        } else {
+          SystemNavigator.pop();
+        }
+      },
+      child: Scaffold(
       body: pages[safeTabIndex],
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: FloatingActionButton(
@@ -144,6 +140,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ),
+      ),
       ),
     );
   }

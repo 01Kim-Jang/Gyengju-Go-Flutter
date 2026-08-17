@@ -212,7 +212,14 @@ class _SafetyInfoScreenState extends State<SafetyInfoScreen> {
               children: [
                 Row(
                   children: [
-                    Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                    Flexible(
+                      child: Text(
+                        title,
+                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
                     const SizedBox(width: 8),
                     Text(number, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: color)),
                   ],
