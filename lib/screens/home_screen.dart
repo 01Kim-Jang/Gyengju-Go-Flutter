@@ -9,6 +9,7 @@ import '../utils/translations.dart';
 import 'quest_screen.dart';
 import 'party_screen.dart';
 import 'settings_screen.dart';
+import 'safety_info_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -26,7 +27,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final lang = appState.currentLanguage;
 
     // 네비게이션용 탭 내용 (지도가 하단바 중앙의 원형 버튼으로 항상 고정되도록,
-    // Quest(0) / Map(1) / Social(2) / Settings(3) 순서를 유지한다.
+    // Quest(0) / Map(1) / Social(2) / SafetyInfo(3) / Settings(4) 순서를 유지한다.
     final List<Widget> pages = [
       const QuestScreen(),
       // 지도 화면 탭
@@ -74,6 +75,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       const PartyScreen(),
+      const SafetyInfoScreen(),
       const SettingsScreen(),
     ];
 
@@ -142,7 +144,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   _buildNavItem(appState, 2, Icons.diversity_3, AppTranslations.get(lang, 'social')),
                 ],
               ),
-              _buildNavItem(appState, 3, Icons.settings, AppTranslations.get(lang, 'settings')),
+              Row(
+                children: [
+                  _buildNavItem(appState, 3, Icons.health_and_safety, AppTranslations.get(lang, 'safety_info_tab')),
+                  _buildNavItem(appState, 4, Icons.settings, AppTranslations.get(lang, 'settings')),
+                ],
+              ),
             ],
           ),
         ),

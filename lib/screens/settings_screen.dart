@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:geolocator/geolocator.dart';
 import '../providers/app_state.dart';
 import '../utils/translations.dart';
-import 'safety_info_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -216,25 +215,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ),
                   ],
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // 1-1. Safety Info
-              _buildSectionCard(
-                title: AppTranslations.get(currentLang, 'safety_info'),
-                icon: Icons.health_and_safety,
-                child: ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(
-                    AppTranslations.get(currentLang, 'safety_info_desc'),
-                    style: const TextStyle(color: Color(0xFF5D4037), fontSize: 12.5),
-                  ),
-                  trailing: const Icon(Icons.chevron_right, color: Color(0xFF8D6E63)),
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const SafetyInfoScreen()),
-                  ),
                 ),
               ),
               const SizedBox(height: 16),
