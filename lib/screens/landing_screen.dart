@@ -86,50 +86,97 @@ class _LandingScreenState extends State<LandingScreen> with SingleTickerProvider
   @override
   Widget build(BuildContext context) {
     final currentLang = context.watch<AppState>().currentLanguage;
+    // 배경(baked) 이미지에 UI를 직접 굽던 기존 방식은 실제 진행바와 겹치는 문제가 있었어서,
+    // 한지 텍스처 + 다크 사극풍 오버레이 + 캐릭터 PNG + 네이티브 텍스트/진행바를
+    // 완전히 별도 레이어로 쌓는 방식으로 재구성했다.
     return Scaffold(
       body: Container(
         width: double.infinity,
+        height: double.infinity,
         decoration: const BoxDecoration(
           image: DecorationImage(
-            image: AssetImage('assets/images/landing_bg.jpg'),
+            image: AssetImage('assets/images/hanji_bg.png'),
             fit: BoxFit.cover,
           ),
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(bottom: 50.0, left: 40, right: 40),
-              child: Column(
-                children: [
-                  Text(
-                    AppTranslations.get(currentLang, 'preparing_trip'),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      shadows: [Shadow(color: Colors.black87, blurRadius: 4)],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  AnimatedBuilder(
-                    animation: _progressController,
-                    builder: (context, child) {
-                      return ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: LinearProgressIndicator(
-                          value: _progressController.value,
-                          minHeight: 8,
-                          backgroundColor: Colors.white.withValues(alpha: 0.3),
-                          valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFD4AF37)),
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                const Color(0xFF3E2723).withValues(alpha: 0.88),
+                const Color(0xFF2A1810).withValues(alpha: 0.94),
+              ],
             ),
-          ],
+          ),
+          child: SafeArea(
+            child: Column(
+              children: [
+                const Spacer(flex: 3),
+                Text(
+                  'Gyeongju GO',
+                  style: TextStyle(
+                    fontFamily: 'Serif',
+                    fontSize: 42,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFFD4AF37),
+                    shadows: [Shadow(color: Colors.black.withValues(alpha: 0.4), blurRadius: 6, offset: const Offset(0, 2))],
+                  ),
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  '(경주고)',
+                  style: TextStyle(
+                    fontFamily: 'Serif',
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFFD4AF37),
+                  ),
+                ),
+                const Spacer(flex: 1),
+                Expanded(
+                  flex: 6,
+                  child: Image.asset(
+                    'assets/images/char_main.png',
+                    fit: BoxFit.contain,
+                  ),
+                ),
+                const Spacer(flex: 1),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 50.0, left: 40, right: 40),
+                  child: Column(
+                    children: [
+                      Text(
+                        AppTranslations.get(currentLang, 'preparing_trip'),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          shadows: [Shadow(color: Colors.black87, blurRadius: 4)],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      AnimatedBuilder(
+                        animation: _progressController,
+                        builder: (context, child) {
+                          return ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: LinearProgressIndicator(
+                              value: _progressController.value,
+                              minHeight: 8,
+                              backgroundColor: Colors.white.withValues(alpha: 0.3),
+                              valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFD4AF37)),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
