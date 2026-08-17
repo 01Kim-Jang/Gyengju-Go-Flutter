@@ -64,25 +64,44 @@ class _SafetyInfoScreenState extends State<SafetyInfoScreen> {
     final appState = context.watch<AppState>();
     final lang = appState.currentLanguage;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(AppTranslations.get(lang, 'safety_info')),
-        backgroundColor: const Color(0xFFFDFBF7),
-        foregroundColor: const Color(0xFF3E2723),
-        elevation: 1,
-      ),
-      body: Container(
-        decoration: const BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage('assets/images/hanji_bg.png'),
-            fit: BoxFit.cover,
-            colorFilter: ColorFilter.mode(Colors.black12, BlendMode.darken),
-          ),
+    return Container(
+      decoration: const BoxDecoration(
+        image: DecorationImage(
+          image: AssetImage('assets/images/hanji_bg.png'),
+          fit: BoxFit.cover,
+          colorFilter: ColorFilter.mode(Colors.black12, BlendMode.darken),
         ),
-        child: SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.all(20),
-            children: [
+      ),
+      child: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.all(20),
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16.0),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.health_and_safety, color: Color(0xFFD4AF37), size: 32),
+                      const SizedBox(width: 10),
+                      Text(
+                        AppTranslations.get(lang, 'safety_info'),
+                        style: const TextStyle(
+                          fontSize: 30,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Serif',
+                          color: Color(0xFF3E2723),
+                          shadows: [Shadow(color: Colors.white70, blurRadius: 2, offset: Offset(1, 1))],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  const Divider(color: Color(0xFF8D6E63), thickness: 1.5),
+                ],
+              ),
+            ),
               Text(
                 AppTranslations.get(lang, 'safety_info_desc'),
                 style: const TextStyle(fontSize: 13, color: Color(0xFF5D4037)),
@@ -161,8 +180,7 @@ class _SafetyInfoScreenState extends State<SafetyInfoScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-            ],
-          ),
+          ],
         ),
       ),
     );
