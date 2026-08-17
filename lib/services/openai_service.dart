@@ -4,8 +4,18 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class OpenAIService {
+  // dotenv.load()가 아직 끝나지 않은 시점에 호출되면 NotInitializedError가 던져질 수 있으므로
+  // 항상 이 getter를 통해 안전하게 키를 읽는다(초기화 전이면 빈 문자열 → 각 메서드의 폴백 경로로 진행).
+  static String get _apiKey {
+    try {
+      return dotenv.env['OPENAI_API_KEY'] ?? '';
+    } catch (_) {
+      return '';
+    }
+  }
+
   static Future<String> translateText(String text, String targetLang) async {
-    final apiKey = dotenv.env['OPENAI_API_KEY'] ?? '';
+    final apiKey = _apiKey;
     if (apiKey.isEmpty) return text; // 키가 없으면 원본 반환
 
     final url = Uri.parse('https://api.openai.com/v1/chat/completions');
@@ -45,7 +55,7 @@ class OpenAIService {
           ],
           'temperature': 0.3,
         }),
-      );
+      ).timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
         // UTF-8 디코딩 처리
@@ -68,7 +78,7 @@ class OpenAIService {
     double? lat,
     double? lng,
   }) async {
-    final apiKey = dotenv.env['OPENAI_API_KEY'] ?? '';
+    final apiKey = _apiKey;
     if (apiKey.isEmpty) return "오류: OpenAI API Key가 설정되지 않았습니다.";
 
     final url = Uri.parse('https://api.openai.com/v1/chat/completions');
@@ -119,7 +129,7 @@ class OpenAIService {
           ],
           'temperature': 0.7,
         }),
-      );
+      ).timeout(const Duration(seconds: 20));
 
       if (response.statusCode == 200) {
         final responseBody = utf8.decode(response.bodyBytes);
@@ -137,8 +147,8 @@ class OpenAIService {
 
   // 장소 이름만으로 역사적 배경(도슨트 스크립트) 자동 생성
   static Future<String> generateDocentScript(String title) async {
-    final apiKey = dotenv.env['OPENAI_API_KEY'];
-    if (apiKey == null || apiKey.isEmpty) return 'API 키가 설정되지 않았습니다.';
+    final apiKey = _apiKey;
+    if (apiKey.isEmpty) return 'API 키가 설정되지 않았습니다.';
 
     final url = Uri.parse('https://api.openai.com/v1/chat/completions');
 
@@ -161,7 +171,7 @@ class OpenAIService {
           ],
           'temperature': 0.7,
         }),
-      );
+      ).timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(utf8.decode(response.bodyBytes));
@@ -181,8 +191,8 @@ class OpenAIService {
   ) async {
     if (targetLang == 'ko' || restaurants.isEmpty) return restaurants;
 
-    final apiKey = dotenv.env['OPENAI_API_KEY'];
-    if (apiKey == null || apiKey.isEmpty) return restaurants;
+    final apiKey = _apiKey;
+    if (apiKey.isEmpty) return restaurants;
 
     String langName = 'English';
     switch (targetLang) {
@@ -218,7 +228,7 @@ class OpenAIService {
           ],
           'temperature': 0.1,
         }),
-      );
+      ).timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(utf8.decode(response.bodyBytes));

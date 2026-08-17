@@ -65,29 +65,30 @@ class _DocentSheetState extends State<DocentSheet> {
     final lang = appState.currentLanguage;
     final originalTitle = widget.spotData['title'] ?? AppTranslations.get(lang, 'unknown_place');
 
-    // Odii 데이터에 overview가 없을 수 있으므로 AI로 생성
-    String originalText = widget.spotData['overview'] ?? '';
-    if (originalText.isEmpty) {
-      originalText = await OpenAIService.generateDocentScript(originalTitle);
-    }
-
-    if (lang == 'ko') {
-      if (mounted) {
-        setState(() {
-          translatedSummary = originalText;
-          translatedTitle = originalTitle;
-          isLoading = false;
-        });
+    // 어떤 이유로든(네트워크 예외, dotenv 미초기화 등) 실패하더라도 로딩 스피너가
+    // 영원히 멈추지 않는 사고를 막기 위해 전체를 try/finally로 감싼다.
+    try {
+      // Odii 데이터에 overview가 없을 수 있으므로 AI로 생성
+      String originalText = widget.spotData['overview'] ?? '';
+      if (originalText.isEmpty) {
+        originalText = await OpenAIService.generateDocentScript(originalTitle);
       }
-    } else {
-      // 제목과 내용 번역
-      final tTitle = await OpenAIService.translateText(originalTitle, lang);
-      final tSummary = await OpenAIService.translateText(originalText, lang);
 
+      if (lang == 'ko') {
+        translatedSummary = originalText;
+        translatedTitle = originalTitle;
+      } else {
+        // 제목과 내용 번역
+        translatedTitle = await OpenAIService.translateText(originalTitle, lang);
+        translatedSummary = await OpenAIService.translateText(originalText, lang);
+      }
+    } catch (e) {
+      debugPrint('DocentSheet load error: $e');
+      translatedTitle ??= originalTitle;
+      translatedSummary ??= AppTranslations.get(lang, 'docent_load_error');
+    } finally {
       if (mounted) {
         setState(() {
-          translatedTitle = tTitle;
-          translatedSummary = tSummary;
           isLoading = false;
         });
       }
