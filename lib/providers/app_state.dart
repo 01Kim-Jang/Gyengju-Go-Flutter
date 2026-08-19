@@ -13,7 +13,9 @@ import '../data/spots_db.dart';
 
 class AppState extends ChangeNotifier {
   String _currentLanguage = 'ko';
-  bool _isMapboxMode = false;
+  // 앱의 정체성인 게이미피케이션 경험(포켓스탑, 스탬프, 캐릭터)을 첫 화면부터
+  // 바로 보여주기 위해 게임모드(Mapbox)를 기본값으로 시작한다.
+  bool _isMapboxMode = true;
   int _score = 0;
   List<Map<String, dynamic>> _spotsData = [];
   String _selectedCharacterPath = 'assets/images/char_style1_male.png';
