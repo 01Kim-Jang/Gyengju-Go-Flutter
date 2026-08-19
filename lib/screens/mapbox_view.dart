@@ -10,6 +10,7 @@ import '../widgets/pokestop_modal.dart';
 import '../utils/marker_generator.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
+import '../models/friend_profile.dart';
 import '../data/spots_db.dart';
 import '../utils/translations.dart';
 import '../utils/transit_helper.dart';
@@ -44,6 +45,8 @@ class _MapboxViewState extends State<MapboxView> {
   PointAnnotationManager? pointAnnotationManager;
   PointAnnotation? playerAnnotation;
   final Map<String, dynamic> _spotsMap = {};
+  final Map<String, PointAnnotation> _friendAnnotations = {};
+  final Map<String, String> _friendAnnotationCharPath = {};
 
   List<Map<String, dynamic>> _spotsData = [];
   geo.Position? _currentPosition;
@@ -79,6 +82,57 @@ class _MapboxViewState extends State<MapboxView> {
   void _onAppStateChanged() {
     if (mapboxMap != null && _appState != null) {
       _drawRoutePolyline(_appState!.routeCoordinates);
+      _updateFriendAnnotations(_appState!.sharingFriends);
+    }
+  }
+
+  // 위치 공유를 켜둔 친구들을 캐릭터 마커 + 이름표로 지도에 표시한다.
+  // (여성안심/자녀안심 성격의 안전 기능)
+  Future<void> _updateFriendAnnotations(List<FriendProfile> friends) async {
+    if (pointAnnotationManager == null) return;
+
+    final currentUids = friends.map((f) => f.uid).toSet();
+
+    final toRemove = _friendAnnotations.keys.where((uid) => !currentUids.contains(uid)).toList();
+    for (final uid in toRemove) {
+      final annotation = _friendAnnotations.remove(uid);
+      _friendAnnotationCharPath.remove(uid);
+      if (annotation != null) {
+        await pointAnnotationManager?.delete(annotation);
+      }
+    }
+
+    for (final friend in friends) {
+      if (friend.lat == null || friend.lng == null) continue;
+      final existing = _friendAnnotations[friend.uid];
+
+      if (existing == null || _friendAnnotationCharPath[friend.uid] != friend.characterPath) {
+        if (existing != null) {
+          await pointAnnotationManager?.delete(existing);
+        }
+        final imageBytes = await MarkerGenerator.createPlayerMarker(friend.characterPath);
+        final created = await pointAnnotationManager?.create(
+          PointAnnotationOptions(
+            geometry: Point(coordinates: Position(friend.lng!, friend.lat!)),
+            image: imageBytes,
+            iconSize: 1.1,
+            iconAnchor: IconAnchor.BOTTOM,
+            textField: friend.nickname,
+            textSize: 13.0,
+            textColor: Colors.white.value,
+            textHaloColor: const Color(0xFF1F3864).value,
+            textHaloWidth: 1.5,
+            textOffset: const [0.0, -3.2],
+          ),
+        );
+        if (created != null) {
+          _friendAnnotations[friend.uid] = created;
+          _friendAnnotationCharPath[friend.uid] = friend.characterPath;
+        }
+      } else {
+        existing.geometry = Point(coordinates: Position(friend.lng!, friend.lat!));
+        await pointAnnotationManager?.update(existing);
+      }
     }
   }
 
@@ -218,6 +272,9 @@ class _MapboxViewState extends State<MapboxView> {
     _checkLocationPermission().then((_) {
       _startLocationStream();
     });
+    // 위치 공유 설정과 친구 목록 감시를 게임모드 진입 시점에 미리 시작해둔다.
+    // (친구/소셜 탭을 아직 한 번도 안 열었어도 안전 기능이 바로 동작하도록)
+    context.read<AppState>().loadMyProfile();
   }
 
   Future<void> _checkLocationPermission() async {
@@ -274,6 +331,10 @@ class _MapboxViewState extends State<MapboxView> {
     this.mapboxMap = mapboxMap;
     final isNight = context.read<AppState>().isNightMode;
     _lastNightMode = isNight;
+
+    // initState 시점엔 Firebase 초기화가 아직 안 끝났을 수 있어(백그라운드 초기화),
+    // 지도가 완전히 뜬 이 시점에 한 번 더 시도해 친구 위치 공유 감시가 확실히 시작되도록 한다.
+    context.read<AppState>().loadMyProfile();
 
     await mapboxMap.style.setStyleURI(isNight ? MapboxStyles.DARK : MapboxStyles.STANDARD);
 
@@ -345,6 +406,7 @@ class _MapboxViewState extends State<MapboxView> {
 
     // 데이터 불러오기 및 마커 렌더링
     _loadSpotsAndRender();
+    _updateFriendAnnotations(context.read<AppState>().sharingFriends);
 
     // Plant trees in Gyeongju green areas
     _setupTrees();
