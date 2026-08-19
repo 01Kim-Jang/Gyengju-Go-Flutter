@@ -29,6 +29,20 @@ service cloud.firestore {
       allow delete: if request.auth != null && request.auth.uid in resource.data.uids;
     }
 
+    // locations/{uid}: 여성안심/자녀안심 성격의 실시간 위치 공유 데이터.
+    // users/{uid}는 친구코드 검색 때문에 모든 로그인 사용자가 서로 읽을 수 있어서
+    // 위치처럼 민감한 값은 절대 그 문서에 두지 않고, 본인이거나 실제 친구 관계
+    // (friendships 문서가 존재)일 때만 읽을 수 있는 이 별도 컬렉션에 둔다.
+    match /locations/{uid} {
+      allow read: if request.auth != null && (
+        request.auth.uid == uid ||
+        exists(/databases/$(database)/documents/friendships/$(
+          uid < request.auth.uid ? uid + '_' + request.auth.uid : request.auth.uid + '_' + uid
+        ))
+      );
+      allow write: if request.auth != null && request.auth.uid == uid;
+    }
+
     // parties/{partyId}: members는 배열-of-맵이라 규칙에서 uid만 직접 조회할 수 없으므로
     // 검증용으로 병행 관리하는 memberUids 배열을 기준으로 접근을 제어한다.
     match /parties/{partyId} {
