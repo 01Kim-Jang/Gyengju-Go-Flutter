@@ -179,6 +179,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               const SizedBox(height: 16),
 
+              // 1-1. Friend Location Sharing (여성안심/자녀안심 성격의 안전 기능)
+              _buildSectionCard(
+                title: AppTranslations.get(currentLang, 'location_sharing_title'),
+                icon: Icons.shield,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      AppTranslations.get(currentLang, 'location_sharing_desc'),
+                      style: const TextStyle(fontSize: 12.5, color: Color(0xFF8D6E63), height: 1.4),
+                    ),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(
+                        appState.locationSharingEnabled
+                            ? AppTranslations.get(currentLang, 'location_sharing_on')
+                            : AppTranslations.get(currentLang, 'location_sharing_off'),
+                        style: const TextStyle(color: Color(0xFF3E2723), fontWeight: FontWeight.w600),
+                      ),
+                      value: appState.locationSharingEnabled,
+                      onChanged: (val) => appState.toggleLocationSharing(val),
+                      activeColor: const Color(0xFFD4AF37),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
               // 1-0. Map Engine Mode (Kakao 2D / Mapbox 3D game mode)
               _buildSectionCard(
                 title: AppTranslations.get(currentLang, 'map_engine_setting'),
