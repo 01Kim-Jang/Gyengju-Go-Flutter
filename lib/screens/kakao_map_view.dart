@@ -165,6 +165,12 @@ class _KakaoMapViewState extends State<KakaoMapView> {
     Widget mapWidget = KakaoMap(
       onMapCreated: ((controller) {
         mapController = controller;
+        // kakao_map_plugin은 마커/오버레이를 didUpdateWidget에서만 웹뷰로 전송하고
+        // 최초 마운트 시에는 보내지 않는다. 지도(WebView JS)가 준비된 이 시점에
+        // 한 번 더 build를 트리거해서 이미 갖고 있던 번역된 마커/오버레이가
+        // 확실히 반영되도록 한다 (그렇지 않으면 다른 우연한 리빌드가 있기 전까지
+        // 명소 이름 라벨이 전혀 나타나지 않는다).
+        if (mounted) setState(() {});
       }),
       markers: mapMarkers,
       customOverlays: mapOverlays,
