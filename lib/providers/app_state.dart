@@ -9,6 +9,7 @@ import '../models/party.dart';
 import '../services/odii_service.dart';
 import '../services/user_service.dart';
 import '../services/party_service.dart';
+import '../services/tago_service.dart';
 import '../data/spots_db.dart';
 
 class AppState extends ChangeNotifier {
@@ -28,6 +29,22 @@ class AppState extends ChangeNotifier {
 
   List<List<double>> _routeCoordinates = [];
   List<List<double>> get routeCoordinates => _routeCoordinates;
+
+  // 도보 내비게이션 실시간 갱신 스로틀링 (매 GPS 틱마다 Directions API를 호출하지 않도록)
+  DateTime? _lastRouteFetchTime;
+  double? _lastRouteFetchLat;
+  double? _lastRouteFetchLng;
+
+  // 대중교통 정류소 접근 알림 (필요할 때만, 즉 감시 활성화 후 정류소에 실제로
+  // 가까워졌을 때 한 번만 튀어나오도록 설계됨)
+  bool _transitAlertActive = false;
+  bool get transitAlertActive => _transitAlertActive;
+  bool _isCheckingTransitStop = false;
+  DateTime? _lastTransitCheckTime;
+  double? _lastTransitCheckLat;
+  double? _lastTransitCheckLng;
+  NearestStopArrivals? _pendingTransitAlert;
+  NearestStopArrivals? get pendingTransitAlert => _pendingTransitAlert;
 
   String _navigationMode = 'walk'; // 'walk' or 'drive'
   String get navigationMode => _navigationMode;
@@ -307,7 +324,72 @@ class AppState extends ChangeNotifier {
       if (activeQuest.plannedOrder.isEmpty && activeQuest.currentTargetSpot == null) {
         _planQuestRoute(activeQuest);
       }
-      triggerRouteFetch();
+
+      // 도보 내비게이션 중 목적지에 도착(25m 이내)하면 경로를 자동으로 종료한다.
+      final target = activeQuest.currentTargetSpot;
+      if (_navigationMode == 'walk' && target != null && _routeCoordinates.isNotEmpty && getDistanceToSpot(target) <= 25.0) {
+        clearRoute();
+        return;
+      }
+
+      // 매 GPS 틱마다 Directions API를 부르지 않도록, 일정 거리(20m) 이상 이동했고
+      // 마지막 호출로부터 일정 시간(8초)이 지났을 때만 경로를 다시 계산해서
+      // "실시간으로 따라오는" 트래킹 경험을 과도한 API 호출 없이 구현한다.
+      final now = DateTime.now();
+      final movedFar = _lastRouteFetchLat == null ||
+          _calculateDistance(_lastRouteFetchLat!, _lastRouteFetchLng!, lat, lng) * 1000 > 20;
+      final enoughTimePassed = _lastRouteFetchTime == null ||
+          now.difference(_lastRouteFetchTime!) > const Duration(seconds: 8);
+      if (movedFar && enoughTimePassed) {
+        _lastRouteFetchLat = lat;
+        _lastRouteFetchLng = lng;
+        _lastRouteFetchTime = now;
+        triggerRouteFetch();
+      }
+    }
+
+    if (_transitAlertActive) {
+      _maybeCheckTransitProximity(lat, lng);
+    }
+  }
+
+  void startTransitAlert() {
+    _transitAlertActive = true;
+  }
+
+  void clearTransitAlert() {
+    _pendingTransitAlert = null;
+    notifyListeners();
+  }
+
+  Future<void> _maybeCheckTransitProximity(double lat, double lng) async {
+    if (_isCheckingTransitStop) return;
+
+    final now = DateTime.now();
+    final movedFar = _lastTransitCheckLat == null ||
+        _calculateDistance(_lastTransitCheckLat!, _lastTransitCheckLng!, lat, lng) * 1000 > 15;
+    final enoughTimePassed = _lastTransitCheckTime == null ||
+        now.difference(_lastTransitCheckTime!) > const Duration(seconds: 10);
+    if (!movedFar || !enoughTimePassed) return;
+
+    _lastTransitCheckLat = lat;
+    _lastTransitCheckLng = lng;
+    _lastTransitCheckTime = now;
+    _isCheckingTransitStop = true;
+    try {
+      final stops = await TagoService.fetchNearbyStops(lat, lng);
+      if (stops.isEmpty) return;
+      final nearest = stops.first;
+      if (nearest.distanceM <= 40.0) {
+        final arrivals = await TagoService.fetchArrivals(nearest.cityCode, nearest.nodeId);
+        _pendingTransitAlert = NearestStopArrivals(stop: nearest, arrivals: arrivals);
+        // 한 번 알린 뒤에는 감시를 자동으로 종료한다 (정류장을 지나칠 때마다
+        // 계속 튀어나오는 것이 아니라 "필요할 때만" 한 번 뜨도록).
+        _transitAlertActive = false;
+        notifyListeners();
+      }
+    } finally {
+      _isCheckingTransitStop = false;
     }
   }
 
