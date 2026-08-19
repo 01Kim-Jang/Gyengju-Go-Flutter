@@ -10,6 +10,8 @@ import 'quest_screen.dart';
 import 'party_screen.dart';
 import 'settings_screen.dart';
 import 'safety_info_screen.dart';
+import '../widgets/bus_arrival_sheet.dart';
+import '../utils/transit_helper.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -25,6 +27,29 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final appState = context.watch<AppState>();
     final lang = appState.currentLanguage;
+
+    // 대중교통 정류소 접근 알림: 감시 활성화 후 실제로 정류소에 가까워졌을 때만
+    // (매 정류소를 지나칠 때마다가 아니라) 한 번 자동으로 시트를 띄운다.
+    final pendingTransitAlert = appState.pendingTransitAlert;
+    if (pendingTransitAlert != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        appState.clearTransitAlert();
+        final stopName = pendingTransitAlert.stop.nodeName;
+        showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder: (_) => BusArrivalSheet(
+            spotName: stopName,
+            lat: pendingTransitAlert.stop.lat,
+            lng: pendingTransitAlert.stop.lng,
+            currentLang: lang,
+            aiPrompt: buildTransitPrompt(stopName, lang),
+          ),
+        );
+      });
+    }
 
     // 네비게이션용 탭 내용 (지도가 하단바 중앙의 원형 버튼으로 항상 고정되도록,
     // Quest(0) / Map(1) / Social(2) / SafetyInfo(3) / Settings(4) 순서를 유지한다.
