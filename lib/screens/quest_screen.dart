@@ -344,6 +344,7 @@ class QuestScreen extends StatelessWidget {
                               final targetLat = double.tryParse(activeQuest.currentTargetSpot!['mapY'].toString()) ?? 35.8348;
                               final targetLng = double.tryParse(activeQuest.currentTargetSpot!['mapX'].toString()) ?? 129.2266;
 
+                              appState.startTransitAlert();
                               openTransitInfoSheet(
                                 context,
                                 targetDisplayName: targetDisplayName,
