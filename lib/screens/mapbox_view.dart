@@ -707,6 +707,7 @@ class _MapboxViewState extends State<MapboxView> {
                               final targetLat = double.tryParse(target['mapY'].toString()) ?? 35.8348;
                               final targetLng = double.tryParse(target['mapX'].toString()) ?? 129.2266;
 
+                              appState.startTransitAlert();
                               openTransitInfoSheet(
                                 context,
                                 targetDisplayName: targetDisplayName,
