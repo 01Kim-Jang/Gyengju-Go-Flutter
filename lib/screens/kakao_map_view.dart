@@ -180,7 +180,7 @@ class _KakaoMapViewState extends State<KakaoMapView> {
               Polyline(
                 polylineId: 'route_line',
                 points: kakaoPolylinePoints,
-                strokeColor: Colors.blue.shade600,
+                strokeColor: appState.navigationMode == 'walk' ? const Color(0xFFFFC400) : Colors.blue.shade600,
                 strokeWidth: 5,
               ),
             ]
@@ -295,6 +295,7 @@ class _KakaoMapViewState extends State<KakaoMapView> {
                           final targetLat = double.tryParse(target['mapY'].toString()) ?? 35.8348;
                           final targetLng = double.tryParse(target['mapX'].toString()) ?? 129.2266;
 
+                          appState.startTransitAlert();
                           openTransitInfoSheet(
                             context,
                             targetDisplayName: targetDisplayName,
