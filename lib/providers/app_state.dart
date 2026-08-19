@@ -10,6 +10,8 @@ import '../services/odii_service.dart';
 import '../services/user_service.dart';
 import '../services/party_service.dart';
 import '../services/tago_service.dart';
+import '../services/friend_service.dart';
+import '../models/friend_profile.dart';
 import '../data/spots_db.dart';
 
 class AppState extends ChangeNotifier {
@@ -74,8 +76,10 @@ class AppState extends ChangeNotifier {
     if (profile != null) {
       _myFriendCode = profile['friendCode']?.toString();
       _myNickname = profile['nickname']?.toString() ?? _myNickname;
-      notifyListeners();
     }
+    _locationSharingEnabled = await UserService.getLocationSharingEnabled();
+    notifyListeners();
+    startWatchingFriends();
   }
 
   Future<void> updateNickname(String nickname) async {
@@ -83,6 +87,60 @@ class AppState extends ChangeNotifier {
     _myNickname = nickname.trim();
     notifyListeners();
     await UserService.updateProfile(nickname: _myNickname);
+  }
+
+  // --- 친구 위치 공유 (여성안심/자녀안심 성격의 안전 기능) ---
+  // 전체 친구에게 한 번에 ON/OFF 하는 전역 토글이며, 기본값은 OFF다.
+  // 앱이 켜져 있는 동안(포그라운드)에만 위치가 갱신되어 친구들에게 보인다.
+  bool _locationSharingEnabled = false;
+  bool get locationSharingEnabled => _locationSharingEnabled;
+  double? _lastSharedLat;
+  double? _lastSharedLng;
+
+  Future<void> toggleLocationSharing(bool enabled) async {
+    _locationSharingEnabled = enabled;
+    notifyListeners();
+    await UserService.updateLocationSharing(enabled);
+    if (enabled && _userLat != null && _userLng != null) {
+      await UserService.updateMyLocation(_userLat!, _userLng!);
+    }
+  }
+
+  StreamSubscription<List<FriendProfile>>? _friendsListSub;
+  final Map<String, StreamSubscription<FriendProfile?>> _friendLocationSubs = {};
+  final Map<String, FriendProfile> _friendLocations = {};
+
+  // 위치 공유를 켜둔 친구들만 (게임모드 지도에 캐릭터+이름표로 표시됨)
+  List<FriendProfile> get sharingFriends => _friendLocations.values
+      .where((f) => f.locationSharingEnabled && f.lat != null && f.lng != null)
+      .toList();
+
+  void startWatchingFriends() {
+    _friendsListSub?.cancel();
+    _friendsListSub = FriendService.watchFriends().listen((friends) {
+      final currentUids = friends.map((f) => f.uid).toSet();
+
+      // 더 이상 친구가 아니게 된 uid의 구독은 정리
+      final toRemove = _friendLocationSubs.keys.where((u) => !currentUids.contains(u)).toList();
+      for (final u in toRemove) {
+        _friendLocationSubs.remove(u)?.cancel();
+        _friendLocations.remove(u);
+      }
+
+      // 새로 추가된 친구에 대해서만 실시간 위치 구독 시작
+      for (final uid in currentUids) {
+        if (_friendLocationSubs.containsKey(uid)) continue;
+        _friendLocationSubs[uid] = FriendService.watchFriendProfile(uid).listen((profile) {
+          if (profile == null) {
+            _friendLocations.remove(uid);
+          } else {
+            _friendLocations[uid] = profile;
+          }
+          notifyListeners();
+        });
+      }
+      notifyListeners();
+    });
   }
 
   // --- Party (Co-Op Travel) Management — Firestore 실시간 동기화 ---
@@ -170,6 +228,10 @@ class AppState extends ChangeNotifier {
   @override
   void dispose() {
     _partySub?.cancel();
+    _friendsListSub?.cancel();
+    for (final sub in _friendLocationSubs.values) {
+      sub.cancel();
+    }
     super.dispose();
   }
 
@@ -315,6 +377,17 @@ class AppState extends ChangeNotifier {
         _lastPartySyncedLat = lat;
         _lastPartySyncedLng = lng;
         PartyService.updateMemberPosition(_activeParty!.partyId, lat, lng);
+      }
+    }
+
+    // 친구 위치 공유가 켜져 있으면 동일한 방식으로(10m 이상 이동 시) 내 위치를 갱신
+    if (_locationSharingEnabled) {
+      final movedFarForFriends = _lastSharedLat == null ||
+          _calculateDistance(_lastSharedLat!, _lastSharedLng!, lat, lng) * 1000 > 10;
+      if (movedFarForFriends) {
+        _lastSharedLat = lat;
+        _lastSharedLng = lng;
+        UserService.updateMyLocation(lat, lng);
       }
     }
 
