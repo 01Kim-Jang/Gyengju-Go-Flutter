@@ -23,6 +23,7 @@ class _PokestopModalState extends State<PokestopModal> with TickerProviderStateM
   late FlutterTts flutterTts;
   bool _isSpun = false;
   bool _showScore = false;
+  bool _isSpeaking = false;
   
   List<Map<String, dynamic>> _restaurants = [];
   bool _isLoadingPlaces = false;
@@ -73,9 +74,20 @@ class _PokestopModalState extends State<PokestopModal> with TickerProviderStateM
     await flutterTts.setSpeechRate(0.5);
     await flutterTts.setVolume(1.0);
     await flutterTts.setPitch(1.0);
+    flutterTts.setCompletionHandler(() {
+      if (mounted) setState(() => _isSpeaking = false);
+    });
   }
 
+  // 재생 중이면 정지, 아니면 재생하는 토글. 스핀 직후 자동 재생 및
+  // 버튼 재탭 시 모두 이 메서드를 거치므로 중지 기능이 항상 보장된다.
   Future<void> _playDocent() async {
+    if (_isSpeaking) {
+      await flutterTts.stop();
+      if (mounted) setState(() => _isSpeaking = false);
+      return;
+    }
+
     final title = _cleanTitle(widget.spotData['title'] ?? '');
     final spotDetail = SpotsDB.get(title);
     final currentLang = context.read<AppState>().currentLanguage;
@@ -94,7 +106,8 @@ class _PokestopModalState extends State<PokestopModal> with TickerProviderStateM
       }
       textToSpeak = widget.spotData['overview'] ?? welcomeMsg;
     }
-    
+
+    if (mounted) setState(() => _isSpeaking = true);
     await flutterTts.speak(textToSpeak);
   }
 
@@ -581,14 +594,20 @@ class _PokestopModalState extends State<PokestopModal> with TickerProviderStateM
                       Expanded(
                         child: OutlinedButton.icon(
                           onPressed: _playDocent,
-                          icon: const Icon(Icons.volume_up, color: Color(0xFF4A90E2)),
+                          icon: Icon(
+                            _isSpeaking ? Icons.stop_circle : Icons.volume_up,
+                            color: _isSpeaking ? Colors.redAccent : const Color(0xFF4A90E2),
+                          ),
                           label: Text(
-                            AppTranslations.get(currentLang, 'play_docent'),
-                            style: const TextStyle(color: Color(0xFF4A90E2), fontWeight: FontWeight.bold),
+                            AppTranslations.get(currentLang, _isSpeaking ? 'docent_stop' : 'play_docent'),
+                            style: TextStyle(
+                              color: _isSpeaking ? Colors.redAccent : const Color(0xFF4A90E2),
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 12),
-                            side: const BorderSide(color: Color(0xFF4A90E2)),
+                            side: BorderSide(color: _isSpeaking ? Colors.redAccent : const Color(0xFF4A90E2)),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
                         ),
