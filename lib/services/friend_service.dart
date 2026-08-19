@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import '../models/friend_profile.dart';
@@ -9,6 +10,7 @@ class FriendService {
   static FirebaseFirestore get _db => FirebaseFirestore.instance;
   static CollectionReference<Map<String, dynamic>> get _friendships => _db.collection('friendships');
   static CollectionReference<Map<String, dynamic>> get _users => _db.collection('users');
+  static CollectionReference<Map<String, dynamic>> get _locations => _db.collection('locations');
 
   static String _friendshipDocId(String uidA, String uidB) {
     final sorted = [uidA, uidB]..sort();
@@ -76,5 +78,51 @@ class FriendService {
       }
       return profiles;
     });
+  }
+
+  // 친구 한 명의 프로필(닉네임/캐릭터, 모두 읽기 가능한 users/{uid})과
+  // 위치(locations/{uid}, 본인·실친구만 읽기 가능한 별도 컬렉션)를 합쳐서
+  // 실시간으로 구독한다. locations 문서는 친구 관계가 아니면 firestore.rules에서
+  // 권한 오류가 나므로, 그 경우 위치 없이 기본 프로필만 내려준다.
+  static Stream<FriendProfile?> watchFriendProfile(String friendUid) {
+    final controller = StreamController<FriendProfile?>.broadcast();
+    Map<String, dynamic>? userData;
+    Map<String, dynamic>? locationData;
+    bool userLoaded = false;
+
+    void emit() {
+      if (!userLoaded) return;
+      if (userData == null) {
+        controller.add(null);
+        return;
+      }
+      final merged = Map<String, dynamic>.from(userData!);
+      if (locationData != null) merged.addAll(locationData!);
+      controller.add(FriendProfile.fromMap(friendUid, merged));
+    }
+
+    final userSub = _users.doc(friendUid).snapshots().listen((doc) {
+      userData = doc.exists ? doc.data() : null;
+      userLoaded = true;
+      emit();
+    });
+    final locationSub = _locations.doc(friendUid).snapshots().listen(
+      (doc) {
+        locationData = doc.exists ? doc.data() : null;
+        emit();
+      },
+      onError: (_) {
+        // 친구 관계가 아니어서 권한이 없는 경우 등 - 위치 없이 기본 프로필만 표시
+        locationData = null;
+        emit();
+      },
+    );
+
+    controller.onCancel = () {
+      userSub.cancel();
+      locationSub.cancel();
+    };
+
+    return controller.stream;
   }
 }

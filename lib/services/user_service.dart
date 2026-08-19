@@ -16,6 +16,10 @@ class UserService {
 
   static FirebaseFirestore get _db => FirebaseFirestore.instance;
   static CollectionReference<Map<String, dynamic>> get _users => _db.collection('users');
+  // users/{uid}는 친구코드 검색 때문에 모든 로그인 사용자가 서로 읽을 수 있으므로,
+  // 위치처럼 민감한 데이터는 별도 컬렉션(locations/{uid})에 두고 firestore.rules에서
+  // 본인 또는 실제 친구 관계인 경우에만 읽을 수 있도록 엄격히 제한한다.
+  static CollectionReference<Map<String, dynamic>> get _locations => _db.collection('locations');
 
   static String? get uid {
     if (!_isFirebaseReady) return null;
@@ -100,6 +104,44 @@ class UserService {
       await _users.doc(myUid).set({'stampCount': stampCount}, SetOptions(merge: true));
     } catch (e) {
       debugPrint('UserService.updateStampCount Error: $e');
+    }
+  }
+
+  // 여성안심/자녀안심 성격의 친구 위치 공유 기능. 기본값 OFF이며 사용자가
+  // 설정 화면에서 명시적으로 켜야만 친구들에게 내 위치가 보인다.
+  static Future<void> updateLocationSharing(bool enabled) async {
+    final myUid = uid;
+    if (myUid == null) return;
+    try {
+      await _locations.doc(myUid).set({'locationSharingEnabled': enabled}, SetOptions(merge: true));
+    } catch (e) {
+      debugPrint('UserService.updateLocationSharing Error: $e');
+    }
+  }
+
+  static Future<void> updateMyLocation(double lat, double lng) async {
+    final myUid = uid;
+    if (myUid == null) return;
+    try {
+      await _locations.doc(myUid).set({
+        'lat': lat,
+        'lng': lng,
+        'lastLocationUpdate': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    } catch (e) {
+      debugPrint('UserService.updateMyLocation Error: $e');
+    }
+  }
+
+  static Future<bool> getLocationSharingEnabled() async {
+    final myUid = uid;
+    if (myUid == null) return false;
+    try {
+      final doc = await _locations.doc(myUid).get();
+      return doc.data()?['locationSharingEnabled'] == true;
+    } catch (e) {
+      debugPrint('UserService.getLocationSharingEnabled Error: $e');
+      return false;
     }
   }
 }
