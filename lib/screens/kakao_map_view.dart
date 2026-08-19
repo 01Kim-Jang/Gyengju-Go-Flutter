@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:kakao_map_plugin/kakao_map_plugin.dart';
+import 'package:geolocator/geolocator.dart' as geo;
 import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 import '../widgets/pokestop_modal.dart';
@@ -17,6 +19,48 @@ class KakaoMapView extends StatefulWidget {
 
 class _KakaoMapViewState extends State<KakaoMapView> {
   late KakaoMapController mapController;
+  geo.Position? _currentPosition;
+  StreamSubscription<geo.Position>? _positionStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkLocationPermission().then((_) => _startLocationStream());
+  }
+
+  @override
+  void dispose() {
+    _positionStream?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _checkLocationPermission() async {
+    bool serviceEnabled = await geo.Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) return;
+    geo.LocationPermission permission = await geo.Geolocator.checkPermission();
+    if (permission == geo.LocationPermission.denied) {
+      permission = await geo.Geolocator.requestPermission();
+    }
+  }
+
+  void _startLocationStream() {
+    _positionStream = geo.Geolocator.getPositionStream(
+      locationSettings: const geo.LocationSettings(
+        accuracy: geo.LocationAccuracy.high,
+        distanceFilter: 3,
+      ),
+    ).listen((geo.Position position) {
+      if (!mounted) return;
+      setState(() => _currentPosition = position);
+      context.read<AppState>().updateUserLocation(position.latitude, position.longitude);
+    });
+  }
+
+  void _moveToMyLocation() {
+    if (_currentPosition == null) return;
+    mapController.panTo(LatLng(_currentPosition!.latitude, _currentPosition!.longitude));
+    mapController.setLevel(3);
+  }
 
   String _cleanTitle(String rawTitle) {
     String t = rawTitle;
@@ -87,6 +131,32 @@ class _KakaoMapViewState extends State<KakaoMapView> {
         yAnchor: 2.2, // Offset above the marker pin
       );
     }).toList();
+
+    // 내 위치를 표시하는 펄스 도트 오버레이 (네이티브 지도 앱들의 파란 점과 유사한 방식)
+    if (_currentPosition != null) {
+      mapOverlays.add(
+        CustomOverlay(
+          customOverlayId: 'my_location',
+          latLng: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+          content: '''
+            <div style="position: relative; width: 22px; height: 22px;">
+              <div style="
+                position: absolute; top: -9px; left: -9px;
+                width: 40px; height: 40px; border-radius: 50%;
+                background: rgba(66, 133, 244, 0.25);
+              "></div>
+              <div style="
+                position: absolute; top: 0; left: 0;
+                width: 22px; height: 22px; border-radius: 50%;
+                background: #4285F4; border: 3px solid white;
+                box-shadow: 0px 2px 5px rgba(0,0,0,0.35);
+              "></div>
+            </div>
+          ''',
+          yAnchor: 0.5,
+        ),
+      );
+    }
 
     final List<LatLng> kakaoPolylinePoints = appState.routeCoordinates.map((coords) {
       return LatLng(coords[1], coords[0]);
@@ -293,6 +363,17 @@ class _KakaoMapViewState extends State<KakaoMapView> {
               ),
             ),
           ),
+        // My Location Button
+        Positioned(
+          right: 16,
+          bottom: 100,
+          child: FloatingActionButton(
+            heroTag: "myLocationKakao",
+            backgroundColor: const Color(0xFFD4AF37),
+            child: const Icon(Icons.my_location, color: Colors.white),
+            onPressed: _moveToMyLocation,
+          ),
+        ),
       ],
     );
   }
