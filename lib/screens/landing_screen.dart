@@ -21,7 +21,10 @@ class _LandingScreenState extends State<LandingScreen> with SingleTickerProvider
     super.initState();
     _progressController = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 1), // Base animation duration
+      // 네비게이션은 이 애니메이션이 끝나고 데이터 로딩도 끝난 이후(둘 중 늦은 쪽)에
+      // 발생하므로, 이 값이 곧 랜딩 화면의 최소 노출 시간이 된다. 데이터가 너무 빨리
+      // 로드되면 화면이 순간적으로 지나가버리는 문제가 있어 2초로 늘렸다.
+      duration: const Duration(seconds: 2),
     );
 
     // Start progress animation
