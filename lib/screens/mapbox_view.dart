@@ -336,6 +336,16 @@ class _MapboxViewState extends State<MapboxView> {
     // 지도가 완전히 뜬 이 시점에 한 번 더 시도해 친구 위치 공유 감시가 확실히 시작되도록 한다.
     context.read<AppState>().loadMyProfile();
 
+    // Mapbox 기본 나침반/축척 표시가 화면 맨 위(0,0) 기준으로 그려져서 상태바(시간·와이파이·배터리)와
+    // 겹쳐 보이던 문제 수정. 상태바 높이만큼 아래로 여백을 줘서 겹치지 않게 한다.
+    try {
+      final statusBarHeight = MediaQuery.of(context).padding.top;
+      await mapboxMap.compass.updateSettings(CompassSettings(marginTop: statusBarHeight + 8));
+      await mapboxMap.scaleBar.updateSettings(ScaleBarSettings(marginTop: statusBarHeight + 8));
+    } catch (e) {
+      debugPrint("Ornament margin update error: $e");
+    }
+
     await mapboxMap.style.setStyleURI(isNight ? MapboxStyles.DARK : MapboxStyles.STANDARD);
 
     try {
