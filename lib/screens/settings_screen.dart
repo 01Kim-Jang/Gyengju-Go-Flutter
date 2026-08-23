@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:geolocator/geolocator.dart';
 import '../providers/app_state.dart';
 import '../utils/translations.dart';
+import 'tutorial_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -383,6 +384,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       }
                     },
                   ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // 5-1. Replay Tutorial
+              OutlinedButton.icon(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const TutorialScreen(fromSettings: true)),
+                ),
+                icon: const Icon(Icons.school, color: Color(0xFF1F3864)),
+                label: Text(
+                  AppTranslations.get(currentLang, 'replay_tutorial'),
+                  style: const TextStyle(color: Color(0xFF1F3864), fontWeight: FontWeight.bold, fontSize: 15),
+                ),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Color(0xFF1F3864), width: 1.2),
+                  minimumSize: const Size(double.infinity, 52),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  backgroundColor: const Color(0xFFFFFDF9).withValues(alpha: 0.8),
                 ),
               ),
               const SizedBox(height: 30),
