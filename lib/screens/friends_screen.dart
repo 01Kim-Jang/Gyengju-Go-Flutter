@@ -48,8 +48,10 @@ class _FriendsScreenState extends State<FriendsScreen> {
       case AddFriendResult.alreadyFriends:
         msgKey = 'friend_already_added';
         break;
-      default:
-        msgKey = 'friend_not_found';
+      case AddFriendResult.notSignedIn:
+      case AddFriendResult.error:
+        msgKey = 'friend_code_unavailable';
+        break;
     }
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(AppTranslations.get(lang, msgKey))),
@@ -133,7 +135,14 @@ class _FriendsScreenState extends State<FriendsScreen> {
 
   void _showMyQr(AppState appState, String lang) {
     final code = appState.myFriendCode;
-    if (code == null || code.isEmpty) return;
+    if (code == null || code.isEmpty) {
+      // 조용히 아무 반응 없이 끝나면 "버튼이 고장남"처럼 보이므로, 원인(주로
+      // 아직 Firebase/친구 서비스 연동 전이거나 프로필 로딩 중)을 알려준다.
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppTranslations.get(lang, 'friend_code_unavailable'))),
+      );
+      return;
+    }
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -287,10 +296,15 @@ class _FriendsScreenState extends State<FriendsScreen> {
               child: StreamBuilder<List<FriendProfile>>(
                 stream: FriendService.watchFriends(),
                 builder: (context, snapshot) {
-                  if (!snapshot.hasData) {
+                  // Firebase가 아직 설정 안 됐거나(watchFriends()가 빈 스트림을 반환)
+                  // 로그인이 안 된 경우, 스트림이 데이터 없이 곧바로 완료되어
+                  // snapshot.hasData가 영원히 false로 남는다. connectionState까지
+                  // 같이 봐서, 진짜로 "아직 기다리는 중"일 때만 로딩을 보여준다.
+                  final stillWaiting = snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData;
+                  if (stillWaiting) {
                     return const Center(child: CircularProgressIndicator(color: Color(0xFFD4AF37)));
                   }
-                  final friends = snapshot.data!;
+                  final friends = snapshot.data ?? [];
                   if (friends.isEmpty) {
                     return Center(
                       child: Padding(
