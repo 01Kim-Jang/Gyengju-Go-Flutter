@@ -342,6 +342,12 @@ class _MapboxViewState extends State<MapboxView> {
       final statusBarHeight = MediaQuery.of(context).padding.top;
       await mapboxMap.compass.updateSettings(CompassSettings(marginTop: statusBarHeight + 8));
       await mapboxMap.scaleBar.updateSettings(ScaleBarSettings(marginTop: statusBarHeight + 8));
+
+      // Mapbox 로고/저작권 표시는 라이선스상 완전히 숨길 수 없다(logo.enabled는
+      // Mapbox와 별도 협의가 필요한 "Restricted API"). 대신 좌하단 AI 비서
+      // 버튼과 겹치지 않도록 우하단으로 옮겨서 항상 온전히 보이게 한다.
+      await mapboxMap.logo.updateSettings(LogoSettings(position: OrnamentPosition.BOTTOM_RIGHT));
+      await mapboxMap.attribution.updateSettings(AttributionSettings(position: OrnamentPosition.BOTTOM_RIGHT));
     } catch (e) {
       debugPrint("Ornament margin update error: $e");
     }
