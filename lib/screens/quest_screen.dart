@@ -7,6 +7,7 @@ import '../data/spots_db.dart';
 import '../widgets/quest_route_sheet.dart';
 import '../utils/transit_helper.dart';
 import 'trip_report_screen.dart';
+import 'stamp_book_screen.dart';
 
 class QuestScreen extends StatelessWidget {
   const QuestScreen({super.key});
@@ -18,119 +19,6 @@ class QuestScreen extends StatelessWidget {
     'planner_historic',
     'planner_art',
   };
-
-  void _showStampBook(BuildContext context, AppState appState) {
-    final coreSpots = ['첨성대', '동궁과 월지', '불국사', '석굴암', '대릉원', '황리단길'];
-    final currentLang = appState.currentLanguage;
-    
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFFFDFBF7), // Warm hanji style color
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-          side: const BorderSide(color: Color(0xFF8D6E63), width: 2),
-        ),
-        title: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.stars, color: Color(0xFFD4AF37), size: 30),
-                const SizedBox(width: 8),
-                Text(
-                  AppTranslations.get(currentLang, 'stamp_book'),
-                  style: const TextStyle(
-                    fontFamily: 'Serif', 
-                    fontWeight: FontWeight.bold, 
-                    color: Color(0xFF3E2723),
-                    fontSize: 22,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '${AppTranslations.get(currentLang, 'collected')}: ${appState.globalVisitedSpots.intersection(coreSpots.toSet()).length} / ${coreSpots.length}',
-              style: const TextStyle(fontSize: 14, color: Color(0xFF7D5A50), fontWeight: FontWeight.w600),
-            ),
-            const Divider(color: Color(0xFFD7CCC8), thickness: 1.5),
-          ],
-        ),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: GridView.builder(
-            shrinkWrap: true,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 16,
-              childAspectRatio: 0.8,
-            ),
-            itemCount: coreSpots.length,
-            itemBuilder: (context, index) {
-              final spotName = coreSpots[index];
-              final isCollected = appState.globalVisitedSpots.contains(spotName);
-              return Column(
-                children: [
-                  Expanded(
-                    child: AspectRatio(
-                      aspectRatio: 1,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: isCollected ? const Color(0xFFFFF3E0) : Colors.grey[200],
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: isCollected ? const Color(0xFFD4AF37) : Colors.grey[400]!,
-                            width: 2.5,
-                          ),
-                          boxShadow: isCollected
-                              ? [
-                                  BoxShadow(
-                                    color: Colors.orange.withValues(alpha: 0.2),
-                                    blurRadius: 6,
-                                    spreadRadius: 1,
-                                  )
-                                ]
-                              : null,
-                        ),
-                        child: Center(
-                          child: isCollected
-                              ? const Icon(Icons.verified, color: Color(0xFFD4AF37), size: 36)
-                              : const Icon(Icons.lock, color: Colors.grey, size: 28),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    SpotsDB.get(spotName)?.getName(currentLang) ?? spotName,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: isCollected ? FontWeight.bold : FontWeight.normal,
-                      color: isCollected ? const Color(0xFF3E2723) : Colors.grey[600],
-                    ),
-                    textAlign: TextAlign.center,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              );
-            },
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              AppTranslations.get(currentLang, 'close'),
-              style: const TextStyle(color: Color(0xFF8D6E63), fontWeight: FontWeight.bold),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -179,7 +67,10 @@ class QuestScreen extends StatelessWidget {
                         ),
                       ),
                       OutlinedButton.icon(
-                        onPressed: () => _showStampBook(context, appState),
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const StampBookScreen()),
+                        ),
                         icon: const Icon(Icons.stars, color: Color(0xFFD4AF37), size: 20),
                         label: Text(
                           AppTranslations.get(appState.currentLanguage, 'stamp_book'),
