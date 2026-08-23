@@ -43,10 +43,18 @@ class _LanguageSelectScreenState extends State<LanguageSelectScreen> {
     }
 
     if (mounted) {
-      Navigator.pushReplacement(
+      // pushReplacement로 이동하면 언어 선택 화면이 스택에서 사라져서, 캐릭터
+      // 선택 화면에서 뒤로가기를 눌렀을 때(언어를 잘못 골랐을 때) 앱이 그냥
+      // 종료돼버렸다. 일반 push로 바꿔서 뒤로가기 시 언어 선택으로 정상적으로
+      // 돌아올 수 있도록 한다.
+      Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const CharacterSelectScreen()),
-      );
+      ).then((_) {
+        // 뒤로가기로 돌아왔을 때 로딩 상태가 그대로 남아 버튼이 계속 비활성화되지
+        // 않도록 초기화한다.
+        if (mounted) setState(() => _isLoading = false);
+      });
     }
   }
 
