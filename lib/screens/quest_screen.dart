@@ -6,6 +6,7 @@ import '../utils/translations.dart';
 import '../data/spots_db.dart';
 import '../widgets/quest_route_sheet.dart';
 import '../utils/transit_helper.dart';
+import 'trip_report_screen.dart';
 
 class QuestScreen extends StatelessWidget {
   const QuestScreen({super.key});
@@ -198,6 +199,27 @@ class QuestScreen extends StatelessWidget {
                         ),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const TripReportScreen()),
+                      ),
+                      icon: const Icon(Icons.menu_book, color: Color(0xFF1F3864), size: 18),
+                      label: Text(
+                        AppTranslations.get(appState.currentLanguage, 'trip_report'),
+                        style: const TextStyle(color: Color(0xFF1F3864), fontWeight: FontWeight.bold, fontSize: 13),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Color(0xFF1F3864), width: 1.2),
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                        backgroundColor: const Color(0xFFFFFDF9).withValues(alpha: 0.8),
+                      ),
+                    ),
                   ),
                 ],
               ),
