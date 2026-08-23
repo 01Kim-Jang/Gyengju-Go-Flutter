@@ -23,15 +23,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
     {'path': 'assets/images/char_princess.png', 'nameKey': 'char_princess'},
   ];
 
+  // 도트 픽셀(2등신) 캐릭터는 우선 앱에서 선택지로 노출하지 않기로 함
+  // (추후 업데이트 시 재도입 가능하도록 데이터는 남겨둔다).
+  // ignore: unused_field
   final List<Map<String, dynamic>> _dotCharacters = [
     {'path': 'assets/images/char_style1_male.png', 'nameKey': 'char_dot_warrior'},
     {'path': 'assets/images/char_style1_female.png', 'nameKey': 'char_dot_lady'},
     {'path': 'assets/images/char_style2_male.png', 'nameKey': 'char_dot_young_master'},
     {'path': 'assets/images/char_style2_female.png', 'nameKey': 'char_dot_maiden'},
   ];
-
-  // Whether we are viewing 8-head or 2-head grid
-  bool _isEightHeadMode = true;
 
   @override
   void initState() {
@@ -183,26 +183,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _buildSectionCard(
                 title: AppTranslations.get(currentLang, 'location_sharing_title'),
                 icon: Icons.shield,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      AppTranslations.get(currentLang, 'location_sharing_desc'),
-                      style: const TextStyle(fontSize: 12.5, color: Color(0xFF8D6E63), height: 1.4),
-                    ),
-                    SwitchListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(
-                        appState.locationSharingEnabled
-                            ? AppTranslations.get(currentLang, 'location_sharing_on')
-                            : AppTranslations.get(currentLang, 'location_sharing_off'),
-                        style: const TextStyle(color: Color(0xFF3E2723), fontWeight: FontWeight.w600),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        AppTranslations.get(currentLang, 'location_sharing_desc'),
+                        style: const TextStyle(fontSize: 12.5, color: Color(0xFF8D6E63), height: 1.4),
                       ),
-                      value: appState.locationSharingEnabled,
-                      onChanged: (val) => appState.toggleLocationSharing(val),
-                      activeColor: const Color(0xFFD4AF37),
-                    ),
-                  ],
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(
+                          appState.locationSharingEnabled
+                              ? AppTranslations.get(currentLang, 'location_sharing_on')
+                              : AppTranslations.get(currentLang, 'location_sharing_off'),
+                          style: const TextStyle(color: Color(0xFF3E2723), fontWeight: FontWeight.w600),
+                        ),
+                        value: appState.locationSharingEnabled,
+                        onChanged: (val) => appState.toggleLocationSharing(val),
+                        activeColor: const Color(0xFFD4AF37),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
@@ -284,42 +287,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 title: charStyleStr,
                 icon: Icons.face,
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Segmented Selector
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ChoiceChip(
-                            label: Text(AppTranslations.get(currentLang, 'char_8_head')),
-                            selected: _isEightHeadMode,
-                            onSelected: (selected) {
-                              if (selected) setState(() => _isEightHeadMode = true);
-                            },
-                            selectedColor: const Color(0xFFD4AF37),
-                            labelStyle: TextStyle(
-                              color: _isEightHeadMode ? Colors.white : const Color(0xFF8D6E63),
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: ChoiceChip(
-                            label: Text(AppTranslations.get(currentLang, 'char_2_head')),
-                            selected: !_isEightHeadMode,
-                            onSelected: (selected) {
-                              if (selected) setState(() => _isEightHeadMode = false);
-                            },
-                            selectedColor: const Color(0xFFD4AF37),
-                            labelStyle: TextStyle(
-                              color: !_isEightHeadMode ? Colors.white : const Color(0xFF8D6E63),
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Text(
+                        AppTranslations.get(currentLang, 'char_8_head'),
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF8D6E63)),
+                      ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
                     // Character Grid
                     GridView.builder(
                       shrinkWrap: true,
@@ -330,9 +307,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         crossAxisSpacing: 10,
                         mainAxisSpacing: 10,
                       ),
-                      itemCount: _isEightHeadMode ? _illustrations.length : _dotCharacters.length,
+                      itemCount: _illustrations.length,
                       itemBuilder: (context, index) {
-                        final char = _isEightHeadMode ? _illustrations[index] : _dotCharacters[index];
+                        final char = _illustrations[index];
                         final path = char['path'] as String;
                         final isSelected = appState.selectedCharacterPath == path;
                         final name = AppTranslations.get(currentLang, char['nameKey']!);
