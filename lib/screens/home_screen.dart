@@ -70,27 +70,36 @@ class _HomeScreenState extends State<HomeScreen> {
               alignment: Alignment.bottomLeft,
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
-                child: FloatingActionButton.extended(
-                  heroTag: "aiChatbot",
-                  onPressed: () {
-                    showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      backgroundColor: Colors.transparent,
-                      builder: (context) => const ChatBotSheet(),
-                    );
-                  },
-                  backgroundColor: Colors.white,
-                  icon: const Icon(
-                    Icons.support_agent,
-                    color: Color(0xFFD4AF37),
-                    size: 32,
-                  ),
-                  label: Text(
-                    AppTranslations.get(lang, 'ai_assistant'),
-                    style: const TextStyle(
-                      color: Colors.black,
-                      fontWeight: FontWeight.bold,
+                child: ConstrainedBox(
+                  // 일본어 "AI アシスタント" 등 언어별로 라벨 길이가 크게 달라져서,
+                  // 폭을 제한하고 FittedBox로 텍스트를 줄여서라도 가운데 지도
+                  // 버튼을 가리지 않도록 한다.
+                  constraints: const BoxConstraints(maxWidth: 190),
+                  child: FloatingActionButton.extended(
+                    heroTag: "aiChatbot",
+                    onPressed: () {
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (context) => const ChatBotSheet(),
+                      );
+                    },
+                    backgroundColor: Colors.white,
+                    icon: const Icon(
+                      Icons.support_agent,
+                      color: Color(0xFFD4AF37),
+                      size: 32,
+                    ),
+                    label: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        AppTranslations.get(lang, 'ai_assistant'),
+                        style: const TextStyle(
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ),
                 ),
