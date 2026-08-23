@@ -142,7 +142,9 @@ class _PokestopModalState extends State<PokestopModal> with TickerProviderStateM
     appState.updateQuestProgress('spin_5');
     
     final title = _cleanTitle(widget.spotData['title'] ?? '');
-    appState.markSpotVisited(title);
+    final visitLat = double.tryParse(widget.spotData['mapY'].toString());
+    final visitLng = double.tryParse(widget.spotData['mapX'].toString());
+    appState.markSpotVisited(title, lat: visitLat, lng: visitLng);
 
     _playDocent();
     _fetchNearbyPlaces();

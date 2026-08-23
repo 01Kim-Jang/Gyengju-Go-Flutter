@@ -11,6 +11,7 @@ import '../services/user_service.dart';
 import '../services/party_service.dart';
 import '../services/tago_service.dart';
 import '../services/friend_service.dart';
+import '../services/trip_log_service.dart';
 import '../models/friend_profile.dart';
 import '../data/spots_db.dart';
 
@@ -36,6 +37,13 @@ class AppState extends ChangeNotifier {
   DateTime? _lastRouteFetchTime;
   double? _lastRouteFetchLat;
   double? _lastRouteFetchLng;
+
+  // 여행 보고서(일지)용 이동 궤적 기록. 앱이 켜져 있는 동안(포그라운드) 일정
+  // 거리/시간 간격으로 좌표를 로컬에 저장해서, 나중에 그날 실제로 걸은 경로를
+  // 지도에 다시 그릴 수 있게 한다.
+  double? _lastBreadcrumbLat;
+  double? _lastBreadcrumbLng;
+  DateTime? _lastBreadcrumbTime;
 
   // 대중교통 정류소 접근 알림 (필요할 때만, 즉 감시 활성화 후 정류소에 실제로
   // 가까워졌을 때 한 번만 튀어나오도록 설계됨)
@@ -380,6 +388,19 @@ class AppState extends ChangeNotifier {
       }
     }
 
+    // 여행 보고서용 궤적 기록 (30m 이상 이동 + 45초 이상 경과 시에만, 저장 용량/빈도 절약)
+    final breadcrumbNow = DateTime.now();
+    final movedFarForBreadcrumb = _lastBreadcrumbLat == null ||
+        _calculateDistance(_lastBreadcrumbLat!, _lastBreadcrumbLng!, lat, lng) * 1000 > 30;
+    final breadcrumbTimePassed = _lastBreadcrumbTime == null ||
+        breadcrumbNow.difference(_lastBreadcrumbTime!) > const Duration(seconds: 45);
+    if (movedFarForBreadcrumb && breadcrumbTimePassed) {
+      _lastBreadcrumbLat = lat;
+      _lastBreadcrumbLng = lng;
+      _lastBreadcrumbTime = breadcrumbNow;
+      TripLogService.appendBreadcrumb(lat, lng, at: breadcrumbNow);
+    }
+
     // 친구 위치 공유가 켜져 있으면 동일한 방식으로(10m 이상 이동 시) 내 위치를 갱신
     if (_locationSharingEnabled) {
       final movedFarForFriends = _lastSharedLat == null ||
@@ -644,13 +665,18 @@ class AppState extends ChangeNotifier {
   }
 
   // New method specifically for planner spot spin
-  void markSpotVisited(String spotTitle) {
+  void markSpotVisited(String spotTitle, {double? lat, double? lng}) {
     bool updated = false;
 
     // Always add to global stamp book
     if (!_globalVisitedSpots.contains(spotTitle)) {
       _globalVisitedSpots.add(spotTitle);
       updated = true;
+    }
+
+    // 여행 보고서용 방문 기록 (로컬 저장, 날짜별로 쌓임)
+    if (lat != null && lng != null) {
+      TripLogService.appendVisit(spotTitle, lat, lng);
     }
     
     // Check if the visited spot is part of the active quest's planned route.
