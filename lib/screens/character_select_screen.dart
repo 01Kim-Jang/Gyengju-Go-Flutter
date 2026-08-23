@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 import '../utils/translations.dart';
-import 'home_screen.dart';
+import 'tutorial_screen.dart';
 
 class CharacterSelectScreen extends StatefulWidget {
   const CharacterSelectScreen({super.key});
@@ -167,9 +167,11 @@ class _CharacterSelectScreenState extends State<CharacterSelectScreen> {
                 onPressed: () {
                   final selectedPath = _characters.firstWhere((c) => c['id'] == _selectedId)['path'];
                   context.read<AppState>().setCharacter(selectedPath);
-                  Navigator.pushReplacement(
+                  // 일반 push로 이동해서, 튜토리얼 화면에서 뒤로가기를 누르면
+                  // (캐릭터를 다시 고르고 싶을 때) 여기로 정상적으로 돌아올 수 있게 한다.
+                  Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const HomeScreen()),
+                    MaterialPageRoute(builder: (context) => const TutorialScreen()),
                   );
                 },
                 style: ElevatedButton.styleFrom(
