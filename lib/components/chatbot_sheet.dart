@@ -141,9 +141,15 @@ class _ChatBotSheetState extends State<ChatBotSheet> {
               children: [
                 const Icon(Icons.support_agent, color: Color(0xFFD4AF37), size: 28),
                 const SizedBox(width: 8),
-                Text(
-                  titleStr,
-                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF3E2723), fontFamily: 'Serif'),
+                // 영어/베트남어 등 긴 언어에서 제목이 시트 폭을 넘어 오버플로우
+                // 경고가 뜨던 문제 수정. Flexible + ellipsis로 넘치면 줄여서 표시.
+                Flexible(
+                  child: Text(
+                    titleStr,
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF3E2723), fontFamily: 'Serif'),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ],
             ),
