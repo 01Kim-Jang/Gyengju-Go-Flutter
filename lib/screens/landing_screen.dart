@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 import '../services/odii_service.dart';
+import '../services/user_service.dart';
 import '../utils/translations.dart';
 import 'language_select_screen.dart';
+import 'home_screen.dart';
 
 class LandingScreen extends StatefulWidget {
   const LandingScreen({super.key});
@@ -15,6 +17,9 @@ class LandingScreen extends StatefulWidget {
 class _LandingScreenState extends State<LandingScreen> with SingleTickerProviderStateMixin {
   late AnimationController _progressController;
   bool _dataLoaded = false;
+  // 이미 온보딩(언어/캐릭터 선택)을 마친 적 있는 사용자로 확인되면, 언어 선택부터
+  // 다시 거치지 않고 바로 홈 화면으로 들어간다.
+  bool _isReturningUser = false;
 
   @override
   void initState() {
@@ -36,10 +41,29 @@ class _LandingScreenState extends State<LandingScreen> with SingleTickerProvider
 
   Future<void> _prefetchData() async {
     try {
-      // Fetch default 'ko' data
-      final spots = await OdiiService.fetchGyeongjuSpots('ko');
+      final appState = context.read<AppState>();
+
+      // Firebase 준비가 안 됐거나 첫 실행이면 null이 돌아와서 기존 온보딩
+      // 흐름(언어 선택부터)을 그대로 타므로 항상 안전하다. 네트워크가 느릴 때
+      // 랜딩 화면이 무한정 멈춰있지 않도록 타임아웃을 둔다.
+      Map<String, dynamic>? returningProfile;
+      try {
+        returningProfile = await UserService.getReturningUserProfile().timeout(const Duration(seconds: 5));
+      } catch (e) {
+        debugPrint("Returning-user check failed/timed out: $e");
+      }
+
+      String langForFetch = 'ko';
+      if (returningProfile != null) {
+        _isReturningUser = true;
+        appState.applyReturningUserProfile(returningProfile);
+        final savedLang = returningProfile['languagePreference']?.toString();
+        if (savedLang != null && savedLang.isNotEmpty) langForFetch = savedLang;
+      }
+
+      final spots = await OdiiService.fetchGyeongjuSpots(langForFetch);
       if (mounted) {
-        context.read<AppState>().setSpotsData(spots);
+        appState.setSpotsData(spots);
       }
     } catch (e) {
       debugPrint("Error prefetching spots: $e");
@@ -68,10 +92,11 @@ class _LandingScreenState extends State<LandingScreen> with SingleTickerProvider
   }
 
   void _navigateToNext() {
+    final destination = _isReturningUser ? const HomeScreen() : const LanguageSelectScreen();
     Navigator.pushReplacement(
       context,
       PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => const LanguageSelectScreen(),
+        pageBuilder: (context, animation, secondaryAnimation) => destination,
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return FadeTransition(opacity: animation, child: child);
         },
