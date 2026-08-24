@@ -759,6 +759,22 @@ class AppState extends ChangeNotifier {
       debugPrint("Error fetching spots in new language: $e");
     }
     notifyListeners();
+    // 언어 선택 최초 화면과 설정 화면 언어 변경 둘 다 이 메서드를 거치므로,
+    // 여기 한 곳에서만 저장해도 두 경로 모두 커버된다.
+    UserService.updateProfile(languagePreference: lang);
+  }
+
+  // 랜딩 화면에서 이미 온보딩을 마친 재방문 사용자로 확인됐을 때, 저장된
+  // 언어/캐릭터/닉네임을 로컬 상태에 반영한다. 스팟 데이터는 호출한 쪽에서
+  // 해당 언어로 다시 불러와야 한다(이 메서드는 fetch를 하지 않는다).
+  void applyReturningUserProfile(Map<String, dynamic> profile) {
+    final lang = profile['languagePreference']?.toString();
+    if (lang != null && lang.isNotEmpty) _currentLanguage = lang;
+    final characterPath = profile['characterPath']?.toString();
+    if (characterPath != null && characterPath.isNotEmpty) _selectedCharacterPath = characterPath;
+    final nickname = profile['nickname']?.toString();
+    if (nickname != null && nickname.isNotEmpty) _myNickname = nickname;
+    notifyListeners();
   }
 
   void setAudioEnabled(bool val) {
