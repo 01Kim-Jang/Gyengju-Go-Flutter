@@ -47,6 +47,8 @@ class UserService {
           'characterPath': 'assets/images/silla_hwarang_2head_cute.png',
           'friendCode': code,
           'stampCount': 0,
+          'score': 0,
+          'visitedSpots': <String>[],
           'createdAt': FieldValue.serverTimestamp(),
         });
       }
@@ -97,13 +99,20 @@ class UserService {
     }
   }
 
-  static Future<void> updateStampCount(int stampCount) async {
+  // 점수와 방문한 명소 목록을 Firestore에 저장해서, 앱을 재설치하거나 다른
+  // 기기로 로그인해도 진행 상황이 이어지도록 한다. stampCount는 파티/친구
+  // 목록 등에서 가볍게 보여주는 용도로 계속 별도 유지한다.
+  static Future<void> updateProgress({required int score, required List<String> visitedSpots}) async {
     final myUid = uid;
     if (myUid == null) return;
     try {
-      await _users.doc(myUid).set({'stampCount': stampCount}, SetOptions(merge: true));
+      await _users.doc(myUid).set({
+        'score': score,
+        'stampCount': visitedSpots.length,
+        'visitedSpots': visitedSpots,
+      }, SetOptions(merge: true));
     } catch (e) {
-      debugPrint('UserService.updateStampCount Error: $e');
+      debugPrint('UserService.updateProgress Error: $e');
     }
   }
 
