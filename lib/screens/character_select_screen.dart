@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
+import '../services/user_service.dart';
 import '../utils/translations.dart';
 import 'tutorial_screen.dart';
 
@@ -167,6 +168,9 @@ class _CharacterSelectScreenState extends State<CharacterSelectScreen> {
                 onPressed: () {
                   final selectedPath = _characters.firstWhere((c) => c['id'] == _selectedId)['path'];
                   context.read<AppState>().setCharacter(selectedPath);
+                  // 캐릭터 선택까지 마쳤다는 건 온보딩이 끝났다는 뜻 - 다음 실행부터는
+                  // 언어/캐릭터 선택을 건너뛰고 바로 홈으로 들어갈 수 있도록 기록해둔다.
+                  UserService.markOnboardingCompleted();
                   // 일반 push로 이동해서, 튜토리얼 화면에서 뒤로가기를 누르면
                   // (캐릭터를 다시 고르고 싶을 때) 여기로 정상적으로 돌아올 수 있게 한다.
                   Navigator.push(
