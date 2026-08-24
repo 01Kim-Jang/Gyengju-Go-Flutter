@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>경주GO 개인정보처리방침</title>
+<style>
+  body { font-family: -apple-system, "Malgun Gothic", sans-serif; max-width: 720px; margin: 40px auto; padding: 0 20px; line-height: 1.7; color: #2A1810; }
+  h1 { font-size: 24px; border-bottom: 2px solid #D4AF37; padding-bottom: 12px; }
+  h2 { font-size: 18px; margin-top: 32px; color: #4A3B32; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+  th, td { border: 1px solid #ddd; padding: 8px 10px; text-align: left; font-size: 14px; }
+  th { background: #F9F6F0; }
+  .meta { color: #777; font-size: 14px; }
+  a { color: #8B5E00; }
+</style>
+</head>
+<body>
+
+<h1>경주GO(Gyeongju GO) 개인정보처리방침</h1>
+<p class="meta">시행일자: 2026년 8월 24일</p>
+
+<p>
+"경주GO"(이하 "앱")는 경주 지역 여행 정보 제공 및 관광 스탬프 투어 서비스를 위해
+최소한의 정보만을 수집하며, 아래와 같이 개인정보를 처리합니다.
+</p>
+
+<h2>1. 수집하는 정보 및 수집 방법</h2>
+<p>앱은 별도의 회원가입 없이 <b>익명 인증(Firebase Anonymous Authentication)</b>을 사용합니다.
+실명, 전화번호, 이메일 등은 수집하지 않습니다.</p>
+<table>
+  <tr><th>항목</th><th>수집 시점</th><th>목적</th></tr>
+  <tr><td>익명 계정 식별자(UID)</td><td>앱 최초 실행 시 자동 생성</td><td>친구/파티/진행도 저장을 위한 기기 식별</td></tr>
+  <tr><td>닉네임, 선택 캐릭터, 친구 코드</td><td>사용자 설정 시</td><td>친구 목록, 파티 기능 제공</td></tr>
+  <tr><td>게임 점수, 방문한 관광지 목록</td><td>스탬프 획득 시</td><td>스탬프북 진행도 저장 및 기기 변경 시 복원</td></tr>
+  <tr><td>언어 설정</td><td>언어 선택 시</td><td>다음 실행 시 동일 언어로 자동 표시</td></tr>
+  <tr><td>위치 정보(GPS)</td><td>지도 사용 시 상시 / 위치공유 기능은 사용자가 <b>직접 켠 경우에만</b></td><td>지도 표시, 근처 명소 탐색, (선택) 친구에게 내 위치 공유</td></tr>
+  <tr><td>카메라</td><td>QR 코드로 친구 추가 시</td><td>QR 코드 인식. 촬영된 이미지는 저장/전송되지 않습니다.</td></tr>
+  <tr><td>AI 비서에 입력한 텍스트</td><td>AI 챗봇/번역 기능 사용 시</td><td>답변 생성 및 번역 처리 (자체 서버를 거쳐 OpenAI API로 전달, 별도 저장하지 않음)</td></tr>
+</table>
+
+<p><b>위치공유 기능은 기본값이 꺼짐(OFF) 상태</b>이며, 설정 화면에서 사용자가 직접 켜야만
+친구에게 내 위치가 표시됩니다. 언제든지 다시 끌 수 있습니다.</p>
+
+<h2>2. 제3자 서비스 제공</h2>
+<p>앱은 아래 서비스를 이용하며, 각 서비스의 자체 개인정보처리방침이 함께 적용될 수 있습니다.</p>
+<table>
+  <tr><th>서비스</th><th>용도</th></tr>
+  <tr><td>Google Firebase (Firestore, Authentication)</td><td>계정/친구/진행도 데이터 저장</td></tr>
+  <tr><td>Mapbox / Kakao Map</td><td>지도 표시</td></tr>
+  <tr><td>한국관광공사 공공 API (Tour API / ODii)</td><td>관광지 정보 제공</td></tr>
+  <tr><td>OpenAI API</td><td>AI 여행 비서, 자동 번역</td></tr>
+</table>
+
+<h2>3. 개인정보 보관 기간</h2>
+<p>수집된 정보는 서비스 제공 목적 달성 시 또는 사용자의 삭제 요청 시까지 보관됩니다.
+익명 계정 특성상 앱을 삭제하면 해당 기기와의 연결이 끊어지며, 계정 데이터 완전 삭제를
+원하시면 아래 문의처로 연락해주시면 처리해드립니다.</p>
+
+<h2>4. 이용자의 권리</h2>
+<p>이용자는 언제든지 아래 이메일로 본인의 데이터 열람, 정정, 삭제를 요청할 수 있습니다.</p>
+
+<h2>5. 아동의 개인정보</h2>
+<p>본 앱은 만 14세 미만 아동으로부터 고의로 개인정보를 수집하지 않습니다.</p>
+
+<h2>6. 문의처</h2>
+<p>개인정보 관련 문의: <a href="mailto:jhjang7332@gmail.com">jhjang7332@gmail.com</a></p>
+
+<h2>7. 정책 변경</h2>
+<p>본 방침은 법령이나 서비스 변경에 따라 개정될 수 있으며, 변경 시 본 페이지를 통해 고지합니다.</p>
+
+</body>
+</html>
