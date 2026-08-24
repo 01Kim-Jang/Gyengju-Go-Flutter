@@ -446,9 +446,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 Icon(icon, color: const Color(0xFF8D6E63)),
                 const SizedBox(width: 8),
-                Text(
-                  title,
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF3E2723), fontFamily: 'Serif'),
+                // 카드 제목 전부가 이 위젯을 공유해서, 긴 언어에서 폭을 넘는
+                // 경우를 대비해 방어적으로 Flexible + ellipsis를 적용해둔다.
+                Flexible(
+                  child: Text(
+                    title,
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF3E2723), fontFamily: 'Serif'),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ],
             ),
