@@ -85,14 +85,21 @@ class _SafetyInfoScreenState extends State<SafetyInfoScreen> {
                     children: [
                       const Icon(Icons.health_and_safety, color: Color(0xFFD4AF37), size: 32),
                       const SizedBox(width: 10),
-                      Text(
-                        AppTranslations.get(lang, 'safety_info'),
-                        style: const TextStyle(
-                          fontSize: 30,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'Serif',
-                          color: Color(0xFF3E2723),
-                          shadows: [Shadow(color: Colors.white70, blurRadius: 2, offset: Offset(1, 1))],
+                      // 영어("Emergency / Safety Info") 등 긴 언어에서 큰 폰트(30px)와
+                      // 합쳐져 화면 폭을 넘던 오버플로우 수정.
+                      Flexible(
+                        child: Text(
+                          AppTranslations.get(lang, 'safety_info'),
+                          style: const TextStyle(
+                            fontSize: 30,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Serif',
+                            color: Color(0xFF3E2723),
+                            shadows: [Shadow(color: Colors.white70, blurRadius: 2, offset: Offset(1, 1))],
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
                         ),
                       ),
                     ],
