@@ -851,12 +851,18 @@ class _MapboxViewState extends State<MapboxView> {
                     children: [
                       const Icon(Icons.groups, color: Color(0xFFD4AF37), size: 20),
                       const SizedBox(width: 8),
-                      Text(
-                        AppTranslations.get(appState.currentLanguage, 'party_badge_standalone')
-                            .replaceAll('{name}', '${AppTranslations.get(appState.currentLanguage, '${appState.activeParty!.courseId}_title')} ${AppTranslations.get(appState.currentLanguage, 'party_group_suffix')}')
-                            .replaceAll('{code}', appState.activeParty!.inviteCode)
-                            .replaceAll('{count}', appState.activeParty!.members.length.toString()),
-                        style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                      // 코스 제목+파티 접미사+코드+인원수가 합쳐진 문자열이라 영어/베트남어
+                      // 등에서 배지 폭을 넘기 쉬움 - Flexible + ellipsis로 방어.
+                      Flexible(
+                        child: Text(
+                          AppTranslations.get(appState.currentLanguage, 'party_badge_standalone')
+                              .replaceAll('{name}', '${AppTranslations.get(appState.currentLanguage, '${appState.activeParty!.courseId}_title')} ${AppTranslations.get(appState.currentLanguage, 'party_group_suffix')}')
+                              .replaceAll('{code}', appState.activeParty!.inviteCode)
+                              .replaceAll('{count}', appState.activeParty!.members.length.toString()),
+                          style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ],
                   ),
