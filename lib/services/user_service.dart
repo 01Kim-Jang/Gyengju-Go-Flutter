@@ -85,17 +85,49 @@ class UserService {
     }
   }
 
-  static Future<void> updateProfile({String? nickname, String? characterPath}) async {
+  static Future<void> updateProfile({String? nickname, String? characterPath, String? languagePreference}) async {
     final myUid = uid;
     if (myUid == null) return;
     final data = <String, dynamic>{};
     if (nickname != null && nickname.trim().isNotEmpty) data['nickname'] = nickname.trim();
     if (characterPath != null) data['characterPath'] = characterPath;
+    if (languagePreference != null && languagePreference.isNotEmpty) data['languagePreference'] = languagePreference;
     if (data.isEmpty) return;
     try {
       await _users.doc(myUid).set(data, SetOptions(merge: true));
     } catch (e) {
       debugPrint('UserService.updateProfile Error: $e');
+    }
+  }
+
+  // 캐릭터 선택까지 마친 시점(온보딩 완료)에 한 번 기록해서, 다음 실행부터는
+  // 언어/캐릭터 선택 화면을 건너뛰고 바로 홈으로 들어갈 수 있게 한다.
+  static Future<void> markOnboardingCompleted() async {
+    final myUid = uid;
+    if (myUid == null) return;
+    try {
+      await _users.doc(myUid).set({'onboardingCompleted': true}, SetOptions(merge: true));
+    } catch (e) {
+      debugPrint('UserService.markOnboardingCompleted Error: $e');
+    }
+  }
+
+  // 랜딩 화면에서 "이미 온보딩을 마친 재방문 사용자인지" 확인할 때 사용.
+  // Firebase가 아직 준비 안 됐거나 처음 쓰는 사용자면 null을 반환해 기존
+  // 온보딩 흐름(언어 선택부터)을 그대로 타도록 한다.
+  static Future<Map<String, dynamic>?> getReturningUserProfile() async {
+    if (!_isFirebaseReady) return null;
+    try {
+      await ensureSignedIn();
+      final myUid = uid;
+      if (myUid == null) return null;
+      final doc = await _users.doc(myUid).get();
+      final data = doc.data();
+      if (data == null || data['onboardingCompleted'] != true) return null;
+      return data;
+    } catch (e) {
+      debugPrint('UserService.getReturningUserProfile Error: $e');
+      return null;
     }
   }
 
