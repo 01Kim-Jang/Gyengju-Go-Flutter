@@ -1,6 +1,3 @@
-// 플레이스홀더 파일입니다.
-// `flutterfire configure` 실행 시 이 파일 전체가 실제 프로젝트 설정값으로 자동 교체됩니다.
-// (README의 "Firebase 설정" 섹션 참고)
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb, TargetPlatform;
 
@@ -28,10 +25,10 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'REPLACE_ME',
-    appId: 'REPLACE_ME',
-    messagingSenderId: 'REPLACE_ME',
-    projectId: 'REPLACE_ME',
-    storageBucket: 'REPLACE_ME',
+    apiKey: 'AIzaSyAgkxf9QGSvvSk5nQSKuDUCvjH7l18Z1C4',
+    appId: '1:186888075344:android:4b15809ddb98313759f955',
+    messagingSenderId: '186888075344',
+    projectId: 'gyengju-go',
+    storageBucket: 'gyengju-go.firebasestorage.app',
   );
 }

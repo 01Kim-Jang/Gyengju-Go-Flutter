@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "186888075344",
+    "project_id": "gyengju-go",
+    "storage_bucket": "gyengju-go.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:186888075344:android:4b15809ddb98313759f955",
+        "android_client_info": {
+          "package_name": "com.example.gyeongju_go_flutter"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAgkxf9QGSvvSk5nQSKuDUCvjH7l18Z1C4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
