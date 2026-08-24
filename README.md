@@ -58,6 +58,7 @@
 - **캐릭터 스타일 스위처**: 신라 전통 캐릭터 6종(왕, 왕비, 화랑, 공주, 상인, 현대 여행자) 중 골라 실시간으로 커스텀 변경할 수 있습니다. (2등신 도트 픽셀 캐릭터는 우선 비활성화했으며, 데이터는 남겨둬 추후 업데이트로 재도입 가능합니다.)
 - **서비스 언어 변경**: 한국어, 영어, 일본어, 중국어(간체), 베트남어, 태국어 간의 실시간 전체 UI 다국어 번역 교체.
 - **데이터 초기화**: 획득한 스탬프 기록 및 점수를 모두 초기화하고 여정을 다시 시작하는 기능 지원.
+- **진행 상황 클라우드 저장**: 점수와 방문(스탬프 수집) 기록이 Firestore에 저장되어, 앱을 재설치하거나 다른 기기로 로그인해도 이어집니다. (이전에는 메모리에만 있어 앱을 완전히 종료하면 초기화됐습니다.)
 
 ### 6. ⚡ 로딩 최적화, 3D 동전 스핀 및 사용자 피드백 반영 (Performance & High Fidelity)
 - **포켓스탑 로딩 속도 즉시 단축 (Preloaded Spots)**: 기존 공공데이터 API 전체 호출 방식의 네트워크 지연 및 파싱 병목을 해결하기 위해 경주 전용 다국어 데이터를 미리 정제하여 패키징([preloaded_spots.dart](file:///c:/Users/baram/.gemini/antigravity/scratch/gyeongju_go_flutter/lib/data/preloaded_spots.dart))하여 첫 앱 실행 및 언어 전환 로딩 속도를 즉각적으로 끌어올렸습니다.
@@ -164,8 +165,8 @@ ODII_SERVICE_KEY=YOUR_ODII_SERVICE_KEY
 TAGO_SERVICE_KEY=YOUR_TAGO_SERVICE_KEY
 ```
 
-### 2. Firebase 설정 (친구 & 파티 기능에 필요)
-친구/파티 기능은 Firebase Auth(익명 인증) + Cloud Firestore를 사용합니다.
+### 2. Firebase 설정 (친구 & 파티 기능, 진행 상황 저장에 필요)
+친구/파티 기능과 점수·스탬프 진행 상황 클라우드 저장은 Firebase Auth(익명 인증) + Cloud Firestore를 사용합니다.
 
 1. [Firebase 콘솔](https://console.firebase.google.com)에서 프로젝트를 생성합니다.
 2. **Firestore Database**를 만듭니다 (위치: `asia-northeast3` 권장, 테스트 모드로 시작 가능).
