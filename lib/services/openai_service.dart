@@ -4,21 +4,38 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class OpenAIService {
+  // OpenAI API 키는 더 이상 앱 안에 두지 않는다. 대신 Cloudflare Worker가 키를
+  // 서버 쪽에서만 들고 있다가 OpenAI로 요청을 대신 전달해주는 프록시 역할을
+  // 하며(자세한 내용은 cloudflare-worker/README.md 참고), 앱은 이 프록시의
+  // URL과 간단한 공유 시크릿만 알고 있으면 된다.
   // dotenv.load()가 아직 끝나지 않은 시점에 호출되면 NotInitializedError가 던져질 수 있으므로
-  // 항상 이 getter를 통해 안전하게 키를 읽는다(초기화 전이면 빈 문자열 → 각 메서드의 폴백 경로로 진행).
-  static String get _apiKey {
+  // 항상 이 getter를 통해 안전하게 값을 읽는다(초기화 전이면 빈 문자열 → 각 메서드의 폴백 경로로 진행).
+  static String get _proxyUrl {
     try {
-      return dotenv.env['OPENAI_API_KEY'] ?? '';
+      return dotenv.env['AI_PROXY_URL'] ?? '';
     } catch (_) {
       return '';
     }
   }
 
-  static Future<String> translateText(String text, String targetLang) async {
-    final apiKey = _apiKey;
-    if (apiKey.isEmpty) return text; // 키가 없으면 원본 반환
+  static String get _proxySecret {
+    try {
+      return dotenv.env['AI_PROXY_SECRET'] ?? '';
+    } catch (_) {
+      return '';
+    }
+  }
 
-    final url = Uri.parse('https://api.openai.com/v1/chat/completions');
+  static Map<String, String> get _headers => {
+        'Content-Type': 'application/json; charset=utf-8',
+        'X-App-Secret': _proxySecret,
+      };
+
+  static Future<String> translateText(String text, String targetLang) async {
+    final proxyUrl = _proxyUrl;
+    if (proxyUrl.isEmpty) return text; // 프록시 설정이 없으면 원본 반환
+
+    final url = Uri.parse(proxyUrl);
 
     // Odii 언어 코드를 GPT 프롬프트용 언어 이름으로 변환
     String langName = 'English';
@@ -39,10 +56,7 @@ class OpenAIService {
     try {
       final response = await http.post(
         url,
-        headers: {
-          'Content-Type': 'application/json; charset=utf-8',
-          'Authorization': 'Bearer $apiKey',
-        },
+        headers: _headers,
         body: jsonEncode({
           'model': 'gpt-4o-mini',
           'messages': [
@@ -78,10 +92,10 @@ class OpenAIService {
     double? lat,
     double? lng,
   }) async {
-    final apiKey = _apiKey;
-    if (apiKey.isEmpty) return "오류: OpenAI API Key가 설정되지 않았습니다.";
+    final proxyUrl = _proxyUrl;
+    if (proxyUrl.isEmpty) return "오류: AI 프록시가 설정되지 않았습니다.";
 
-    final url = Uri.parse('https://api.openai.com/v1/chat/completions');
+    final url = Uri.parse(proxyUrl);
 
     String langName = 'Korean';
     switch (targetLang) {
@@ -109,10 +123,7 @@ class OpenAIService {
     try {
       final response = await http.post(
         url,
-        headers: {
-          'Content-Type': 'application/json; charset=utf-8',
-          'Authorization': 'Bearer $apiKey',
-        },
+        headers: _headers,
         body: jsonEncode({
           'model': 'gpt-4o-mini',
           'messages': [
@@ -147,18 +158,15 @@ class OpenAIService {
 
   // 장소 이름만으로 역사적 배경(도슨트 스크립트) 자동 생성
   static Future<String> generateDocentScript(String title) async {
-    final apiKey = _apiKey;
-    if (apiKey.isEmpty) return 'API 키가 설정되지 않았습니다.';
+    final proxyUrl = _proxyUrl;
+    if (proxyUrl.isEmpty) return 'AI 프록시가 설정되지 않았습니다.';
 
-    final url = Uri.parse('https://api.openai.com/v1/chat/completions');
+    final url = Uri.parse(proxyUrl);
 
     try {
       final response = await http.post(
         url,
-        headers: {
-          'Content-Type': 'application/json; charset=utf-8',
-          'Authorization': 'Bearer $apiKey',
-        },
+        headers: _headers,
         body: jsonEncode({
           'model': 'gpt-3.5-turbo',
           'messages': [
@@ -191,8 +199,8 @@ class OpenAIService {
   ) async {
     if (targetLang == 'ko' || restaurants.isEmpty) return restaurants;
 
-    final apiKey = _apiKey;
-    if (apiKey.isEmpty) return restaurants;
+    final proxyUrl = _proxyUrl;
+    if (proxyUrl.isEmpty) return restaurants;
 
     String langName = 'English';
     switch (targetLang) {
@@ -210,11 +218,8 @@ class OpenAIService {
       }).toList();
 
       final response = await http.post(
-        Uri.parse('https://api.openai.com/v1/chat/completions'),
-        headers: {
-          'Content-Type': 'application/json; charset=utf-8',
-          'Authorization': 'Bearer $apiKey',
-        },
+        Uri.parse(proxyUrl),
+        headers: _headers,
         body: jsonEncode({
           'model': 'gpt-4o-mini',
           'response_format': { 'type': 'json_object' },
