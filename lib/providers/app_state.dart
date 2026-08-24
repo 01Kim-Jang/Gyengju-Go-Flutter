@@ -76,6 +76,8 @@ class AppState extends ChangeNotifier {
   String? _myFriendCode;
   String? get myFriendCode => _myFriendCode;
 
+  bool _progressRestored = false;
+
   Future<void> loadMyProfile() async {
     await UserService.ensureSignedIn();
     final uid = UserService.uid;
@@ -84,6 +86,21 @@ class AppState extends ChangeNotifier {
     if (profile != null) {
       _myFriendCode = profile['friendCode']?.toString();
       _myNickname = profile['nickname']?.toString() ?? _myNickname;
+
+      // 저장된 점수·방문 스탬프를 앱 시작 시 딱 한 번만 복원한다. loadMyProfile()은
+      // Firebase 초기화 재시도 때문에 여러 번 호출될 수 있는데, 그때마다 복원하면
+      // 그사이 사용자가 새로 쌓은 진행 상황을 예전 값으로 덮어쓰게 되기 때문이다.
+      if (!_progressRestored) {
+        _progressRestored = true;
+        final savedScore = (profile['score'] as num?)?.toInt();
+        final savedVisited = (profile['visitedSpots'] as List?)?.map((e) => e.toString()).toList();
+        if (savedScore != null) _score = savedScore;
+        if (savedVisited != null) {
+          _globalVisitedSpots
+            ..clear()
+            ..addAll(savedVisited);
+        }
+      }
     }
     _locationSharingEnabled = await UserService.getLocationSharingEnabled();
     notifyListeners();
@@ -710,8 +727,9 @@ class AppState extends ChangeNotifier {
       }
     }
 
-    // Sync stamp progress to Firestore (user profile + active party, if any)
-    UserService.updateStampCount(_globalVisitedSpots.length);
+    // Sync progress to Firestore (user profile + active party, if any) so it
+    // survives app reinstalls / device switches instead of living only in memory.
+    UserService.updateProgress(score: _score, visitedSpots: _globalVisitedSpots.toList());
     if (_activeParty != null) {
       final courseQuest = _quests.firstWhere(
         (q) => q.id == _activeParty!.courseId,
@@ -763,7 +781,7 @@ class AppState extends ChangeNotifier {
       q.visitedSpotTitles.clear();
       q.currentTargetSpot = null;
     }
-    UserService.updateStampCount(0);
+    UserService.updateProgress(score: 0, visitedSpots: []);
     notifyListeners();
   }
 
