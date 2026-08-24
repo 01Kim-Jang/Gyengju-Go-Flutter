@@ -15,6 +15,7 @@
 
 ### 2. 🤖 AI 가이드 스마트 비서 & 3종 내비게이션 연동
 - **GPT-4o-mini 기반 AI 여행 비서**: 사용자의 현재 GPS 위치 정보를 컨텍스트로 받아 주변 맛집, 카페, 교통편, 역사적 정보에 최적화된 맞춤형 추천을 제공합니다.
+- **OpenAI 키 서버 프록시**: OpenAI API 키가 앱 안에 직접 포함되지 않도록, Cloudflare Worker(무료 요금제, Firebase Blaze 불필요)가 대신 키를 들고 OpenAI로 요청을 전달합니다. 자세한 내용은 [`cloudflare-worker/`](cloudflare-worker/) 참고.
 - **다국어 길찾기 링크**: AI 비서가 장소를 추천하면 메시지 하단에 **길찾기 카드**가 자동 파싱되어 노출됩니다.
 - **3개 이동수단 지원**: **자동차(Drive), 도보(Walk), 대중교통(Transit)** 버튼을 탭하면 사용자의 실시간 GPS 위치와 목적지의 위경도 좌표가 매핑된 카카오맵 외부 웹 길찾기 서비스로 다국어가 반영되어 바로 연결됩니다 (`url_launcher` 연동).
 - **실시간 도보 내비게이션**: '도보' 선택 시 Mapbox Directions API로 계산한 경로가 골드/노란색 라인으로 지도에 표시되고, 걷는 동안 위치가 바뀌면(20m 이상 이동 시) 자동으로 경로를 다시 계산해 실제로 따라오는 것처럼 트래킹됩니다. 목적지 25m 이내 도착 시 경로가 자동으로 종료됩니다.
@@ -158,12 +159,14 @@ lib/
 ### 1. 환경 설정 (.env)
 루트 폴더에 `.env` 파일을 만들고 키를 작성하세요.
 ```env
-OPENAI_API_KEY=YOUR_OPENAI_API_KEY
+AI_PROXY_URL=YOUR_CLOUDFLARE_WORKER_URL
+AI_PROXY_SECRET=YOUR_AI_PROXY_SECRET
 MAPBOX_ACCESS_TOKEN=YOUR_MAPBOX_ACCESS_TOKEN
 KAKAO_REST_API_KEY=YOUR_KAKAO_REST_API_KEY
 ODII_SERVICE_KEY=YOUR_ODII_SERVICE_KEY
 TAGO_SERVICE_KEY=YOUR_TAGO_SERVICE_KEY
 ```
+> `AI_PROXY_URL`/`AI_PROXY_SECRET`는 OpenAI API 키를 앱 밖에 안전하게 보관하기 위한 Cloudflare Worker 프록시 설정입니다. Firebase Blaze(종량제) 업그레이드 없이 배포 가능하며, 자세한 배포 절차는 [`cloudflare-worker/README.md`](cloudflare-worker/README.md)를 참고하세요. (기존 `OPENAI_API_KEY`는 더 이상 앱에 필요하지 않습니다 — Worker 쪽 Secret으로 옮겨졌습니다.)
 
 ### 2. Firebase 설정 (친구 & 파티 기능, 진행 상황 저장에 필요)
 친구/파티 기능과 점수·스탬프 진행 상황 클라우드 저장은 Firebase Auth(익명 인증) + Cloud Firestore를 사용합니다.
