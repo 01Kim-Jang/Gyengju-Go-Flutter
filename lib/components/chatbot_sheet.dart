@@ -308,6 +308,7 @@ class _ChatBotSheetState extends State<ChatBotSheet> {
                 Expanded(
                   child: TextField(
                     controller: _controller,
+                    style: const TextStyle(color: Colors.black),
                     decoration: InputDecoration(
                       hintText: AppTranslations.get(
                         currentLang,
