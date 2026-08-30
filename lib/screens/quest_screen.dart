@@ -163,6 +163,16 @@ class QuestScreen extends StatelessWidget {
                                 message: AppTranslations.get(appState.currentLanguage, 'view_full_route'),
                                 child: const Icon(Icons.chevron_right, color: Colors.white70),
                               ),
+                              GestureDetector(
+                                onTap: () => appState.cancelActiveQuest(),
+                                child: Tooltip(
+                                  message: AppTranslations.get(appState.currentLanguage, 'cancel'),
+                                  child: const Padding(
+                                    padding: EdgeInsets.only(left: 6.0),
+                                    child: Icon(Icons.close, color: Colors.white70, size: 20),
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
                           const SizedBox(height: 12),

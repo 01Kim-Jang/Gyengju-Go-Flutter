@@ -745,6 +745,14 @@ class _MapboxViewState extends State<MapboxView> {
                               height: 14,
                               child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFD4AF37)),
                             ),
+                          const SizedBox(width: 6),
+                          GestureDetector(
+                            onTap: () => appState.cancelActiveQuest(),
+                            child: Tooltip(
+                              message: AppTranslations.get(appState.currentLanguage, 'cancel'),
+                              child: const Icon(Icons.close, size: 20, color: Colors.grey),
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 8),

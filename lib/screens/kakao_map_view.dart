@@ -254,6 +254,14 @@ class _KakaoMapViewState extends State<KakaoMapView> {
                           height: 14,
                           child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFD4AF37)),
                         ),
+                      const SizedBox(width: 6),
+                      GestureDetector(
+                        onTap: () => appState.cancelActiveQuest(),
+                        child: Tooltip(
+                          message: AppTranslations.get(currentLang, 'cancel'),
+                          child: const Icon(Icons.close, size: 20, color: Colors.grey),
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 8),

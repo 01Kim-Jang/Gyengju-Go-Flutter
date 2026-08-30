@@ -518,6 +518,15 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  // 진행 중인 퀘스트를 완료 처리 없이 중도에 그만둔다. 네비게이션(경로 표시)이
+  // 켜져 있어도 언제든 끌 수 있도록 경로/타겟 배너를 함께 초기화한다.
+  void cancelActiveQuest() {
+    final activeQuest = _quests.where((q) => q.isActive).firstOrNull;
+    if (activeQuest == null) return;
+    activeQuest.isActive = false;
+    clearRoute();
+  }
+
   // 퀘스트 키워드에 매칭되면서 아직 방문하지 않은 명소 목록
   List<Map<String, dynamic>> _matchingUnvisitedSpots(Quest quest) {
     final results = <Map<String, dynamic>>[];
