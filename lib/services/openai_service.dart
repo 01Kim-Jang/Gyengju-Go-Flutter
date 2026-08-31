@@ -91,6 +91,7 @@ class OpenAIService {
     String targetLang, {
     double? lat,
     double? lng,
+    String? ragContext,
   }) async {
     final proxyUrl = _proxyUrl;
     if (proxyUrl.isEmpty) return "오류: AI 프록시가 설정되지 않았습니다.";
@@ -120,6 +121,12 @@ class OpenAIService {
         ? "The user's current GPS location is Latitude: $lat, Longitude: $lng (in Gyeongju, South Korea)."
         : "The user is in Gyeongju, South Korea.";
 
+    String ragBlock = (ragContext != null && ragContext.trim().isNotEmpty)
+        ? '\n\nVerified information about Gyeongju attractions relevant to this conversation '
+            '(curated by the app team — prefer these facts over your own general knowledge, '
+            'and prioritize mentioning these spots when relevant):\n$ragContext'
+        : '';
+
     try {
       final response = await http.post(
         url,
@@ -134,7 +141,8 @@ class OpenAIService {
                   '$locationContext '
                   'Provide recommendations for nearby restaurants, routes, or historical facts based on their location if asked. '
                   'Always reply in $langName. '
-                  'CRITICAL: If you recommend any specific restaurant, cafe, or tourist spot, you MUST append a tag in the format `[ROUTE:Name,Latitude,Longitude]` for EACH recommended place so the app can render get-directions buttons. For example, if you suggest Bulguksa, append `[ROUTE:Bulguksa Temple,35.7899,129.3320]`. If you suggest multiple places, append multiple tags, e.g., `[ROUTE:PlaceA,LatA,LngA][ROUTE:PlaceB,LatB,LngB]`. Make sure the coordinates are highly accurate for Gyeongju.',
+                  'CRITICAL: If you recommend any specific restaurant, cafe, or tourist spot, you MUST append a tag in the format `[ROUTE:Name,Latitude,Longitude]` for EACH recommended place so the app can render get-directions buttons. For example, if you suggest Bulguksa, append `[ROUTE:Bulguksa Temple,35.7899,129.3320]`. If you suggest multiple places, append multiple tags, e.g., `[ROUTE:PlaceA,LatA,LngA][ROUTE:PlaceB,LatB,LngB]`. Make sure the coordinates are highly accurate for Gyeongju.'
+                  '$ragBlock',
             },
             {'role': 'user', 'content': question},
           ],

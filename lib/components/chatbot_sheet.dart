@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/openai_service.dart';
+import '../services/ai_rag_service.dart';
 import '../providers/app_state.dart';
 import '../utils/translations.dart';
 
@@ -40,11 +41,20 @@ class _ChatBotSheetState extends State<ChatBotSheet> {
       double? lat = appState.userLat;
       double? lng = appState.userLng;
 
+      final ragContext = AiRagService.buildContext(
+        question: text,
+        lang: targetLang,
+        spotsData: appState.spotsData,
+        userLat: lat,
+        userLng: lng,
+      );
+
       final response = await OpenAIService.chatWithAI(
         text,
         targetLang,
         lat: lat,
         lng: lng,
+        ragContext: ragContext,
       );
 
       if (mounted) {
@@ -72,11 +82,20 @@ class _ChatBotSheetState extends State<ChatBotSheet> {
     double? lat = appState.userLat;
     double? lng = appState.userLng;
 
+    final ragContext = AiRagService.buildContext(
+      question: text,
+      lang: targetLang,
+      spotsData: appState.spotsData,
+      userLat: lat,
+      userLng: lng,
+    );
+
     final response = await OpenAIService.chatWithAI(
       text,
       targetLang,
       lat: lat,
       lng: lng,
+      ragContext: ragContext,
     );
 
     setState(() {
