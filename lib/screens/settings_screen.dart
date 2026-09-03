@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../providers/app_state.dart';
 import '../utils/translations.dart';
 import 'tutorial_screen.dart';
+
+const String _privacyPolicyUrl = 'https://01kim-jang.github.io/Gyengju-Go-Flutter/privacy.html';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -428,6 +431,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 icon: const Icon(Icons.school, color: Color(0xFF1F3864)),
                 label: Text(
                   AppTranslations.get(currentLang, 'replay_tutorial'),
+                  style: const TextStyle(color: Color(0xFF1F3864), fontWeight: FontWeight.bold, fontSize: 15),
+                ),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Color(0xFF1F3864), width: 1.2),
+                  minimumSize: const Size(double.infinity, 52),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  backgroundColor: const Color(0xFFFFFDF9).withValues(alpha: 0.8),
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // 5-2. Privacy Policy (플레이스토어 정책상 앱 안에서도 접근 가능해야 함)
+              OutlinedButton.icon(
+                onPressed: () => launchUrl(
+                  Uri.parse(_privacyPolicyUrl),
+                  mode: LaunchMode.externalApplication,
+                ),
+                icon: const Icon(Icons.privacy_tip_outlined, color: Color(0xFF1F3864)),
+                label: Text(
+                  AppTranslations.get(currentLang, 'privacy_policy'),
                   style: const TextStyle(color: Color(0xFF1F3864), fontWeight: FontWeight.bold, fontSize: 15),
                 ),
                 style: OutlinedButton.styleFrom(
