@@ -8,6 +8,7 @@ import 'firebase_options.dart';
 import 'screens/landing_screen.dart';
 import 'providers/app_state.dart';
 import 'services/user_service.dart';
+import 'services/notification_service.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,6 +40,9 @@ Future<void> _initializeResources() async {
     await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
     await UserService.ensureSignedIn();
     debugPrint("Firebase initialized & signed in (uid: ${UserService.uid})");
+
+    await NotificationService.init();
+    debugPrint("Notifications initialized");
   } catch (e, stacktrace) {
     debugPrint("Initialization Error: $e");
     debugPrint(stacktrace.toString());

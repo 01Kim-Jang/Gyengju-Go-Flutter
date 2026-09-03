@@ -14,6 +14,8 @@ import '../services/friend_service.dart';
 import '../services/trip_log_service.dart';
 import '../models/friend_profile.dart';
 import '../data/spots_db.dart';
+import '../services/notification_service.dart';
+import '../utils/translations.dart';
 
 class AppState extends ChangeNotifier {
   String _currentLanguage = 'ko';
@@ -24,6 +26,10 @@ class AppState extends ChangeNotifier {
   List<Map<String, dynamic>> _spotsData = [];
   String _selectedCharacterPath = 'assets/images/char_style1_male.png';
   final Set<String> _globalVisitedSpots = {};
+  // 세션 동안 "근처에 새 스탬프가 있어요" 알림을 이미 보낸 명소 (같은 곳 근처를
+  // 서성일 때마다 반복 알림이 뜨지 않도록 방지). 앱 재시작 시 초기화되는 걸로 충분하다.
+  final Set<String> _notifiedNearbySpots = {};
+  static const double _nearbyNotificationRadiusM = 150.0;
   bool _audioEnabled = true;
   String _mapThemeMode = 'auto'; // 'auto', 'day', 'night'
 
@@ -461,6 +467,34 @@ class AppState extends ChangeNotifier {
 
     if (_transitAlertActive) {
       _maybeCheckTransitProximity(lat, lng);
+    }
+
+    _maybeNotifyNearbyStamp(lat, lng);
+  }
+
+  // 아직 방문하지 않은 명소가 근처(150m 이내)에 있으면 로컬 알림을 한 번 보낸다.
+  // 같은 명소에 대해 세션 중 반복 알림은 보내지 않는다.
+  void _maybeNotifyNearbyStamp(double lat, double lng) {
+    for (final spot in _spotsData) {
+      final title = spot['title']?.toString() ?? '';
+      if (title.isEmpty) continue;
+      if (_globalVisitedSpots.contains(title)) continue;
+      if (_notifiedNearbySpots.contains(title)) continue;
+
+      final spotLat = double.tryParse(spot['mapY']?.toString() ?? '');
+      final spotLng = double.tryParse(spot['mapX']?.toString() ?? '');
+      if (spotLat == null || spotLng == null) continue;
+
+      final distM = _calculateDistance(lat, lng, spotLat, spotLng) * 1000.0;
+      if (distM > _nearbyNotificationRadiusM) continue;
+
+      _notifiedNearbySpots.add(title);
+      final displayName = SpotsDB.get(title)?.getName(_currentLanguage) ?? title;
+      final suffix = AppTranslations.get(_currentLanguage, 'nearby_stamp_body_suffix');
+      NotificationService.showNearbyStamp(
+        title: AppTranslations.get(_currentLanguage, 'nearby_stamp_title'),
+        body: '$displayName$suffix',
+      );
     }
   }
 
