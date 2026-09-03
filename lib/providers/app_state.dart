@@ -31,6 +31,7 @@ class AppState extends ChangeNotifier {
   final Set<String> _notifiedNearbySpots = {};
   static const double _nearbyNotificationRadiusM = 150.0;
   bool _audioEnabled = true;
+  bool _pushNotificationsEnabled = true;
   String _mapThemeMode = 'auto'; // 'auto', 'day', 'night'
 
   double? _userLat;
@@ -374,6 +375,7 @@ class AppState extends ChangeNotifier {
   String get selectedCharacterPath => _selectedCharacterPath;
   Set<String> get globalVisitedSpots => _globalVisitedSpots;
   bool get audioEnabled => _audioEnabled;
+  bool get pushNotificationsEnabled => _pushNotificationsEnabled;
   String get mapThemeMode => _mapThemeMode;
 
   bool get isNightMode {
@@ -475,6 +477,7 @@ class AppState extends ChangeNotifier {
   // 아직 방문하지 않은 명소가 근처(150m 이내)에 있으면 로컬 알림을 한 번 보낸다.
   // 같은 명소에 대해 세션 중 반복 알림은 보내지 않는다.
   void _maybeNotifyNearbyStamp(double lat, double lng) {
+    if (!_pushNotificationsEnabled) return;
     for (final spot in _spotsData) {
       final title = spot['title']?.toString() ?? '';
       if (title.isEmpty) continue;
@@ -822,6 +825,11 @@ class AppState extends ChangeNotifier {
 
   void setAudioEnabled(bool val) {
     _audioEnabled = val;
+    notifyListeners();
+  }
+
+  void setPushNotificationsEnabled(bool val) {
+    _pushNotificationsEnabled = val;
     notifyListeners();
   }
 

@@ -269,6 +269,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               const SizedBox(height: 16),
 
+              // 2-1. Push Notifications ("근처에 새 스탬프가 있어요")
+              _buildSectionCard(
+                title: AppTranslations.get(currentLang, 'push_notifications'),
+                icon: Icons.notifications,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        AppTranslations.get(currentLang, 'push_notifications_desc'),
+                        style: const TextStyle(fontSize: 12.5, color: Color(0xFF8D6E63), height: 1.4),
+                      ),
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(
+                          appState.pushNotificationsEnabled
+                              ? AppTranslations.get(currentLang, 'push_enabled')
+                              : AppTranslations.get(currentLang, 'push_disabled'),
+                          style: const TextStyle(color: Color(0xFF3E2723), fontWeight: FontWeight.w600),
+                        ),
+                        value: appState.pushNotificationsEnabled,
+                        onChanged: (val) => appState.setPushNotificationsEnabled(val),
+                        activeColor: const Color(0xFFD4AF37),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
               // 3. Day / Night theme Mode
               _buildSectionCard(
                 title: themeStr,
