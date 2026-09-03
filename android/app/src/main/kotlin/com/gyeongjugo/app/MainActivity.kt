@@ -1,4 +1,4 @@
-package com.example.gyeongju_go_flutter
+package com.gyeongjugo.app
 
 import io.flutter.embedding.android.FlutterActivity
 

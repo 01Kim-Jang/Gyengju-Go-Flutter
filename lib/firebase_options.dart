@@ -26,7 +26,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyAgkxf9QGSvvSk5nQSKuDUCvjH7l18Z1C4',
-    appId: '1:186888075344:android:4b15809ddb98313759f955',
+    appId: '1:186888075344:android:b4d3c1b4ad3f689f59f955',
     messagingSenderId: '186888075344',
     projectId: 'gyengju-go',
     storageBucket: 'gyengju-go.firebasestorage.app',
