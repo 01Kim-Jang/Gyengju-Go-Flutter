@@ -15,6 +15,7 @@ class DefaultFirebaseOptions {
     }
   }
 
+  // `flutterfire configure --platforms=web`로 등록한 실제 Firebase 웹 앱.
   static const FirebaseOptions web = FirebaseOptions(
     apiKey: 'AIzaSyAs0XlbAhraIB2TNdcvp3xIyOb6vpG7FOQ',
     appId: '1:186888075344:web:341c865872eb06fe59f955',

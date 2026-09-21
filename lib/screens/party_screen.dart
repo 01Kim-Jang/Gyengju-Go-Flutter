@@ -41,70 +41,87 @@ class _PartyScreenState extends State<PartyScreen> {
                 borderRadius: BorderRadius.circular(20),
                 side: const BorderSide(color: Color(0xFF8D6E63), width: 1.8),
               ),
+              insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
               title: Row(
                 children: [
                   const Icon(Icons.group_add, color: Color(0xFF1F3864), size: 26),
                   const SizedBox(width: 8),
-                  Text(
-                    AppTranslations.get(currentLang, 'create_party'),
-                    style: const TextStyle(
-                      fontFamily: 'Serif',
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1F3864),
-                      fontSize: 20,
+                  Expanded(
+                    child: Text(
+                      AppTranslations.get(currentLang, 'create_party'),
+                      style: const TextStyle(
+                        fontFamily: 'Serif',
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1F3864),
+                        fontSize: 20,
+                      ),
                     ),
                   ),
                 ],
               ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    AppTranslations.get(currentLang, 'select_course_desc'),
-                    style: const TextStyle(fontSize: 13, color: Color(0xFF5D4037)),
-                  ),
-                  const SizedBox(height: 16),
-                  DropdownButtonFormField<String>(
-                    value: selectedCourseId,
-                    decoration: InputDecoration(
-                      labelText: AppTranslations.get(currentLang, 'select_course_label'),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      AppTranslations.get(currentLang, 'select_course_desc'),
+                      style: const TextStyle(fontSize: 13, color: Color(0xFF5D4037)),
                     ),
-                    items: [
-                      DropdownMenuItem(
-                        value: 'c_royal',
-                        child: Text(
-                          '${AppTranslations.get(currentLang, 'c_royal_title')} (${AppTranslations.get(currentLang, 'walk')})',
-                          style: const TextStyle(fontSize: 13),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      value: selectedCourseId,
+                      isExpanded: true,
+                      isDense: true,
+                      decoration: InputDecoration(
+                        labelText: AppTranslations.get(currentLang, 'select_course_label'),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Color(0xFFD4AF37), width: 1.4),
                         ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                       ),
-                      DropdownMenuItem(
-                        value: 'c_buddha',
-                        child: Text(
-                          '${AppTranslations.get(currentLang, 'c_buddha_title')} (${AppTranslations.get(currentLang, 'transit')})',
-                          style: const TextStyle(fontSize: 13),
+                      items: [
+                        DropdownMenuItem(
+                          value: 'c_royal',
+                          child: Text(
+                            '${AppTranslations.get(currentLang, 'c_royal_title')} (${AppTranslations.get(currentLang, 'walk')})',
+                            style: const TextStyle(fontSize: 13),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
                         ),
-                      ),
-                      DropdownMenuItem(
-                        value: 'c_munmu',
-                        child: Text(
-                          '${AppTranslations.get(currentLang, 'c_munmu_title')} (${AppTranslations.get(currentLang, 'drive')})',
-                          style: const TextStyle(fontSize: 13),
+                        DropdownMenuItem(
+                          value: 'c_buddha',
+                          child: Text(
+                            '${AppTranslations.get(currentLang, 'c_buddha_title')} (${AppTranslations.get(currentLang, 'transit')})',
+                            style: const TextStyle(fontSize: 13),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
                         ),
-                      ),
-                    ],
-                    onChanged: (val) {
-                      if (val != null) {
-                        setDialogState(() {
-                          selectedCourseId = val;
-                          selectedCourseTitle = AppTranslations.get(currentLang, '${val}_title');
-                        });
-                      }
-                    },
-                  ),
-                ],
+                        DropdownMenuItem(
+                          value: 'c_munmu',
+                          child: Text(
+                            '${AppTranslations.get(currentLang, 'c_munmu_title')} (${AppTranslations.get(currentLang, 'drive')})',
+                            style: const TextStyle(fontSize: 13),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
+                        ),
+                      ],
+                      onChanged: (val) {
+                        if (val != null) {
+                          setDialogState(() {
+                            selectedCourseId = val;
+                            selectedCourseTitle = AppTranslations.get(currentLang, '${val}_title');
+                          });
+                        }
+                      },
+                    ),
+                  ],
+                ),
               ),
               actions: [
                 TextButton(

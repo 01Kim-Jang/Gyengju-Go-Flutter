@@ -47,15 +47,17 @@ class MobileWebFrame extends StatelessWidget {
                   ),
                 ],
               ),
-              clipBehavior: Clip.hardEdge,
+              clipBehavior: Clip.none,
               child: MediaQuery(
                 data: MediaQuery.of(context).copyWith(
                   size: Size(_phoneWidth, phoneHeight),
-                  // 폰 프레임 안에서는 패딩을 기기처럼 단순화
                   padding: const EdgeInsets.only(top: 12, bottom: 8),
                   viewPadding: const EdgeInsets.only(top: 12, bottom: 8),
                 ),
-                child: child,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(26),
+                  child: child,
+                ),
               ),
             ),
           ),
