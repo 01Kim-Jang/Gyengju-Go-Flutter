@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -58,7 +59,7 @@ class OpenAIService {
         url,
         headers: _headers,
         body: jsonEncode({
-          'model': 'gpt-4o-mini',
+          'model': 'gpt-4o',
           'messages': [
             {
               'role': 'system',
@@ -132,7 +133,7 @@ class OpenAIService {
         url,
         headers: _headers,
         body: jsonEncode({
-          'model': 'gpt-4o-mini',
+          'model': 'gpt-4o',
           'messages': [
             {
               'role': 'system',
@@ -176,7 +177,7 @@ class OpenAIService {
         url,
         headers: _headers,
         body: jsonEncode({
-          'model': 'gpt-3.5-turbo',
+          'model': 'gpt-4o',
           'messages': [
             {
               'role': 'system',
@@ -198,6 +199,36 @@ class OpenAIService {
     }
 
     return '현재 이 장소에 대한 도슨트 정보를 불러올 수 없습니다.';
+  }
+
+  // 오디오 도슨트 음성 생성 (OpenAI TTS). 기기/브라우저 내장 TTS는 언어별 설치된
+  // 음성 품질 편차가 커서(특히 베트남어/태국어 등) 외국인 관광객에게 제공하기엔
+  // 부족하므로, 모든 언어를 동일하게 자연스러운 OpenAI 음성으로 통일한다.
+  // 입력 텍스트의 언어를 모델이 자동 인식하므로 언어별 voice 분기는 필요 없다.
+  static Future<Uint8List?> synthesizeSpeech(String text) async {
+    final proxyUrl = _proxyUrl;
+    if (proxyUrl.isEmpty || text.trim().isEmpty) return null;
+
+    try {
+      final response = await http.post(
+        Uri.parse('$proxyUrl/tts'),
+        headers: _headers,
+        body: jsonEncode({
+          'model': 'gpt-4o-mini-tts',
+          'voice': 'alloy',
+          'input': text,
+          'response_format': 'mp3',
+        }),
+      ).timeout(const Duration(seconds: 30));
+
+      if (response.statusCode == 200) {
+        return response.bodyBytes;
+      }
+      debugPrint('OpenAI TTS Error: ${response.statusCode} - ${response.body}');
+    } catch (e) {
+      debugPrint('OpenAI TTS Exception: $e');
+    }
+    return null;
   }
 
   // 4. 주변 음식점 다국어 번역
@@ -229,7 +260,7 @@ class OpenAIService {
         Uri.parse(proxyUrl),
         headers: _headers,
         body: jsonEncode({
-          'model': 'gpt-4o-mini',
+          'model': 'gpt-4o',
           'response_format': { 'type': 'json_object' },
           'messages': [
             {

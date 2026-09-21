@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:kakao_map_plugin/kakao_map_plugin.dart';
 import 'package:geolocator/geolocator.dart' as geo;
@@ -6,6 +7,7 @@ import 'package:pointer_interceptor/pointer_interceptor.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 import '../widgets/pokestop_modal.dart';
+import '../widgets/kakao_web_map.dart';
 import '../data/spots_db.dart';
 import '../utils/translations.dart';
 import '../utils/transit_helper.dart';
@@ -22,6 +24,7 @@ class _KakaoMapViewState extends State<KakaoMapView> {
   late KakaoMapController mapController;
   geo.Position? _currentPosition;
   StreamSubscription<geo.Position>? _positionStream;
+  void Function(double lat, double lng, {int? level})? _webPanTo;
 
   @override
   void initState() {
@@ -59,8 +62,21 @@ class _KakaoMapViewState extends State<KakaoMapView> {
 
   void _moveToMyLocation() {
     if (_currentPosition == null) return;
-    mapController.panTo(LatLng(_currentPosition!.latitude, _currentPosition!.longitude));
-    mapController.setLevel(3);
+    if (kIsWeb) {
+      _webPanTo?.call(_currentPosition!.latitude, _currentPosition!.longitude, level: 3);
+    } else {
+      mapController.panTo(LatLng(_currentPosition!.latitude, _currentPosition!.longitude));
+      mapController.setLevel(3);
+    }
+  }
+
+  void _onSpotTapped(Map<String, dynamic> spot) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => PokestopModal(spotData: spot),
+    );
   }
 
   String _cleanTitle(String rawTitle) {
@@ -163,7 +179,34 @@ class _KakaoMapViewState extends State<KakaoMapView> {
       return LatLng(coords[1], coords[0]);
     }).toList();
 
-    Widget mapWidget = KakaoMap(
+    Widget mapWidget;
+    if (kIsWeb) {
+      final displayNames = <String, String>{
+        for (final spot in loadedSpots)
+          (spot['title'] ?? '').toString(): (() {
+            final clean = _cleanTitle(spot['title'] ?? '');
+            final detail = SpotsDB.get(clean);
+            return detail != null ? detail.getName(currentLang) : (spot['title'] ?? '').toString();
+          })(),
+      };
+
+      mapWidget = KakaoWebMap(
+        spots: loadedSpots,
+        displayNames: displayNames,
+        targetTitle: targetTitle.isNotEmpty ? targetTitle : null,
+        routeCoordinates: appState.routeCoordinates.isNotEmpty ? appState.routeCoordinates : null,
+        navigationMode: appState.navigationMode,
+        myLocation: _currentPosition != null
+            ? {'lat': _currentPosition!.latitude, 'lng': _currentPosition!.longitude}
+            : null,
+        onMarkerTap: (title) {
+          final spot = loadedSpots.firstWhere((s) => s['title'] == title, orElse: () => {});
+          if (spot.isNotEmpty) _onSpotTapped(spot);
+        },
+        onControllerReady: (panTo) => _webPanTo = panTo,
+      );
+    } else {
+    mapWidget = KakaoMap(
       onMapCreated: ((controller) {
         mapController = controller;
         // kakao_map_plugin은 마커/오버레이를 didUpdateWidget에서만 웹뷰로 전송하고
@@ -191,16 +234,10 @@ class _KakaoMapViewState extends State<KakaoMapView> {
           (s) => s['title'] == markerId,
           orElse: () => {},
         );
-        if (spot.isNotEmpty) {
-          showModalBottomSheet(
-            context: context,
-            isScrollControlled: true,
-            backgroundColor: Colors.transparent,
-            builder: (context) => PokestopModal(spotData: spot),
-          );
-        }
+        if (spot.isNotEmpty) _onSpotTapped(spot);
       },
     );
+    }
 
     return Stack(
       children: [

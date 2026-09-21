@@ -40,6 +40,7 @@ dependencies:
   provider: ^6.1.5+1
   flutter_dotenv: ^6.0.1
   flutter_tts: ^4.2.5
+  just_audio: ^0.9.43
   geolocator: ^14.0.3
   url_launcher: ^6.3.2
   webview_flutter: ^4.9.0
@@ -86,7 +87,7 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
-    - .env
+    - env.config
     - assets/scene.gltf
     - assets/scene.bin
     - assets/images/

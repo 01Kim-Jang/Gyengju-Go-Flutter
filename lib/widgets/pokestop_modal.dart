@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
-import 'package:flutter_tts/flutter_tts.dart';
+import 'package:just_audio/just_audio.dart';
+import 'package:pointer_interceptor/pointer_interceptor.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 import '../services/kakao_local_service.dart';
@@ -20,11 +21,12 @@ class PokestopModal extends StatefulWidget {
 }
 
 class _PokestopModalState extends State<PokestopModal> with TickerProviderStateMixin {
-  late FlutterTts flutterTts;
+  late AudioPlayer _audioPlayer;
   bool _isSpun = false;
   bool _showScore = false;
   bool _isSpeaking = false;
-  
+  bool _isLoadingAudio = false;
+
   List<Map<String, dynamic>> _restaurants = [];
   bool _isLoadingPlaces = false;
 
@@ -34,8 +36,12 @@ class _PokestopModalState extends State<PokestopModal> with TickerProviderStateM
   @override
   void initState() {
     super.initState();
-    flutterTts = FlutterTts();
-    _initTts();
+    _audioPlayer = AudioPlayer();
+    _audioPlayer.playerStateStream.listen((state) {
+      if (state.processingState == ProcessingState.completed && mounted) {
+        setState(() => _isSpeaking = false);
+      }
+    });
 
     _spinController = AnimationController(
       vsync: this,
@@ -63,27 +69,13 @@ class _PokestopModalState extends State<PokestopModal> with TickerProviderStateM
     }
   }
 
-  Future<void> _initTts() async {
-    final lang = context.read<AppState>().currentLanguage;
-    String ttsLang = "ko-KR";
-    if (lang == 'en') ttsLang = "en-US";
-    if (lang == 'ja') ttsLang = "ja-JP";
-    if (lang == 'zh-chs') ttsLang = "zh-CN";
-    
-    await flutterTts.setLanguage(ttsLang);
-    await flutterTts.setSpeechRate(0.5);
-    await flutterTts.setVolume(1.0);
-    await flutterTts.setPitch(1.0);
-    flutterTts.setCompletionHandler(() {
-      if (mounted) setState(() => _isSpeaking = false);
-    });
-  }
-
   // 재생 중이면 정지, 아니면 재생하는 토글. 스핀 직후 자동 재생 및
   // 버튼 재탭 시 모두 이 메서드를 거치므로 중지 기능이 항상 보장된다.
+  // 기기/브라우저 내장 TTS 대신 OpenAI TTS로 음성을 생성한다 — 언어별 설치된
+  // 음성 품질 편차(특히 베트남어/태국어)가 커서 외국인 관광객에게는 부적합했다.
   Future<void> _playDocent() async {
     if (_isSpeaking) {
-      await flutterTts.stop();
+      await _audioPlayer.stop();
       if (mounted) setState(() => _isSpeaking = false);
       return;
     }
@@ -91,7 +83,7 @@ class _PokestopModalState extends State<PokestopModal> with TickerProviderStateM
     final title = _cleanTitle(widget.spotData['title'] ?? '');
     final spotDetail = SpotsDB.get(title);
     final currentLang = context.read<AppState>().currentLanguage;
-    
+
     String textToSpeak = '';
     if (spotDetail != null) {
       textToSpeak = "${spotDetail.getFact(currentLang)}. ${spotDetail.getTip(currentLang)}";
@@ -107,8 +99,23 @@ class _PokestopModalState extends State<PokestopModal> with TickerProviderStateM
       textToSpeak = widget.spotData['overview'] ?? welcomeMsg;
     }
 
+    if (mounted) setState(() => _isLoadingAudio = true);
+    final audioBytes = await OpenAIService.synthesizeSpeech(textToSpeak);
+    if (!mounted) return;
+    setState(() => _isLoadingAudio = false);
+
+    if (audioBytes == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('음성을 불러오지 못했습니다.')),
+      );
+      return;
+    }
+
     if (mounted) setState(() => _isSpeaking = true);
-    await flutterTts.speak(textToSpeak);
+    await _audioPlayer.setAudioSource(
+      AudioSource.uri(Uri.dataFromBytes(audioBytes, mimeType: 'audio/mpeg')),
+    );
+    await _audioPlayer.play();
   }
 
   Future<void> _fetchNearbyPlaces() async {
@@ -253,7 +260,7 @@ class _PokestopModalState extends State<PokestopModal> with TickerProviderStateM
 
   @override
   void dispose() {
-    flutterTts.stop();
+    _audioPlayer.dispose();
     _spinController.dispose();
     super.dispose();
   }
@@ -289,7 +296,11 @@ class _PokestopModalState extends State<PokestopModal> with TickerProviderStateM
     final isWithin50m = appState.isSpotWithin50m(widget.spotData);
     final distanceMeters = appState.getDistanceToSpot(widget.spotData);
 
-    return Container(
+    // 웹에서 카카오/Mapbox 지도가 실제 DOM 엘리먼트(iframe/캔버스)로 렌더링되다보니,
+    // 그 위에 뜨는 이 모달을 PointerInterceptor로 감싸지 않으면 스와이프/탭/닫기 버튼
+    // 터치가 모달을 통과해서 아래 지도로 새어나가 아무 반응도 하지 않는다.
+    return PointerInterceptor(
+      child: Container(
       height: MediaQuery.of(context).size.height * 0.85,
       decoration: const BoxDecoration(
         color: Colors.white,
@@ -595,13 +606,21 @@ class _PokestopModalState extends State<PokestopModal> with TickerProviderStateM
                     children: [
                       Expanded(
                         child: OutlinedButton.icon(
-                          onPressed: _playDocent,
-                          icon: Icon(
-                            _isSpeaking ? Icons.stop_circle : Icons.volume_up,
-                            color: _isSpeaking ? Colors.redAccent : const Color(0xFF4A90E2),
-                          ),
+                          onPressed: _isLoadingAudio ? null : _playDocent,
+                          icon: _isLoadingAudio
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF4A90E2)),
+                                )
+                              : Icon(
+                                  _isSpeaking ? Icons.stop_circle : Icons.volume_up,
+                                  color: _isSpeaking ? Colors.redAccent : const Color(0xFF4A90E2),
+                                ),
                           label: Text(
-                            AppTranslations.get(currentLang, _isSpeaking ? 'docent_stop' : 'play_docent'),
+                            _isLoadingAudio
+                                ? AppTranslations.get(currentLang, 'loading')
+                                : AppTranslations.get(currentLang, _isSpeaking ? 'docent_stop' : 'play_docent'),
                             style: TextStyle(
                               color: _isSpeaking ? Colors.redAccent : const Color(0xFF4A90E2),
                               fontWeight: FontWeight.bold,
@@ -773,6 +792,7 @@ class _PokestopModalState extends State<PokestopModal> with TickerProviderStateM
               ),
             ),
         ],
+      ),
       ),
     );
   }

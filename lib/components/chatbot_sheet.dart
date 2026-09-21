@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pointer_interceptor/pointer_interceptor.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/openai_service.dart';
@@ -136,7 +137,10 @@ class _ChatBotSheetState extends State<ChatBotSheet> {
     final currentLang = appState.currentLanguage;
     final titleStr = AppTranslations.get(currentLang, 'ai_guide_title');
 
-    return Container(
+    // 지도 위에 뜨는 이 시트도 PointerInterceptor로 감싸지 않으면 웹에서 아래
+    // 지도(iframe/캔버스)가 터치를 가로채서 입력창/전송 버튼이 먹통이 된다.
+    return PointerInterceptor(
+      child: Container(
       height: MediaQuery.of(context).size.height * 0.75,
       decoration: const BoxDecoration(
         color: Color(0xFFFDFBF7), // warm hanji background
@@ -361,6 +365,7 @@ class _ChatBotSheetState extends State<ChatBotSheet> {
             ),
           ),
         ],
+      ),
       ),
     );
   }

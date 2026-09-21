@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pointer_interceptor/pointer_interceptor.dart';
 import '../services/tago_service.dart';
 import '../utils/translations.dart';
 import '../components/chatbot_sheet.dart';
@@ -56,7 +57,8 @@ class _BusArrivalSheetState extends State<BusArrivalSheet> {
   @override
   Widget build(BuildContext context) {
     final lang = widget.currentLang;
-    return Container(
+    return PointerInterceptor(
+      child: Container(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
       constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.7),
       decoration: const BoxDecoration(
@@ -123,6 +125,7 @@ class _BusArrivalSheetState extends State<BusArrivalSheet> {
             ),
           ),
         ],
+      ),
       ),
     );
   }

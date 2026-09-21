@@ -16,12 +16,13 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'REPLACE_ME',
-    appId: 'REPLACE_ME',
-    messagingSenderId: 'REPLACE_ME',
-    projectId: 'REPLACE_ME',
-    authDomain: 'REPLACE_ME',
-    storageBucket: 'REPLACE_ME',
+    apiKey: 'AIzaSyAs0XlbAhraIB2TNdcvp3xIyOb6vpG7FOQ',
+    appId: '1:186888075344:web:341c865872eb06fe59f955',
+    messagingSenderId: '186888075344',
+    projectId: 'gyengju-go',
+    authDomain: 'gyengju-go.firebaseapp.com',
+    storageBucket: 'gyengju-go.firebasestorage.app',
+    measurementId: 'G-CEV4P5ZDF2',
   );
 
   static const FirebaseOptions android = FirebaseOptions(

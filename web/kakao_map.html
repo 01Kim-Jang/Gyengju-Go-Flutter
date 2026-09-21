@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Kakao Map</title>
+<style>
+  html, body, #map { width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden; }
+  .spot-label {
+    background-color: #FDFBF7;
+    padding: 4px 8px;
+    border-radius: 12px;
+    border: 2px solid #D4AF37;
+    font-size: 11px;
+    font-weight: bold;
+    color: #3E2723;
+    white-space: nowrap;
+    box-shadow: 0px 2px 5px rgba(0,0,0,0.2);
+    font-family: sans-serif;
+    text-align: center;
+    cursor: pointer;
+  }
+  .spot-label.target {
+    border: 3px solid #E53935;
+    background-color: #FFF9C4;
+    font-size: 13px;
+  }
+  .my-location-dot { position: relative; width: 22px; height: 22px; }
+  .my-location-dot .pulse {
+    position: absolute; top: -9px; left: -9px;
+    width: 40px; height: 40px; border-radius: 50%;
+    background: rgba(66, 133, 244, 0.25);
+  }
+  .my-location-dot .dot {
+    position: absolute; top: 0; left: 0;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: #4285F4; border: 3px solid white;
+    box-shadow: 0px 2px 5px rgba(0,0,0,0.35);
+  }
+</style>
+<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=8ae79b4318ce3ff35ce6e3f09698b3b0&libraries=services,clusterer"></script>
+</head>
+<body>
+<div id="map"></div>
+<script>
+  var map = null;
+  var markers = {};   // title -> kakao marker
+  var overlays = {};  // title -> kakao custom overlay (label)
+  var routeLine = null;
+  var myLocationOverlay = null;
+
+  function cleanTitle(raw) {
+    return (raw || '')
+      .replace(/\([^)]*\)/g, '')
+      .replace(/\[[^\]]*\]/g, '')
+      .replace(/^경주\s*,?\s*/, '')
+      .replace(/^Gyeongju\s*,?\s*/i, '')
+      .trim();
+  }
+
+  function initMap() {
+    kakao.maps.load(function () {
+      map = new kakao.maps.Map(document.getElementById('map'), {
+        center: new kakao.maps.LatLng(35.8348, 129.2266),
+        level: 6,
+      });
+      parent.postMessage(JSON.stringify({ type: 'ready' }), '*');
+    });
+  }
+
+  function renderSpots(spots, targetTitle, displayNames) {
+    if (!map) return;
+    var seen = {};
+    (spots || []).forEach(function (spot) {
+      var title = spot.title;
+      seen[title] = true;
+      var lat = parseFloat(spot.mapY);
+      var lng = parseFloat(spot.mapX);
+      if (isNaN(lat) || isNaN(lng)) return;
+      var pos = new kakao.maps.LatLng(lat, lng);
+      var isTarget = title === targetTitle;
+
+      var notifyTap = function () {
+        parent.postMessage(JSON.stringify({ type: 'markerTap', title: title }), '*');
+      };
+
+      if (!markers[title]) {
+        var marker = new kakao.maps.Marker({ position: pos });
+        marker.setMap(map);
+        kakao.maps.event.addListener(marker, 'click', notifyTap);
+        markers[title] = marker;
+      }
+
+      var displayName = (displayNames && displayNames[title]) || cleanTitle(title);
+      var prefix = isTarget ? '🎯 ' : '';
+
+      if (overlays[title]) {
+        overlays[title].el.className = isTarget ? 'spot-label target' : 'spot-label';
+        overlays[title].el.textContent = prefix + displayName;
+      } else {
+        var el = document.createElement('div');
+        el.className = isTarget ? 'spot-label target' : 'spot-label';
+        el.textContent = prefix + displayName;
+        el.addEventListener('click', notifyTap);
+
+        var overlay = new kakao.maps.CustomOverlay({
+          position: pos,
+          content: el,
+          yAnchor: 2.2,
+        });
+        overlay.setMap(map);
+        overlay.el = el;
+        overlays[title] = overlay;
+      }
+    });
+
+    // Remove markers/overlays for spots no longer present
+    Object.keys(markers).forEach(function (title) {
+      if (!seen[title]) {
+        markers[title].setMap(null);
+        delete markers[title];
+        if (overlays[title]) { overlays[title].setMap(null); delete overlays[title]; }
+      }
+    });
+  }
+
+  function renderRoute(coords, mode) {
+    if (!map) return;
+    if (routeLine) { routeLine.setMap(null); routeLine = null; }
+    if (!coords || coords.length === 0) return;
+    var path = coords.map(function (c) { return new kakao.maps.LatLng(c[1], c[0]); });
+    routeLine = new kakao.maps.Polyline({
+      path: path,
+      strokeWeight: 5,
+      strokeColor: mode === 'walk' ? '#FFC400' : '#1E88E5',
+      strokeOpacity: 0.9,
+      strokeStyle: 'solid',
+    });
+    routeLine.setMap(map);
+  }
+
+  function renderMyLocation(lat, lng) {
+    if (!map) return;
+    if (myLocationOverlay) { myLocationOverlay.setMap(null); myLocationOverlay = null; }
+    if (lat == null || lng == null) return;
+    myLocationOverlay = new kakao.maps.CustomOverlay({
+      position: new kakao.maps.LatLng(lat, lng),
+      content: '<div class="my-location-dot"><div class="pulse"></div><div class="dot"></div></div>',
+      yAnchor: 0.5,
+    });
+    myLocationOverlay.setMap(map);
+  }
+
+  window.addEventListener('message', function (event) {
+    var data = event.data;
+    if (typeof data === 'string') {
+      try { data = JSON.parse(data); } catch (e) { return; }
+    }
+    data = data || {};
+    if (data.type === 'update') {
+      renderSpots(data.spots, data.targetTitle, data.displayNames);
+      if (data.route) renderRoute(data.route, data.navigationMode);
+      if (data.myLocation) renderMyLocation(data.myLocation.lat, data.myLocation.lng);
+    } else if (data.type === 'panTo') {
+      if (map) {
+        map.panTo(new kakao.maps.LatLng(data.lat, data.lng));
+        if (data.level) map.setLevel(data.level);
+      }
+    }
+  });
+
+  initMap();
+</script>
+</body>
+</html>
