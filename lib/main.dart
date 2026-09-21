@@ -9,6 +9,7 @@ import 'screens/landing_screen.dart';
 import 'providers/app_state.dart';
 import 'services/user_service.dart';
 import 'services/notification_service.dart';
+import 'widgets/mobile_web_frame.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -72,6 +73,7 @@ class GyeongjuGoApp extends StatelessWidget {
         useMaterial3: true,
       ),
       themeMode: ThemeMode.system,
+      builder: (context, child) => MobileWebFrame(child: child ?? const SizedBox.shrink()),
       home: const LandingScreen(),
     );
   }
