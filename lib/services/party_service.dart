@@ -50,32 +50,40 @@ class PartyService {
     required int stampCount,
   }) async {
     final myUid = UserService.uid;
-    if (myUid == null) return null;
+    if (myUid == null) {
+      debugPrint('PartyService.createParty: not signed in (Firebase not ready?)');
+      return null;
+    }
 
-    final code = await _generateUniqueInviteCode();
-    final docRef = _parties.doc();
+    try {
+      final code = await _generateUniqueInviteCode();
+      final docRef = _parties.doc();
 
-    final host = PartyMember(
-      uid: myUid,
-      nickname: nickname,
-      characterPath: characterPath,
-      isHost: true,
-      lat: lat,
-      lng: lng,
-      stampCount: stampCount,
-    );
+      final host = PartyMember(
+        uid: myUid,
+        nickname: nickname,
+        characterPath: characterPath,
+        isHost: true,
+        lat: lat,
+        lng: lng,
+        stampCount: stampCount,
+      );
 
-    final party = PartyModel(
-      partyId: docRef.id,
-      name: '$courseTitle 탐험대',
-      inviteCode: code,
-      courseId: courseId,
-      courseTitle: courseTitle,
-      members: [host],
-    );
+      final party = PartyModel(
+        partyId: docRef.id,
+        name: '$courseTitle 탐험대',
+        inviteCode: code,
+        courseId: courseId,
+        courseTitle: courseTitle,
+        members: [host],
+      );
 
-    await docRef.set({...party.toJson(), 'memberUids': [myUid]});
-    return party;
+      await docRef.set({...party.toJson(), 'memberUids': [myUid]});
+      return party;
+    } catch (e, st) {
+      debugPrint('PartyService.createParty Error: $e\n$st');
+      return null;
+    }
   }
 
   static Future<JoinPartyOutcome> joinPartyByCode(
