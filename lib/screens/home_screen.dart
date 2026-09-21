@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:pointer_interceptor/pointer_interceptor.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 import 'kakao_map_view.dart';
@@ -65,39 +66,43 @@ class _HomeScreenState extends State<HomeScreen> {
 
           // AI 비서 버튼 (SafeArea 적용). 카카오맵/게임모드 어느 쪽이든 항상
           // 좌하단에 고정되도록 함.
+          // 웹에서 카카오맵은 iframe이라 Stack 위 위젯이 탭을 못 받으므로
+          // PointerInterceptor로 감싼다.
           SafeArea(
             child: Align(
               alignment: Alignment.bottomLeft,
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
-                child: ConstrainedBox(
-                  // 일본어 "AI アシスタント" 등 언어별로 라벨 길이가 크게 달라져서,
-                  // 폭을 제한하고 FittedBox로 텍스트를 줄여서라도 가운데 지도
-                  // 버튼을 가리지 않도록 한다.
-                  constraints: const BoxConstraints(maxWidth: 190),
-                  child: FloatingActionButton.extended(
-                    heroTag: "aiChatbot",
-                    onPressed: () {
-                      showModalBottomSheet(
-                        context: context,
-                        isScrollControlled: true,
-                        backgroundColor: Colors.transparent,
-                        builder: (context) => const ChatBotSheet(),
-                      );
-                    },
-                    backgroundColor: Colors.white,
-                    icon: const Icon(
-                      Icons.support_agent,
-                      color: Color(0xFFD4AF37),
-                      size: 32,
-                    ),
-                    label: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        AppTranslations.get(lang, 'ai_assistant'),
-                        style: const TextStyle(
-                          color: Colors.black,
-                          fontWeight: FontWeight.bold,
+                child: PointerInterceptor(
+                  child: ConstrainedBox(
+                    // 일본어 "AI アシスタント" 등 언어별로 라벨 길이가 크게 달라져서,
+                    // 폭을 제한하고 FittedBox로 텍스트를 줄여서라도 가운데 지도
+                    // 버튼을 가리지 않도록 한다.
+                    constraints: const BoxConstraints(maxWidth: 190),
+                    child: FloatingActionButton.extended(
+                      heroTag: "aiChatbot",
+                      onPressed: () {
+                        showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (context) => const ChatBotSheet(),
+                        );
+                      },
+                      backgroundColor: Colors.white,
+                      icon: const Icon(
+                        Icons.support_agent,
+                        color: Color(0xFFD4AF37),
+                        size: 32,
+                      ),
+                      label: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          AppTranslations.get(lang, 'ai_assistant'),
+                          style: const TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
@@ -140,27 +145,29 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Scaffold(
       body: pages[safeTabIndex],
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      floatingActionButton: FloatingActionButton(
-        heroTag: "mapTabButton",
-        onPressed: () {
-          if (isMapActive) {
-            _showMapModePicker(context, appState, lang);
-          } else {
-            appState.setCurrentTabIndex(1);
-          }
-        },
-        backgroundColor: isMapActive ? const Color(0xFFD4AF37) : Colors.white,
-        elevation: 4,
-        shape: CircleBorder(
-          side: BorderSide(
-            color: const Color(0xFFD4AF37),
-            width: isMapActive ? 0 : 2,
+      floatingActionButton: PointerInterceptor(
+        child: FloatingActionButton(
+          heroTag: "mapTabButton",
+          onPressed: () {
+            if (isMapActive) {
+              _showMapModePicker(context, appState, lang);
+            } else {
+              appState.setCurrentTabIndex(1);
+            }
+          },
+          backgroundColor: isMapActive ? const Color(0xFFD4AF37) : Colors.white,
+          elevation: 4,
+          shape: CircleBorder(
+            side: BorderSide(
+              color: const Color(0xFFD4AF37),
+              width: isMapActive ? 0 : 2,
+            ),
           ),
-        ),
-        child: Icon(
-          Icons.map,
-          color: isMapActive ? Colors.white : const Color(0xFFD4AF37),
-          size: 26,
+          child: Icon(
+            Icons.map,
+            color: isMapActive ? Colors.white : const Color(0xFFD4AF37),
+            size: 26,
+          ),
         ),
       ),
       bottomNavigationBar: BottomAppBar(

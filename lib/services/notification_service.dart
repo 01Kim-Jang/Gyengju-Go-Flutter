@@ -12,6 +12,11 @@ class NotificationService {
 
   static Future<void> init() async {
     if (_initialized) return;
+    // flutter_local_notifications는 웹을 지원하지 않는다.
+    if (kIsWeb) {
+      _initialized = true;
+      return;
+    }
     try {
       const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
       const iosSettings = DarwinInitializationSettings();
@@ -37,7 +42,7 @@ class NotificationService {
     required String title,
     required String body,
   }) async {
-    if (!_initialized) return;
+    if (!_initialized || kIsWeb) return;
     try {
       const androidDetails = AndroidNotificationDetails(
         'nearby_stamp_channel',

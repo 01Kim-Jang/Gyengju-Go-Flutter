@@ -196,6 +196,35 @@ TAGO_SERVICE_KEY=YOUR_TAGO_SERVICE_KEY
 # 의존성 패키지 설치
 flutter pub get
 
-# 앱 실행
+# 앱 실행 (모바일)
 flutter run
+
+# 웹 로컬 실행 (Chrome)
+flutter run -d chrome --web-port=8080
 ```
+
+### 4. 웹 배포 (Flutter Web → Firebase Hosting)
+
+웹에서는 **카카오맵**과 **게임모드(Mapbox)** 를 모두 사용할 수 있습니다. (`mapbox_maps_flutter` 3.x 웹 프리뷰)
+
+**사전 준비**
+1. `.env`에 API 키를 채운다.
+2. `flutterfire configure`에서 **web** 플랫폼을 선택해 `lib/firebase_options.dart`의 web 값을 채운다.
+3. [Kakao Developers](https://developers.kakao.com) → 내 애플리케이션 → 플랫폼 → Web → **사이트 도메인**에 배포 URL과 로컬 origin을 등록한다.
+   - 로컬 예: `http://localhost:8080`
+   - Hosting 예: `https://gyengju-go.web.app`
+
+**빌드 & 배포**
+```bash
+flutter build web --release
+firebase login
+firebase deploy --only hosting
+```
+
+배포 후 URL은 `https://<project-id>.web.app` 형태입니다. SPA 라우팅은 `firebase.json`의 rewrite로 처리됩니다.
+
+**웹에서 달라지는 점**
+- 게임모드(Mapbox 3D): 웹 프리뷰로 지원. 3D 모델·일부 장식 UI는 모바일과 다를 수 있음
+- 로컬 푸시 알림: 미지원 (근처 스탬프 알림은 웹에서 생략)
+- 인앱 WebView 길찾기: 새 브라우저 탭으로 열림
+- QR 스캔: 브라우저 카메라 권한 필요 (HTTPS 또는 localhost)

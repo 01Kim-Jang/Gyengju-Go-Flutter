@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
@@ -43,17 +44,19 @@ class _QrScanScreenState extends State<QrScanScreen> {
         foregroundColor: Colors.white,
         title: Text(widget.title),
         actions: [
-          IconButton(
-            icon: ValueListenableBuilder(
-              valueListenable: _controller,
-              builder: (context, state, child) {
-                return Icon(
-                  state.torchState == TorchState.on ? Icons.flash_on : Icons.flash_off,
-                );
-              },
+          // 웹/데스크톱에서는 플래시가 없거나 지원되지 않는다.
+          if (!kIsWeb)
+            IconButton(
+              icon: ValueListenableBuilder(
+                valueListenable: _controller,
+                builder: (context, state, child) {
+                  return Icon(
+                    state.torchState == TorchState.on ? Icons.flash_on : Icons.flash_off,
+                  );
+                },
+              ),
+              onPressed: () => _controller.toggleTorch(),
             ),
-            onPressed: () => _controller.toggleTorch(),
-          ),
         ],
       ),
       body: Stack(

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:kakao_map_plugin/kakao_map_plugin.dart';
 import 'package:geolocator/geolocator.dart' as geo;
+import 'package:pointer_interceptor/pointer_interceptor.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 import '../widgets/pokestop_modal.dart';
@@ -210,7 +211,8 @@ class _KakaoMapViewState extends State<KakaoMapView> {
             top: 50,
             left: 20,
             right: 20,
-            child: Container(
+            child: PointerInterceptor(
+              child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.95),
@@ -348,13 +350,15 @@ class _KakaoMapViewState extends State<KakaoMapView> {
                 ],
               ),
             ),
+            ),
           )
         else if (appState.activeParty != null)
           Positioned(
             top: 50,
             left: 20,
             right: 20,
-            child: Container(
+            child: PointerInterceptor(
+              child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
                 color: const Color(0xFF1F3864),
@@ -383,16 +387,19 @@ class _KakaoMapViewState extends State<KakaoMapView> {
                 ],
               ),
             ),
+            ),
           ),
         // My Location Button
         Positioned(
           right: 16,
           bottom: 100,
-          child: FloatingActionButton(
-            heroTag: "myLocationKakao",
-            backgroundColor: const Color(0xFFD4AF37),
-            child: const Icon(Icons.my_location, color: Colors.white),
-            onPressed: _moveToMyLocation,
+          child: PointerInterceptor(
+            child: FloatingActionButton(
+              heroTag: "myLocationKakao",
+              backgroundColor: const Color(0xFFD4AF37),
+              child: const Icon(Icons.my_location, color: Colors.white),
+              onPressed: _moveToMyLocation,
+            ),
           ),
         ),
       ],

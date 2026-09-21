@@ -22,24 +22,6 @@ class MapboxView extends StatefulWidget {
   State<MapboxView> createState() => _MapboxViewState();
 }
 
-class AnnotationClickListener extends OnPointAnnotationClickListener {
-  final BuildContext context;
-  final Map<String, dynamic> spotsMap;
-  final Function(Map<String, dynamic> spot) onSpotClick;
-
-  AnnotationClickListener(this.context, this.spotsMap, this.onSpotClick);
-
-  @override
-  void onPointAnnotationClick(PointAnnotation annotation) {
-    // Marker id matches spot id or title
-    final title = annotation.textField;
-    if (title != null && spotsMap.containsKey(title)) {
-      final spot = spotsMap[title];
-      onSpotClick(spot);
-    }
-  }
-}
-
 class _MapboxViewState extends State<MapboxView> {
   MapboxMap? mapboxMap;
   PointAnnotationManager? pointAnnotationManager;
@@ -406,8 +388,11 @@ class _MapboxViewState extends State<MapboxView> {
         .createPointAnnotationManager();
     await pointAnnotationManager?.setIconAllowOverlap(true);
     await pointAnnotationManager?.setTextAllowOverlap(true);
-    pointAnnotationManager?.addOnPointAnnotationClickListener(
-      AnnotationClickListener(context, _spotsMap, (spot) {
+    pointAnnotationManager?.tapEvents(
+      onTap: (annotation) {
+        final title = annotation.textField;
+        if (title == null || !_spotsMap.containsKey(title)) return;
+        final spot = _spotsMap[title] as Map<String, dynamic>;
         _startCinematicCamera(spot);
         showModalBottomSheet(
           context: context,
@@ -417,7 +402,7 @@ class _MapboxViewState extends State<MapboxView> {
         ).then((_) {
           _stopCinematicCamera();
         });
-      }),
+      },
     );
 
     // 데이터 불러오기 및 마커 렌더링
@@ -585,7 +570,7 @@ class _MapboxViewState extends State<MapboxView> {
     Widget mapWidget = MapWidget(
       key: const ValueKey("mapboxWidget"),
       onMapCreated: _onMapCreated,
-      cameraOptions: CameraOptions(
+      viewport: CameraViewportState(
         center: Point(coordinates: Position(129.2266, 35.8348)),
         zoom: 16.0,
         pitch: 75.0, // 극단적인 포켓몬고 스타일 항공샷

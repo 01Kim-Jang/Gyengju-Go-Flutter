@@ -1,5 +1,5 @@
-import 'dart:io';
 import 'dart:ui' as ui;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
@@ -78,15 +78,39 @@ class _StampBookScreenState extends State<StampBookScreen> {
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       if (byteData == null) return;
       final bytes = byteData.buffer.asUint8List();
-      final dir = await getTemporaryDirectory();
-      final file = File('${dir.path}/gyeongju_go_stamp_book.png');
-      await file.writeAsBytes(bytes);
-      await SharePlus.instance.share(
-        ShareParams(
-          files: [XFile(file.path)],
-          text: AppTranslations.get(lang, 'stamp_book_share_text'),
-        ),
-      );
+      final shareText = AppTranslations.get(lang, 'stamp_book_share_text');
+      // 웹에는 dart:io File / path_provider 임시 디렉터리가 없으므로
+      // 바이트 기반 XFile로 Web Share API에 넘긴다.
+      if (kIsWeb) {
+        await SharePlus.instance.share(
+          ShareParams(
+            files: [
+              XFile.fromData(
+                bytes,
+                mimeType: 'image/png',
+                name: 'gyeongju_go_stamp_book.png',
+              ),
+            ],
+            text: shareText,
+          ),
+        );
+      } else {
+        final dir = await getTemporaryDirectory();
+        final path = '${dir.path}/gyeongju_go_stamp_book.png';
+        final file = XFile.fromData(
+          bytes,
+          mimeType: 'image/png',
+          name: 'gyeongju_go_stamp_book.png',
+          path: path,
+        );
+        await file.saveTo(path);
+        await SharePlus.instance.share(
+          ShareParams(
+            files: [XFile(path)],
+            text: shareText,
+          ),
+        );
+      }
     } catch (e) {
       debugPrint('Stamp book share error: $e');
     } finally {
