@@ -7,7 +7,8 @@ import 'package:pointer_interceptor/pointer_interceptor.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 import '../widgets/pokestop_modal.dart';
-import '../widgets/kakao_web_map.dart';
+import '../widgets/kakao_web_map_stub.dart'
+    if (dart.library.js_interop) '../widgets/kakao_web_map.dart';
 import '../data/spots_db.dart';
 import '../utils/translations.dart';
 import '../utils/transit_helper.dart';

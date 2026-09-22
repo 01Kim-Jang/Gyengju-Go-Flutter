@@ -36,6 +36,18 @@ subprojects {
     }
 }
 
+// mapbox_maps_flutter 3.x는 "AGP 9 이상이면 Kotlin 내장"이라고 가정해 kotlin-android를
+// 적용하지 않는다. 하지만 다른 플러그인(flutter_tts, audio_session 등)이 kotlin-android를
+// 직접 적용하기 때문에 이 프로젝트는 builtInKotlin=false를 유지해야 하므로, mapbox에만
+// 플러그인을 대신 적용해준다.
+subprojects {
+    if (name == "mapbox_maps_flutter_mobile") {
+        plugins.withId("com.android.library") {
+            apply(plugin = "org.jetbrains.kotlin.android")
+        }
+    }
+}
+
 subprojects {
     project.evaluationDependsOn(":app")
 }
